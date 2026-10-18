@@ -19,7 +19,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         url: config.get<string>('DATABASE_URL'),
         ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
         autoLoadEntities: true,
-        synchronize: false, // en una BD en la nube, mejor usar migraciones
+        synchronize: false,
       }),
     }),
     ObserveModule.forRoot({
