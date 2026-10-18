@@ -95,20 +95,21 @@ npx expo start              # escanea el QR con Expo Go
 - Perfil configurable en una sola pantalla (≤ 3 pantallas / 5 interacciones).
 - Lint con reglas de accesibilidad (`eslint-plugin-triple-rn-a11y`).
 
-## Conexión a Supabase (front)
+## Autenticación
 
-- Cliente compartido en `src/services/supabase/` (URL + anon key del proyecto del equipo).
-- La autenticación se realiza contra la tabla `usuarios` (contraseña hasheada con SHA256,
-  igual que el front web) mediante `registrarPasajeroSupabase` / `iniciarSesionPasajero`.
-- Variables opcionales en `.env`: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-- El perfil de accesibilidad sigue siendo 100 % local (no se envía a Supabase).
+- La app no se conecta a la base de datos: llama al backend (`src/services/api/auth.ts`),
+  que guarda la cuenta en PostgreSQL (AWS RDS, tabla `usuario`).
+- `POST /auth/register` y `POST /auth/login` reciben `{ email, password }` y devuelven
+  un JWT, que se guarda cifrado con `expo-secure-store`.
+- El backend hashea la contraseña con bcrypt y asigna el rol `viajero`.
+- El perfil de accesibilidad sigue siendo 100 % local (no se envía al backend).
 
 ## Notas para el equipo (backend / siguientes pasos)
 
 1. `POST /routes` usa `costing: 'auto'`; para OmniTravel corresponde
    `wheelchair` / `pedestrian` de Valhalla.
 2. Endpoints pendientes que el front ya consume como mocks tipados:
-   autenticación JWT, `MapController` (bbox → GeoJSON), reportes, subida de
+   `MapController` (bbox → GeoJSON), reportes, subida de
    evidencias (S3).
 3. `docs/adr/` del repositorio está vacío; los ADR-01…09 del documento C4
    pueden poblarse allí.

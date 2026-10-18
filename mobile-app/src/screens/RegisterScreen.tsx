@@ -20,7 +20,7 @@ import {
   type NecesidadAccesibilidad,
 } from '../store/profileStore';
 import type { IconName } from '../services/types';
-import { registrarPasajeroSupabase } from '../services/supabase/auth';
+import { registrarUsuario } from '../services/api/auth';
 import {
   colors,
   fontSize,
@@ -122,13 +122,9 @@ export function RegisterScreen() {
 
     setRegistrando(true);
     try {
-      // La cuenta (email + contraseña hasheada) vive en Supabase.
-      await registrarPasajeroSupabase({
-        nombre: nombre.trim(),
-        email: email.trim(),
-        contrasena,
-        necesidades: necesidades.map(String),
-      });
+      // La cuenta (email + contraseña) se crea en el backend, que la guarda
+      // en PostgreSQL. El nombre y las necesidades no se envían.
+      await registrarUsuario(email, contrasena);
 
       // El perfil de accesibilidad sigue siendo 100 % local (Ley 1581).
       guardarPerfil({

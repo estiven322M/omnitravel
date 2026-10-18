@@ -38,8 +38,16 @@ export async function apiFetch<T>(
     });
 
     if (!respuesta.ok) {
+      // NestJS responde { message, error, statusCode }; si viene un mensaje,
+      // se muestra tal cual (ej. "El correo electrónico ya está registrado.").
+      const cuerpo = (await respuesta.json().catch(() => null)) as {
+        message?: string | string[];
+      } | null;
+      const mensaje = Array.isArray(cuerpo?.message)
+        ? cuerpo.message.join(' ')
+        : cuerpo?.message;
       throw new ApiError(
-        `El servidor respondió con estado ${respuesta.status}.`,
+        mensaje ?? `El servidor respondió con estado ${respuesta.status}.`,
         respuesta.status,
       );
     }
