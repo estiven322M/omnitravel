@@ -5,8 +5,9 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -29,6 +30,14 @@ import type { PasoRuta, ResultadoRuta } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { formatearDistancia } from '../utils/format';
+import {
+  indicePasoEn,
+  limitesDePasos,
+  longitudesAcumuladas,
+  proyectarEnRuta,
+  puntoEnRuta,
+  rutaRestante,
+} from '../utils/progresoRuta';
 import {
   datosDesactualizados,
   iconoDeManeuver,
@@ -94,7 +103,8 @@ export function NavegacionScreen() {
   const [recalculo, setRecalculo] = useState(0);
   const [avisoRecalculo, setAvisoRecalculo] = useState<string | null>(null);
   const [guiaVoz, setGuiaVoz] = useState(false);
-  const [indicePaso, setIndicePaso] = useState(0);
+  /** Metros recorridos sobre la ruta (GPS o paso elegido por la persona). */
+  const [recorridoM, setRecorridoM] = useState(0);
 
   const cargando = resultado === undefined && !error;
   /**
@@ -105,8 +115,126 @@ export function NavegacionScreen() {
     usarAlternativa && resultado?.alternativa
       ? resultado.alternativa
       : resultado;
-  const pasos = rutaMostrada?.pasos ?? [];
+  const pasos = useMemo(() => rutaMostrada?.pasos ?? [], [rutaMostrada]);
+  const coordenadasRuta = useMemo(
+    () => rutaMostrada?.coordenadas ?? [],
+    [rutaMostrada],
+  );
+  const acumuladas = useMemo(
+    () => longitudesAcumuladas(coordenadasRuta),
+    [coordenadasRuta],
+  );
+  const conGeometria = coordenadasRuta.length >= 2;
+  const longitudM = conGeometria
+    ? acumuladas[acumuladas.length - 1]
+    : (rutaMostrada?.distanciaKm ?? 0) * 1000;
+  const limites = useMemo(
+    () => limitesDePasos(pasos, longitudM),
+    [pasos, longitudM],
+  );
+  const indicePaso = indicePasoEn(limites, recorridoM);
   const pasoActual: PasoRuta | undefined = pasos[indicePaso];
+
+  /** Lo que falta: se acorta en el mapa y en las cifras según el avance. */
+  const restanteM = Math.max(longitudM - recorridoM, 0);
+  const restantePasoM = limites[indicePaso]
+    ? Math.max(limites[indicePaso].finM - recorridoM, 0)
+    : (pasoActual?.distanciaKm ?? 0) * 1000;
+  const minutosRestantes =
+    rutaMostrada && longitudM > 0
+      ? Math.max(
+          Math.ceil((rutaMostrada.duracionMin * restanteM) / longitudM),
+          0,
+        )
+      : (rutaMostrada?.duracionMin ?? 0);
+  const posicionEnRuta = useMemo(
+    () =>
+      conGeometria
+        ? puntoEnRuta(coordenadasRuta, acumuladas, recorridoM)
+        : { latitude: origenLat, longitude: origenLon },
+    [
+      conGeometria,
+      coordenadasRuta,
+      acumuladas,
+      recorridoM,
+      origenLat,
+      origenLon,
+    ],
+  );
+  const rutaEnMapa = useMemo(
+    () =>
+      conGeometria
+        ? { coordenadas: rutaRestante(coordenadasRuta, acumuladas, recorridoM) }
+        : null,
+    [conGeometria, coordenadasRuta, acumuladas, recorridoM],
+  );
+  const enCurso = recorridoM > 0;
+
+  /** Salta al inicio de un paso (botón «siguiente» o tarjeta elegida). */
+  const irAPaso = useCallback(
+    (indice: number) => {
+      setRecorridoM((limites[indice]?.inicioM ?? 0) + (indice > 0 ? 0.5 : 0));
+    },
+    [limites],
+  );
+
+  // Avance real: la posición GPS se proyecta sobre la ruta y el recorrido
+  // solo crece (si la persona se aleja > 60 m de la ruta no se cuenta).
+  useEffect(() => {
+    if (!conGeometria) {
+      return undefined;
+    }
+    let activo = true;
+    let suscripcion: Location.LocationSubscription | null = null;
+    (async () => {
+      const permiso = await Location.getForegroundPermissionsAsync();
+      if (!permiso.granted) {
+        const nuevo = await Location.requestForegroundPermissionsAsync();
+        if (!nuevo.granted) {
+          return;
+        }
+      }
+      if (!activo) {
+        return;
+      }
+      suscripcion = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, distanceInterval: 5 },
+        (posicion) => {
+          const { recorridoM: avance, desvioM } = proyectarEnRuta(
+            coordenadasRuta,
+            acumuladas,
+            {
+              latitude: posicion.coords.latitude,
+              longitude: posicion.coords.longitude,
+            },
+          );
+          if (desvioM <= 60) {
+            setRecorridoM((previo) => Math.max(previo, avance));
+          }
+        },
+      );
+      if (!activo) {
+        suscripcion.remove();
+      }
+    })().catch(() => undefined);
+    return () => {
+      activo = false;
+      suscripcion?.remove();
+    };
+  }, [conGeometria, coordenadasRuta, acumuladas]);
+
+  // Las tarjetas de pasos se desplazan solas hasta la indicación vigente.
+  const listaPasosRef = useRef<ScrollView | null>(null);
+  const posicionesPasos = useRef<number[]>([]);
+  useEffect(() => {
+    const x = posicionesPasos.current[indicePaso];
+    if (x != null) {
+      listaPasosRef.current?.scrollTo({
+        x: Math.max(x - spacing.md, 0),
+        animated: true,
+      });
+    }
+  }, [indicePaso]);
 
   // Calcula (y recalcula) la ruta: los estados se fijan en los callbacks
   // de la promesa, nunca de forma síncrona dentro del efecto.
@@ -129,7 +257,7 @@ export function NavegacionScreen() {
         // Cada cálculo nuevo muestra la ruta principal hasta nuevo recálculo.
         setUsarAlternativa(false);
         setError(null);
-        setIndicePaso(0);
+        setRecorridoM(0);
         if (Platform.OS === 'ios') {
           AccessibilityInfo.announceForAccessibility(
             `Ruta calculada: ${ruta.duracionMin} minutos, ${formatearDistancia(
@@ -206,6 +334,7 @@ export function NavegacionScreen() {
       // vuelve a la ruta principal.
       const mostrarAlternativa = !usarAlternativa;
       setUsarAlternativa(mostrarAlternativa);
+      setRecorridoM(0);
       setAvisoRecalculo(
         aviso ?? 'Ruta recalculada: se muestra un camino accesible distinto.',
       );
@@ -226,9 +355,7 @@ export function NavegacionScreen() {
   };
 
   const avanzarPaso = () => {
-    setIndicePaso((indice) =>
-      Math.min(indice + 1, Math.max(pasos.length - 1, 0)),
-    );
+    irAPaso(Math.min(indicePaso + 1, Math.max(pasos.length - 1, 0)));
   };
 
   return (
@@ -299,8 +426,8 @@ export function NavegacionScreen() {
                 {pasoActual.instruccion}
               </Text>
               <Text style={estilos.distanciaManiobra}>
-                {pasoActual.distanciaKm > 0
-                  ? formatearDistancia(pasoActual.distanciaKm)
+                {restantePasoM >= 1
+                  ? formatearDistancia(restantePasoM / 1000)
                   : 'Ahora'}
               </Text>
             </View>
@@ -347,12 +474,10 @@ export function NavegacionScreen() {
               },
             ]}
             vistaInicial={{ latitude: origenLat, longitude: origenLon }}
-            ruta={
-              rutaMostrada?.coordenadas
-                ? { coordenadas: rutaMostrada.coordenadas }
-                : null
-            }
-            ubicacionUsuario={{ latitude: origenLat, longitude: origenLon }}
+            ruta={rutaEnMapa}
+            ubicacionUsuario={posicionEnRuta}
+            ajustarAlCambiar={!enCurso}
+            centrar={enCurso ? { ...posicionEnRuta, clave: indicePaso } : null}
             onPoiPulsado={() => undefined}
           />
         )}
@@ -405,7 +530,7 @@ export function NavegacionScreen() {
                     style={estilos.valorEstadistica}
                     accessibilityLiveRegion="polite"
                   >
-                    {rutaMostrada.duracionMin} min
+                    {minutosRestantes} min
                   </Text>
                 </View>
                 <View style={estilos.separadorVertical} />
@@ -417,7 +542,11 @@ export function NavegacionScreen() {
                   />
                   <Text style={estilos.etiquetaEstadistica}>Distancia</Text>
                   <Text style={estilos.valorEstadistica}>
-                    {formatearDistancia(rutaMostrada.distanciaKm)}
+                    {formatearDistancia(
+                      conGeometria
+                        ? restanteM / 1000
+                        : rutaMostrada.distanciaKm,
+                    )}
                   </Text>
                 </View>
                 <View
@@ -521,6 +650,7 @@ export function NavegacionScreen() {
               ) : null}
 
               <ScrollView
+                ref={listaPasosRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={estilos.listaPasos}
@@ -528,13 +658,24 @@ export function NavegacionScreen() {
               >
                 {pasos.map((paso, indice) => {
                   const activoPaso = indice === indicePaso;
+                  // Misma medida que la tarjeta azul: el paso vigente muestra
+                  // lo que le falta; los demás, su longitud sobre la ruta.
+                  const metrosPaso = activoPaso
+                    ? restantePasoM
+                    : limites[indice]
+                      ? limites[indice].finM - limites[indice].inicioM
+                      : Math.max(paso.distanciaKm, 0) * 1000;
                   return (
                     <Pressable
                       key={`${indice}-${paso.tipo}`}
-                      onPress={() => setIndicePaso(indice)}
+                      onPress={() => irAPaso(indice)}
+                      onLayout={(evento) => {
+                        posicionesPasos.current[indice] =
+                          evento.nativeEvent.layout.x;
+                      }}
                       accessibilityRole="button"
                       accessibilityState={{ selected: activoPaso }}
-                      accessibilityLabel={`Paso ${indice + 1} de ${pasos.length}: ${paso.instruccion}. ${formatearDistancia(Math.max(paso.distanciaKm, 0))}.`}
+                      accessibilityLabel={`Paso ${indice + 1} de ${pasos.length}: ${paso.instruccion}. ${formatearDistancia(metrosPaso / 1000)}.`}
                       style={[
                         estilos.tarjetaPaso,
                         activoPaso ? estilos.tarjetaPasoActiva : null,
@@ -560,7 +701,7 @@ export function NavegacionScreen() {
                           activoPaso ? estilos.textoPasoActivo : null,
                         ]}
                       >
-                        {formatearDistancia(Math.max(paso.distanciaKm, 0))}
+                        {formatearDistancia(metrosPaso / 1000)}
                       </Text>
                     </Pressable>
                   );
