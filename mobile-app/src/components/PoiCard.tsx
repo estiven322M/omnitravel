@@ -55,71 +55,78 @@ export function PoiCard({
       .finally(() => setGuardandoFavorito(false));
   };
 
+  // El corazón va FUERA del Pressable de la tarjeta: un botón dentro de
+  // otro no es válido en web (<button> anidado) y confunde a los lectores
+  // de pantalla.
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${poi.nombre}, ${poi.categoria} en ${poi.ciudad}. ${
-        verificado ? 'Accesibilidad verificada' : 'En revisión por la comunidad'
-      }.`}
-      accessibilityHint={onPress ? 'Abre el detalle del lugar' : undefined}
-      style={({ pressed }) => [
-        estilos.tarjeta,
-        pressed ? estilos.presionado : null,
-      ]}
-    >
-      <Image
-        source={foto.fuente}
-        style={estilos.foto}
-        resizeMode="cover"
-        accessibilityIgnoresInvertColors
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      />
-      <View style={estilos.contenido}>
-        <Text style={estilos.nombre} numberOfLines={1}>
-          {poi.nombre}
-        </Text>
-        <Text style={estilos.subtitulo} numberOfLines={1}>
-          {poi.categoria} • {poi.ciudad}
-        </Text>
-        {etiquetas.length > 0 ? (
-          <View style={estilos.etiquetas}>
-            {etiquetas.map((etiqueta) => (
-              <View key={etiqueta} style={estilos.etiqueta}>
-                <Ionicons name="checkmark" size={11} color={colors.success} />
-                <Text style={estilos.etiquetaTexto}>{etiqueta}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        <View style={estilos.pie}>
-          <Badge
-            tono={verificado ? 'exito' : 'alerta'}
-            texto={
-              verificado
-                ? `${poi.confirmaciones} validaciones`
-                : `En revisión · ${poi.confirmaciones}/3`
-            }
-          />
-          {distanciaKm !== undefined ? (
-            <View style={estilos.filaDistancia}>
-              <Ionicons name="location" size={12} color={colors.primary} />
-              <Text style={estilos.textoDistancia}>
-                {formatearDistancia(distanciaKm)}
-              </Text>
+    <View style={estilos.tarjeta}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={`${poi.nombre}, ${poi.categoria} en ${poi.ciudad}. ${
+          verificado
+            ? 'Accesibilidad verificada'
+            : 'En revisión por la comunidad'
+        }.`}
+        accessibilityHint={onPress ? 'Abre el detalle del lugar' : undefined}
+        style={({ pressed }) => [
+          estilos.zonaTocable,
+          pressed ? estilos.presionado : null,
+        ]}
+      >
+        <Image
+          source={foto.fuente}
+          style={estilos.foto}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+        <View style={estilos.contenido}>
+          <Text style={estilos.nombre} numberOfLines={1}>
+            {poi.nombre}
+          </Text>
+          <Text style={estilos.subtitulo} numberOfLines={1}>
+            {poi.categoria} • {poi.ciudad}
+          </Text>
+          {etiquetas.length > 0 ? (
+            <View style={estilos.etiquetas}>
+              {etiquetas.map((etiqueta) => (
+                <View key={etiqueta} style={estilos.etiqueta}>
+                  <Ionicons name="checkmark" size={11} color={colors.success} />
+                  <Text style={estilos.etiquetaTexto}>{etiqueta}</Text>
+                </View>
+              ))}
             </View>
           ) : null}
-          {onPress ? (
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={colors.textMuted}
-              style={estilos.chevron}
+          <View style={estilos.pie}>
+            <Badge
+              tono={verificado ? 'exito' : 'alerta'}
+              texto={
+                verificado
+                  ? `${poi.confirmaciones} validaciones`
+                  : `En revisión · ${poi.confirmaciones}/3`
+              }
             />
-          ) : null}
+            {distanciaKm !== undefined ? (
+              <View style={estilos.filaDistancia}>
+                <Ionicons name="location" size={12} color={colors.primary} />
+                <Text style={estilos.textoDistancia}>
+                  {formatearDistancia(distanciaKm)}
+                </Text>
+              </View>
+            ) : null}
+            {onPress ? (
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.textMuted}
+                style={estilos.chevron}
+              />
+            ) : null}
+          </View>
         </View>
-      </View>
+      </Pressable>
       {muestraFavorito ? (
         <Pressable
           onPress={alternarGuardado}
@@ -142,7 +149,7 @@ export function PoiCard({
           </View>
         </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -155,6 +162,11 @@ const estilos = StyleSheet.create({
     gap: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  zonaTocable: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   presionado: {
     opacity: 0.9,
