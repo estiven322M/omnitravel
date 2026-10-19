@@ -1,0 +1,1098 @@
+{
+  "info": {
+    "_postman_id": "560c35a3-28e5-5e87-9c27-acdabfa736d7",
+    "name": "OmniTravel — Pruebas funcionales (Entrega 2)",
+    "description": "Pruebas funcionales de los dos procesos entregados, contra el backend desplegado.\n\nEjecutar en orden con el Collection Runner (Run collection). Cada ejecución crea 4 usuarios de prueba (postman+…@omnitravel.test) y un reporte de actualización sobre un lugar ya publicado, por lo que no agrega lugares nuevos al mapa.\n\n- 0. Preparación: 6 solicitudes\n- Proceso 1 — Validación colaborativa: 11 casos (PF-101…PF-111)\n- Proceso 2 — Rutas accesibles: 6 casos (PF-201…PF-206)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Preparación",
+      "item": [
+        {
+          "name": "PF-000 Servidor disponible (health)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('status = ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-001 Registrar usuario de prueba «autor»",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const marca = pm.collectionVariables.get('marca') || String(Date.now());",
+                  "pm.collectionVariables.set('marca', marca);",
+                  "pm.collectionVariables.set('email_autor', `postman+autor.${marca}@omnitravel.test`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve token JWT y rol viajero', () => {",
+                  "  pm.expect(r.token.split('.')).to.have.lengthOf(3);",
+                  "  pm.expect(r.usuario.rol).to.eql('viajero');",
+                  "});",
+                  "pm.collectionVariables.set('token_autor', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_autor}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-002 Registrar usuario de prueba «c1»",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const marca = pm.collectionVariables.get('marca') || String(Date.now());",
+                  "pm.collectionVariables.set('marca', marca);",
+                  "pm.collectionVariables.set('email_c1', `postman+c1.${marca}@omnitravel.test`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve token JWT y rol viajero', () => {",
+                  "  pm.expect(r.token.split('.')).to.have.lengthOf(3);",
+                  "  pm.expect(r.usuario.rol).to.eql('viajero');",
+                  "});",
+                  "pm.collectionVariables.set('token_c1', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_c1}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-003 Registrar usuario de prueba «c2»",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const marca = pm.collectionVariables.get('marca') || String(Date.now());",
+                  "pm.collectionVariables.set('marca', marca);",
+                  "pm.collectionVariables.set('email_c2', `postman+c2.${marca}@omnitravel.test`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve token JWT y rol viajero', () => {",
+                  "  pm.expect(r.token.split('.')).to.have.lengthOf(3);",
+                  "  pm.expect(r.usuario.rol).to.eql('viajero');",
+                  "});",
+                  "pm.collectionVariables.set('token_c2', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_c2}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-004 Registrar usuario de prueba «c3»",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const marca = pm.collectionVariables.get('marca') || String(Date.now());",
+                  "pm.collectionVariables.set('marca', marca);",
+                  "pm.collectionVariables.set('email_c3', `postman+c3.${marca}@omnitravel.test`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Devuelve token JWT y rol viajero', () => {",
+                  "  pm.expect(r.token.split('.')).to.have.lengthOf(3);",
+                  "  pm.expect(r.usuario.rol).to.eql('viajero');",
+                  "});",
+                  "pm.collectionVariables.set('token_c3', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_c3}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-005 Elegir un lugar publicado del mapa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const publicados = pm.response.json().pois.filter((p) => p.estado === 'publicado');",
+                  "pm.test('Hay lugares publicados', () => pm.expect(publicados.length).to.be.above(0));",
+                  "pm.collectionVariables.set('poiId', publicados[0].id_poi);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mapa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mapa"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proceso 1 — Validación colaborativa",
+      "item": [
+        {
+          "name": "PF-101 Crear reporte de actualización de un lugar (RF-02)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Queda en pendiente_validacion', () => pm.expect(r.estado).to.eql('pendiente_validacion'));",
+                  "pm.collectionVariables.set('reporteId', r.id_reporte);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"descripcion\": \"Prueba funcional Postman: rampa de acceso verificada\",\n  \"esCritico\": false,\n  \"caracteristicas\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-102 Crear lugar nuevo sin nombre → rechazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));",
+                  "pm.test('Código de error DATOS_INCOMPLETOS', () => pm.expect(pm.response.json().error).to.eql('DATOS_INCOMPLETOS'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"lat\": 4.537,\n  \"lon\": -75.675\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-103 Crear lugar con coordenadas fuera de rango → rechazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));",
+                  "pm.test('Código de error COORDENADAS_INVALIDAS', () => pm.expect(pm.response.json().error).to.eql('COORDENADAS_INVALIDAS'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Lugar inválido\",\n  \"lat\": 95,\n  \"lon\": -75.675\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-104 Crear reporte sin sesión → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-105 El autor intenta confirmar su propio reporte (RNF-28)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422', () => pm.response.to.have.status(422));",
+                  "pm.test('Código de error AUTOCONFIRMACION', () => pm.expect(pm.response.json().error).to.eql('AUTOCONFIRMACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-106 Primera confirmación (usuario c1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('1 confirmación, aún no publicado', () => pm.expect(pm.response.json()).to.eql({ confirmaciones: 1, publicado: false }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-107 Confirmación duplicada del mismo usuario (RNF-18)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('Código de error CONFIRMACION_DUPLICADA', () => pm.expect(pm.response.json().error).to.eql('CONFIRMACION_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-108 Segunda confirmación (usuario c2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('2 confirmaciones, aún no publicado', () => pm.expect(pm.response.json()).to.eql({ confirmaciones: 2, publicado: false }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-109 Tercera confirmación publica el reporte (RNF-18, RNF-23)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('3 confirmaciones → publicado', () => pm.expect(pm.response.json()).to.eql({ confirmaciones: 3, publicado: true }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c3}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-110 El reporte vigente del lugar aparece publicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json().reporte;",
+                  "pm.test('Es el reporte de la prueba y está publicado', () => {",
+                  "  pm.expect(r.id_reporte).to.eql(Number(pm.collectionVariables.get('reporteId')));",
+                  "  pm.expect(r.estado).to.eql('publicado');",
+                  "  pm.expect(r.confirmaciones).to.eql(3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pois/{{poiId}}/reporte-activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pois",
+                "{{poiId}}",
+                "reporte-activo"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PF-111 Un viajero no puede usar la consola de moderación (RNF-09)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403', () => pm.response.to.have.status(403));",
+                  "pm.test('Código de error ACCESO_DENEGADO', () => pm.expect(pm.response.json().error).to.eql('ACCESO_DENEGADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/moderacion/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "moderacion",
+                "reportes"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proceso 2 — Rutas accesibles",
+      "item": [
+        {
+          "name": "PF-201 Ruta para silla de ruedas evitando escaleras (RF-01, RNF-21)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Ruta con distancia, duración y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "});",
+                  "pm.test('Perfil aplicado: silla_de_ruedas', () => pm.expect(r.perfil).to.eql('silla_de_ruedas'));",
+                  "pm.test('Responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.at.most(3000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.537,\n    -75.672\n  ],\n  \"restrictions\": {\n    \"perfil\": \"silla_de_ruedas\",\n    \"avoidStairs\": true,\n    \"requireElevator\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-202 Ruta para perfil visual (RNF-12)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Ruta con distancia, duración y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "});",
+                  "pm.test('Perfil aplicado: visual', () => pm.expect(r.perfil).to.eql('visual'));",
+                  "pm.test('Responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.at.most(3000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.537,\n    -75.672\n  ],\n  \"restrictions\": {\n    \"perfil\": \"visual\",\n    \"preferSoundTrafficLights\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-203 Ruta peatonal estándar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Ruta con distancia, duración y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "});",
+                  "pm.test('Perfil aplicado: peatonal', () => pm.expect(r.perfil).to.eql('peatonal'));",
+                  "pm.test('Responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.at.most(3000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.537,\n    -75.672\n  ],\n  \"restrictions\": {\n    \"perfil\": \"peatonal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-204 Ruta con coordenada fuera de rango → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    120,\n    -75.6811\n  ],\n  \"destination\": [\n    4.537,\n    -75.672\n  ],\n  \"restrictions\": {\n    \"perfil\": \"silla_de_ruedas\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-205 Ruta sin destino → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PF-206 Ruta sin sesión → 401 (RNF-06)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.537,\n    -75.672\n  ],\n  \"restrictions\": {\n    \"perfil\": \"peatonal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// La marca se reinicia en cada ejecución del Runner (primera solicitud).",
+          " if (pm.info.iteration === 0 && pm.info.requestName.startsWith('PF-000')) { pm.collectionVariables.unset('marca'); }"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://omnitravel-production-4af6.up.railway.app"
+    },
+    {
+      "key": "clave",
+      "value": "Prueba#2026"
+    }
+  ]
+}
