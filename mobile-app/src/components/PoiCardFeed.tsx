@@ -109,84 +109,88 @@ export function PoiCardFeed({
     poi.confirmaciones === 1 ? 'validación' : 'validaciones'
   }`;
 
+  // El corazón va FUERA del Pressable de la tarjeta (sin botones anidados
+  // en web); queda encima gracias a su posición absoluta.
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${poi.nombre}, ${poi.categoria} en ${poi.ciudad}.${
-        etiquetaDistancia ? ` A ${etiquetaDistancia} de ti.` : ''
-      } ${textoValidaciones} de la comunidad. ${
-        verificado
-          ? 'Accesibilidad verificada.'
-          : 'En revisión por la comunidad.'
-      }`}
-      accessibilityHint={onPress ? 'Abre el detalle del lugar' : undefined}
-      style={({ pressed }) => [
-        estilos.tarjeta,
-        pressed ? estilos.presionado : null,
-      ]}
-    >
-      <View style={estilos.foto}>
-        <Image
-          source={foto.fuente}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          accessibilityRole="image"
-          accessibilityLabel={
-            foto.referencia
-              ? `Foto de referencia de ${poi.categoria}`
-              : `Foto de ${poi.nombre}`
-          }
-          accessibilityIgnoresInvertColors
-        />
-      </View>
-
-      <View style={estilos.contenido}>
-        <Text style={estilos.nombre} numberOfLines={1}>
-          {poi.nombre}
-        </Text>
-        <Text style={estilos.subtitulo} numberOfLines={1}>
-          {poi.categoria} • {poi.ciudad}
-        </Text>
-
-        {etiquetaDistancia ? (
-          <View style={estilos.filaDistancia}>
-            <Ionicons name="location" size={13} color={colors.primary} />
-            <Text style={estilos.textoDistancia}>{etiquetaDistancia}</Text>
-          </View>
-        ) : null}
-
-        {etiquetas.length > 0 ? (
-          <View style={estilos.etiquetas}>
-            {etiquetas.map((etiqueta) => (
-              <View key={etiqueta.texto} style={estilos.etiqueta}>
-                <Ionicons
-                  name={etiqueta.icono}
-                  size={12}
-                  color={colors.success}
-                />
-                <Text style={estilos.etiquetaTexto}>{etiqueta.texto}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={estilos.pie}>
-          <Ionicons name="people" size={20} color={colors.primary} />
-          <View style={estilos.textosPie}>
-            <Text style={estilos.validaciones}>{textoValidaciones}</Text>
-            <Text style={estilos.confiabilidad} numberOfLines={1}>
-              Confiabilidad comunitaria
-            </Text>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={colors.primary}
-            style={estilos.chevron}
+    <View>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={`${poi.nombre}, ${poi.categoria} en ${poi.ciudad}.${
+          etiquetaDistancia ? ` A ${etiquetaDistancia} de ti.` : ''
+        } ${textoValidaciones} de la comunidad. ${
+          verificado
+            ? 'Accesibilidad verificada.'
+            : 'En revisión por la comunidad.'
+        }`}
+        accessibilityHint={onPress ? 'Abre el detalle del lugar' : undefined}
+        style={({ pressed }) => [
+          estilos.tarjeta,
+          pressed ? estilos.presionado : null,
+        ]}
+      >
+        <View style={estilos.foto}>
+          <Image
+            source={foto.fuente}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+            accessibilityRole="image"
+            accessibilityLabel={
+              foto.referencia
+                ? `Foto de referencia de ${poi.categoria}`
+                : `Foto de ${poi.nombre}`
+            }
+            accessibilityIgnoresInvertColors
           />
         </View>
-      </View>
+
+        <View style={estilos.contenido}>
+          <Text style={estilos.nombre} numberOfLines={1}>
+            {poi.nombre}
+          </Text>
+          <Text style={estilos.subtitulo} numberOfLines={1}>
+            {poi.categoria} • {poi.ciudad}
+          </Text>
+
+          {etiquetaDistancia ? (
+            <View style={estilos.filaDistancia}>
+              <Ionicons name="location" size={13} color={colors.primary} />
+              <Text style={estilos.textoDistancia}>{etiquetaDistancia}</Text>
+            </View>
+          ) : null}
+
+          {etiquetas.length > 0 ? (
+            <View style={estilos.etiquetas}>
+              {etiquetas.map((etiqueta) => (
+                <View key={etiqueta.texto} style={estilos.etiqueta}>
+                  <Ionicons
+                    name={etiqueta.icono}
+                    size={12}
+                    color={colors.success}
+                  />
+                  <Text style={estilos.etiquetaTexto}>{etiqueta.texto}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <View style={estilos.pie}>
+            <Ionicons name="people" size={20} color={colors.primary} />
+            <View style={estilos.textosPie}>
+              <Text style={estilos.validaciones}>{textoValidaciones}</Text>
+              <Text style={estilos.confiabilidad} numberOfLines={1}>
+                Confiabilidad comunitaria
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.primary}
+              style={estilos.chevron}
+            />
+          </View>
+        </View>
+      </Pressable>
 
       {muestraFavorito ? (
         <Pressable
@@ -208,7 +212,7 @@ export function PoiCardFeed({
           />
         </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
