@@ -25,9 +25,9 @@ Variables en `backend/.env` (plantilla en `.env.example`):
 
 | Variable | Uso |
 |---|---|
-| `DATABASE_URL` | `postgresql://USUARIO:CONTRASEÑA@HOST.rds.amazonaws.com:5432/omnitravel_db` |
+| `DATABASE_URL` | `postgresql://USUARIO:CONTRASEÑA@HOST.rds.amazonaws.com:5432/omnitravel_db` (si trae `?sslmode=…` se ignora: el TLS lo deciden `DB_SSL` y `DB_SSL_CA`) |
 | `DB_SSL` | `true` para RDS |
-| `DB_SSL_CA` | opcional: certificado de la CA de RDS (ruta a un `.pem` o el certificado pegado) para verificar el servidor |
+| `DB_SSL_CA` | certificado de la CA de RDS para verificar el servidor: descarga [`global-bundle.pem`](https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem) en `backend/certs/` y pon `certs/global-bundle.pem` (o pega el certificado). Sin él, el backend acepta cualquier certificado y `crear-admin` no se conecta |
 | `JWT_SECRET` | firma de los tokens de sesión (≥ 32 caracteres; en producción el backend no arranca con uno débil) |
 | `CORS_ORIGINS` | opcional: orígenes web permitidos; por defecto Expo web local |
 | `OBSERVE_APP_KEY` / `OBSERVE_APP_SECRET` | opcional: activa la telemetría `@nestjs/observe` |

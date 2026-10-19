@@ -38,15 +38,35 @@ export function contrasenaValida(clave) {
   );
 }
 
+/**
+ * `pg` da prioridad a `?sslmode=…` de la URL sobre la opción `ssl` (y descarta
+ * la CA). El TLS lo gobiernan DB_SSL / DB_SSL_CA, igual que en el backend.
+ */
+export function urlSinParametrosSsl(url) {
+  try {
+    const parseada = new URL(url);
+    ['ssl', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert', 'uselibpqcompat'].forEach(
+      (nombre) => parseada.searchParams.delete(nombre),
+    );
+    return parseada.toString();
+  } catch {
+    return url;
+  }
+}
+
 function opcionesSsl() {
   if (process.env.DB_SSL !== 'true') {
     return false;
   }
   const ca = process.env.DB_SSL_CA?.trim();
   if (!ca) {
+    // Sin CA, Node no reconoce la autoridad de RDS: se pide configurarla.
     return { rejectUnauthorized: true };
   }
-  return { ca: ca.includes('BEGIN CERTIFICATE') ? ca : readFileSync(ca, 'utf8') };
+  return {
+    ca: ca.includes('BEGIN CERTIFICATE') ? ca.replace(/\\n/g, '\n') : readFileSync(ca, 'utf8'),
+    rejectUnauthorized: true,
+  };
 }
 
 /** Lee una línea sin eco (la contraseña no queda en pantalla ni en el historial). */
@@ -103,10 +123,21 @@ async function main() {
   }
 
   const cliente = new pg.Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: urlSinParametrosSsl(process.env.DATABASE_URL),
     ssl: opcionesSsl(),
   });
-  await cliente.connect();
+  try {
+    await cliente.connect();
+  } catch (error) {
+    if (/certificate/i.test(error.message)) {
+      salir(
+        `${error.message}. Descarga el certificado de AWS RDS ` +
+          '(https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem) ' +
+          'en backend/certs/ y agrega DB_SSL_CA=certs/global-bundle.pem en backend/.env.',
+      );
+    }
+    throw error;
+  }
 
   try {
     const { rows: roles } = await cliente.query(

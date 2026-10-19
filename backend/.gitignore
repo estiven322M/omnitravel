@@ -63,3 +63,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Claves privadas locales
 /certs/*.key
 /certs/*.pem
+
+# Certificados descargados (p. ej. CA de AWS RDS)
+certs/
