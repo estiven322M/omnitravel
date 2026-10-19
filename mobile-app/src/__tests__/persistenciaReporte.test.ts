@@ -57,3 +57,20 @@ describe('cargarDatosMapa sin backend', () => {
     expect(datos.advertencia).toContain('http://192.168.1.10:3000');
   });
 });
+
+describe('cargarDatosMapa con la BD vacía', () => {
+  it('queda conectada (no «sin conexión») y sin lugares', async () => {
+    apiFetchMock.mockResolvedValue({
+      caracteristicas: [],
+      pois: [],
+      valores: [],
+      retroalimentacion: [],
+      reportes: [],
+      confirmaciones: [],
+    });
+    const datos = await cargarDatosMapa();
+    expect(datos.fuente).toBe('backend');
+    expect(datos.pois).toEqual([]);
+    expect(datos.catalogo.length).toBeGreaterThan(0);
+  });
+});

@@ -172,7 +172,9 @@ function obtenerCatalogo(filas: FilaCaracteristica[]): {
 } {
   const activas = filas.filter((fila) => fila.activa);
   if (activas.length === 0) {
-    throw new Error('Catálogo de accesibilidad vacío en la BD.');
+    // BD conectada pero sin catálogo cargado: se muestran las etiquetas del
+    // catálogo base (sin `idBd`, así que ningún valor se envía con ids falsos).
+    return { catalogo: CATALOGO_CARACTERISTICAS, idPorNumerico: new Map() };
   }
 
   const idPorNumerico = new Map<number, string>();
