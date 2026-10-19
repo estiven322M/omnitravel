@@ -154,7 +154,12 @@ export function DashboardModeradorScreen() {
                   </View>
                 ) : null}
               </Pressable>
-              <AvatarInicial texto={nombre} tamano={38} enLinea />
+              <AvatarInicial
+                texto={nombre}
+                tamano={38}
+                enLinea
+                fotoUri={perfil?.fotoUri}
+              />
             </>
           }
         />
