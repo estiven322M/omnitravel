@@ -151,6 +151,7 @@ export function ReportesPendientesScreen() {
                 texto={perfil?.nombre ?? 'M'}
                 tamano={38}
                 enLinea
+                fotoUri={perfil?.fotoUri}
               />
             </>
           }

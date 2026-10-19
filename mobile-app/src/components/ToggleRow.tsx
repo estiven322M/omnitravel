@@ -48,13 +48,17 @@ export function ToggleRow({
           <Text style={estilos.descripcion}>{descripcion}</Text>
         ) : null}
       </View>
-      <Switch
-        value={valor}
-        onValueChange={onCambio}
-        accessible={false}
-        trackColor={{ false: '#C9D1DC', true: colors.primary }}
-        thumbColor={colors.white}
-      />
+      {/* Solo visual: toda la fila es el interruptor. Si el Switch también
+          recibiera el toque, en el navegador se activaría dos veces (fila +
+          Switch) y el filtro quedaría igual que antes. */}
+      <View pointerEvents="none">
+        <Switch
+          value={valor}
+          accessible={false}
+          trackColor={{ false: '#C9D1DC', true: colors.primary }}
+          thumbColor={colors.white}
+        />
+      </View>
     </Pressable>
   );
 }

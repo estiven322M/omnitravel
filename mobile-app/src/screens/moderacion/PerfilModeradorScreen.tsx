@@ -3,6 +3,9 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
 import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +28,11 @@ import {
   obtenerResumenModeracion,
   type ResumenModeracion,
 } from '../../services/moderacion';
+import {
+  borrarFotoDePerfil,
+  elegirFotoDePerfil,
+  FotoPerfilError,
+} from '../../services/fotoPerfil';
 import { cerrarSesionCompleta } from '../../services/sesion';
 import type { IconName } from '../../services/types';
 import { useProfileStore } from '../../store/profileStore';
@@ -110,6 +118,55 @@ export function PerfilModeradorScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const perfil = useProfileStore((estado) => estado.perfil);
   const ultimoEmail = useProfileStore((estado) => estado.ultimoEmail);
+  const establecerFoto = useProfileStore((estado) => estado.establecerFoto);
+  const [cambiandoFoto, setCambiandoFoto] = useState(false);
+  const idCuenta = perfil?.idCuenta;
+
+  // Foto de perfil local, igual que en el perfil del viajero (U12).
+  const cambiarFoto = async () => {
+    if (!idCuenta) {
+      Alerta.alert(
+        'Foto de perfil',
+        'No pudimos identificar tu cuenta. Cierra sesión y vuelve a entrar para poder elegir una foto.',
+      );
+      return;
+    }
+    setCambiandoFoto(true);
+    try {
+      const uri = await elegirFotoDePerfil(idCuenta);
+      if (uri) {
+        establecerFoto(uri);
+        AccessibilityInfo.announceForAccessibility(
+          'Foto de perfil actualizada.',
+        );
+      }
+    } catch (error) {
+      Alerta.alert(
+        'Foto de perfil',
+        error instanceof FotoPerfilError
+          ? error.message
+          : 'No pudimos actualizar tu foto. Inténtalo de nuevo.',
+      );
+    } finally {
+      setCambiandoFoto(false);
+    }
+  };
+
+  const quitarFoto = () => {
+    Alerta.alert('Quitar foto', '¿Quieres quitar tu foto de perfil?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Quitar',
+        style: 'destructive',
+        onPress: () => {
+          if (idCuenta) {
+            borrarFotoDePerfil(idCuenta);
+          }
+          establecerFoto(undefined);
+        },
+      },
+    ]);
+  };
   const [resumen, setResumen] = useState<ResumenModeracion | null>(null);
   const [claveVisible, setClaveVisible] = useState(false);
   const [actual, setActual] = useState('');
@@ -207,7 +264,50 @@ export function PerfilModeradorScreen() {
         </View>
 
         <View style={estilos.tarjetaPerfil}>
-          <AvatarInicial texto={perfil?.nombre ?? 'M'} tamano={88} enLinea />
+          <View style={estilos.columnaAvatar}>
+            <Pressable
+              onPress={() => void cambiarFoto()}
+              onLongPress={perfil?.fotoUri ? quitarFoto : undefined}
+              disabled={cambiandoFoto}
+              accessibilityRole="button"
+              accessibilityLabel={
+                perfil?.fotoUri
+                  ? 'Cambiar tu foto de perfil'
+                  : 'Agregar una foto de perfil'
+              }
+              accessibilityHint="Abre la galería para elegir una imagen"
+            >
+              {perfil?.fotoUri ? (
+                <Image
+                  source={{ uri: perfil.fotoUri }}
+                  style={estilos.avatarFoto}
+                  accessibilityIgnoresInvertColors
+                />
+              ) : cambiandoFoto ? (
+                <View style={estilos.avatarFoto}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              ) : (
+                <AvatarInicial
+                  texto={perfil?.nombre ?? 'M'}
+                  tamano={88}
+                  enLinea
+                />
+              )}
+              <View style={estilos.botonCamara}>
+                <Ionicons name="camera" size={14} color={colors.white} />
+              </View>
+            </Pressable>
+            {perfil?.fotoUri ? (
+              <Pressable
+                onPress={quitarFoto}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={estilos.quitarFoto}>Quitar foto</Text>
+              </Pressable>
+            ) : null}
+          </View>
           <View style={estilos.datosPerfil}>
             <Text style={estilos.nombre}>{perfil?.nombre ?? 'Moderador'}</Text>
             <Text style={estilos.rol}>{rolTexto} de Accesibilidad</Text>
@@ -378,6 +478,33 @@ const estilos = StyleSheet.create({
     padding: spacing.lg,
   },
   datosPerfil: { flex: 1, gap: 3 },
+  columnaAvatar: { alignItems: 'center', gap: spacing.xs },
+  avatarFoto: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonCamara: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quitarFoto: {
+    fontSize: fontSize.xs,
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
   nombre: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,

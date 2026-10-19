@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   colors,
   fontSize,
@@ -73,10 +73,13 @@ export function AvatarInicial({
   texto,
   tamano = 40,
   enLinea = false,
+  fotoUri,
 }: {
   texto: string;
   tamano?: number;
   enLinea?: boolean;
+  /** Foto de perfil de la cuenta; sin ella se muestra la inicial. */
+  fotoUri?: string;
 }) {
   return (
     <View
@@ -87,9 +90,17 @@ export function AvatarInicial({
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <Text style={[estilos.avatarTexto, { fontSize: tamano * 0.42 }]}>
-        {(texto.trim().charAt(0) || '?').toUpperCase()}
-      </Text>
+      {fotoUri ? (
+        <Image
+          source={{ uri: fotoUri }}
+          style={{ width: tamano, height: tamano, borderRadius: tamano / 2 }}
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <Text style={[estilos.avatarTexto, { fontSize: tamano * 0.42 }]}>
+          {(texto.trim().charAt(0) || '?').toUpperCase()}
+        </Text>
+      )}
       {enLinea ? <View style={estilos.enLinea} /> : null}
     </View>
   );
