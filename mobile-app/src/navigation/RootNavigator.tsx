@@ -3,14 +3,20 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useVigilanciaSesion } from '../hooks/useVigilanciaSesion';
 import { LoginScreen } from '../screens/LoginScreen';
+import { IncidenciasScreen } from '../screens/moderacion/IncidenciasScreen';
+import { LoginModeradorScreen } from '../screens/moderacion/LoginModeradorScreen';
+import { RevisionReporteScreen } from '../screens/moderacion/RevisionReporteScreen';
+import { NotificacionesScreen } from '../screens/NotificacionesScreen';
+import { SplashScreen } from '../screens/SplashScreen';
+import { esRolModeracion } from '../services/inicioSesion';
 import { MisReportesScreen } from '../screens/MisReportesScreen';
-import { ModeracionScreen } from '../screens/ModeracionScreen';
 import { NavegacionScreen } from '../screens/NavegacionScreen';
 import { PoiDetailScreen } from '../screens/PoiDetailScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { useProfileStore } from '../store/profileStore';
 import { colors } from '../utils/theme';
 import { MainTabs } from './MainTabs';
+import { ModeradorTabs } from './ModeradorTabs';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,23 +45,26 @@ export function RootNavigator() {
     );
   }
 
+  const moderacion = esRolModeracion(perfil?.rol);
+
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={perfil ? 'Principal' : 'Login'}
-        screenOptions={{ headerShown: false }}
-      >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {perfil ? (
           <>
-            <Stack.Screen name="Principal" component={MainTabs} />
+            {moderacion ? (
+              <Stack.Screen name="PanelModerador" component={ModeradorTabs} />
+            ) : (
+              <Stack.Screen name="Principal" component={MainTabs} />
+            )}
             <Stack.Screen
               name="DetallePoi"
               component={PoiDetailScreen}
               options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
-              name="Moderacion"
-              component={ModeracionScreen}
+              name="Notificaciones"
+              component={NotificacionesScreen}
               options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
@@ -68,13 +77,37 @@ export function RootNavigator() {
               component={NavegacionScreen}
               options={{ animation: 'slide_from_right' }}
             />
+            {moderacion ? (
+              <>
+                <Stack.Screen
+                  name="RevisionReporte"
+                  component={RevisionReporteScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Incidencias"
+                  component={IncidenciasScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+              </>
+            ) : null}
           </>
         ) : (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
             <Stack.Screen
               name="Registro"
               component={RegisterScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="LoginModerador"
+              component={LoginModeradorScreen}
               options={{ animation: 'slide_from_right' }}
             />
           </>

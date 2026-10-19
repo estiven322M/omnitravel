@@ -1,8 +1,3 @@
-
-import {
-    ForbiddenException,
-    UnauthorizedException,
-} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseController } from './database.controller';
 import { DatabaseService } from './database.service';

@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EncabezadoMarca } from '../components/EncabezadoMarca';
 import { EmptyState } from '../components/EmptyState';
 import { PoiCardFeed } from '../components/PoiCardFeed';
 import type { RootStackParamList } from '../navigation/types';
@@ -58,6 +59,7 @@ export function SavedScreen() {
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top']}>
       <ScrollView contentContainerStyle={estilos.contenido}>
+        <EncabezadoMarca tamanoLogo={42} />
         <View style={estilos.filaTitulo}>
           <Text style={estilos.titulo} accessibilityRole="header">
             Tus lugares guardados
@@ -70,7 +72,7 @@ export function SavedScreen() {
         </View>
         <Text style={estilos.subtitulo}>
           {cargadoFavoritos
-            ? `${guardados.length} de tus favoritos sincronizados con la base de datos.`
+            ? `${guardados.length} ${guardados.length === 1 ? 'lugar guardado' : 'lugares guardados'} en tu cuenta.`
             : 'Consultando tus favoritos…'}
         </Text>
 
@@ -87,7 +89,7 @@ export function SavedScreen() {
 
         {cargandoFavoritos && guardados.length === 0 ? (
           <Text style={estilos.textoProceso}>
-            Leyendo tus guardados desde la BD del equipo…
+            Cargando tus lugares guardados…
           </Text>
         ) : null}
 

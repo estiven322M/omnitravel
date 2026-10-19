@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { IconName } from '../services/types';
 import { FILTROS, type FiltroId } from '../utils/filters';
 import { colors, fontSize, fontWeight, radii, spacing } from '../utils/theme';
 import { AppButton } from './AppButton';
@@ -20,6 +21,15 @@ interface Props {
   onAplicar: (filtros: FiltroId[]) => void;
   onCerrar: () => void;
 }
+
+const ICONOS: Record<FiltroId, IconName> = {
+  ancho_puerta_80: 'enter-outline',
+  sin_escalones: 'trending-up-outline',
+  ascensor_amplio: 'swap-vertical-outline',
+  semaforos_sonoros: 'volume-high-outline',
+  menu_braille: 'apps-outline',
+  piso_podotactil: 'grid-outline',
+};
 
 const DESCRIPCIONES: Record<FiltroId, string> = {
   ancho_puerta_80: 'Entradas y puertas accesibles',
@@ -65,16 +75,25 @@ export function FilterSheet({
     titulo: string;
     subtitulo: string;
     grupo: 'motriz' | 'sensorial';
+    icono: IconName;
+    color: string;
+    fondo: string;
   }[] = [
     {
-      titulo: 'Físico / Motriz',
+      titulo: 'Físico/Motriz',
       subtitulo: 'Espacios más accesibles y seguros',
       grupo: 'motriz',
+      icono: 'accessibility',
+      color: colors.primary,
+      fondo: '#EEF4FC',
     },
     {
       titulo: 'Sensorial',
       subtitulo: 'Información y entornos inclusivos',
       grupo: 'sensorial',
+      icono: 'eye',
+      color: colors.success,
+      fondo: '#ECF6EF',
     },
   ];
 
@@ -115,16 +134,31 @@ export function FilterSheet({
             style={estilos.lista}
             contentContainerStyle={estilos.listaContenido}
           >
-            {grupos.map(({ titulo, subtitulo, grupo }) => (
+            {grupos.map(({ titulo, subtitulo, grupo, icono, color, fondo }) => (
               <View key={grupo} style={estilos.seccion}>
-                <Text style={estilos.tituloSeccion}>{titulo}</Text>
-                <Text style={estilos.subtituloSeccion}>{subtitulo}</Text>
+                <View
+                  style={[estilos.bandaSeccion, { backgroundColor: fondo }]}
+                  accessibilityRole="header"
+                  accessible
+                  accessibilityLabel={`${titulo}. ${subtitulo}`}
+                >
+                  <View
+                    style={[estilos.iconoSeccion, { backgroundColor: color }]}
+                  >
+                    <Ionicons name={icono} size={24} color={colors.white} />
+                  </View>
+                  <View style={estilos.textosSeccion}>
+                    <Text style={estilos.tituloSeccion}>{titulo}</Text>
+                    <Text style={estilos.subtituloSeccion}>{subtitulo}</Text>
+                  </View>
+                </View>
                 {FILTROS.filter((filtro) => filtro.grupo === grupo).map(
                   (filtro) => (
                     <ToggleRow
                       key={filtro.id}
                       etiqueta={filtro.etiqueta}
                       descripcion={DESCRIPCIONES[filtro.id]}
+                      icono={ICONOS[filtro.id]}
                       valor={seleccion.includes(filtro.id)}
                       onCambio={() => alternar(filtro.id)}
                     />
@@ -138,12 +172,14 @@ export function FilterSheet({
             <AppButton
               titulo="Limpiar"
               variante="contorno"
+              forma="redondeado"
               onPress={limpiar}
               estilo={estilos.botonPie}
             />
             <AppButton
               titulo="Aplicar filtros"
-              icono="funnel-outline"
+              icono="options-outline"
+              forma="redondeado"
               onPress={aplicar}
               estilo={estilos.botonPie}
             />
@@ -207,15 +243,32 @@ const estilos = StyleSheet.create({
   seccion: {
     marginTop: spacing.md,
   },
+  bandaSeccion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  iconoSeccion: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textosSeccion: {
+    flex: 1,
+  },
   tituloSeccion: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
-    color: colors.primary,
+    color: colors.navy,
   },
   subtituloSeccion: {
     fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    color: colors.textSlate,
   },
   pie: {
     flexDirection: 'row',

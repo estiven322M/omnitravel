@@ -41,12 +41,12 @@ const NECESIDADES: {
   {
     id: 'movilidad_reducida',
     etiqueta: 'Movilidad reducida',
-    icono: 'walk-outline',
+    icono: 'walk',
   },
   {
     id: 'silla_de_ruedas',
     etiqueta: 'Uso de silla de ruedas',
-    icono: 'accessibility-outline',
+    icono: 'accessibility',
   },
   { id: 'visual', etiqueta: 'Discapacidad visual', icono: 'eye-outline' },
 ];
@@ -189,7 +189,27 @@ export function RegisterScreen() {
           contentContainerStyle={estilos.contenido}
           keyboardShouldPersistTaps="handled"
         >
-          <BrandMark tamano={72} />
+          <View style={estilos.barra}>
+            <Pressable
+              onPress={irAInicioSesion}
+              style={estilos.volver}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.primary} />
+              <Text style={estilos.volverTexto}>Volver</Text>
+            </Pressable>
+            <View
+              style={estilos.idioma}
+              accessible
+              accessibilityLabel="Idioma: español"
+            >
+              <Text style={estilos.idiomaTexto}>ES</Text>
+              <Ionicons name="chevron-down" size={14} color={colors.primary} />
+            </View>
+          </View>
+
+          <BrandMark variante="completo" tamano={64} />
 
           <View style={estilos.encabezado}>
             <Text style={estilos.titulo}>Crea tu cuenta</Text>
@@ -201,8 +221,10 @@ export function RegisterScreen() {
           <View style={estilos.campos}>
             <CampoTexto
               etiqueta="Nombre completo"
+              ocultarEtiqueta
+              grande
               icono="person-outline"
-              placeholder="Tu nombre"
+              placeholder="Nombre completo"
               value={nombre}
               onChangeText={setNombre}
               autoComplete="name"
@@ -210,8 +232,10 @@ export function RegisterScreen() {
             />
             <CampoTexto
               etiqueta="Email"
+              ocultarEtiqueta
+              grande
               icono="mail-outline"
-              placeholder="tucorreo@ejemplo.com"
+              placeholder="Email"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -221,8 +245,10 @@ export function RegisterScreen() {
             />
             <CampoTexto
               etiqueta="Contraseña"
+              ocultarEtiqueta
+              grande
               icono="lock-closed-outline"
-              placeholder="Crea una contraseña segura"
+              placeholder="Contraseña"
               value={contrasena}
               onChangeText={setContrasena}
               secureTextEntry={!verContrasena}
@@ -268,11 +294,7 @@ export function RegisterScreen() {
                       activa ? estilos.opcionActiva : null,
                     ]}
                   >
-                    <Ionicons
-                      name={icono}
-                      size={26}
-                      color={activa ? colors.primary : colors.textSecondary}
-                    />
+                    <Ionicons name={icono} size={30} color={colors.primary} />
                     <Text
                       style={[
                         estilos.opcionTexto,
@@ -292,7 +314,7 @@ export function RegisterScreen() {
 
           <View style={estilos.tarjetaPrivacidad}>
             <View style={estilos.iconoPrivacidad}>
-              <Ionicons name="lock-closed" size={18} color={colors.success} />
+              <Ionicons name="lock-closed" size={40} color={colors.success} />
             </View>
             <View style={estilos.textosPrivacidad}>
               <Text style={estilos.tituloPrivacidad}>
@@ -307,7 +329,7 @@ export function RegisterScreen() {
 
           <AppButton
             titulo="Comenzar a explorar"
-            icono="arrow-forward"
+            iconoFinal="arrow-forward"
             onPress={enviar}
             cargando={registrando}
             pistaAccesibilidad="Crea tu perfil local y abre el mapa de lugares accesibles"
@@ -345,9 +367,9 @@ const estilos = StyleSheet.create({
     gap: spacing.xs,
   },
   titulo: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.xxl + 2,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
+    color: colors.navy,
   },
   subtitulo: {
     fontSize: fontSize.sm,
@@ -399,13 +421,42 @@ const estilos = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
+  barra: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  volver: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: 44,
+  },
+  volverTexto: {
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: fontWeight.medium,
+  },
+  idioma: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  idiomaTexto: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
   seccionPerfil: {
     gap: spacing.xs,
+    backgroundColor: '#F1F6FD',
+    borderRadius: radii.md,
+    padding: spacing.md,
   },
   tituloSeccion: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: colors.primary,
+    color: colors.navy,
   },
   subtituloSeccion: {
     fontSize: fontSize.xs,
@@ -435,7 +486,7 @@ const estilos = StyleSheet.create({
   opcionTexto: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-    color: colors.textSecondary,
+    color: colors.navy,
     textAlign: 'center',
   },
   opcionTextoActiva: {
@@ -454,10 +505,9 @@ const estilos = StyleSheet.create({
     padding: spacing.md,
   },
   iconoPrivacidad: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 52,
     borderRadius: radii.sm,
-    backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },

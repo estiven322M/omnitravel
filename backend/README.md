@@ -47,9 +47,17 @@ Migraciones SQL aditivas en `sql/` (ej. `001-reporte-es-critico.sql`).
 | `POST` | `/reportes/:id/confirmaciones` | JWT | Confirmar; la 3.ª confirmación publica |
 | `GET` | `/moderacion/reportes?estado=` | JWT moderador | Consola M03/M04 |
 | `POST` | `/moderacion/reportes/:id/decision` | JWT moderador | Aprobar/rechazar con motivo (tabla `moderacion`) |
+| `GET` | `/reportes/mios` | JWT | «Mis reportes» de la persona autenticada (U12) |
+| `GET` | `/reportes/barreras` | público | Barreras críticas vigentes para el mapa (U06) |
+| `GET` / `PUT` / `DELETE` | `/favoritos`, `/favoritos/:poiId` | JWT | Guardados del viajero (idempotentes) |
+| `GET` | `/moderacion/resumen` | JWT moderador | Tablero M02 y desempeño M07 |
+| `GET` | `/moderacion/incidencias` | JWT moderador | Incidencias post-viaje abiertas (M06) |
+| `POST` | `/moderacion/incidencias/:id/desactivar-punto` | JWT moderador | El POI vuelve a revisión y se cierra la incidencia (auditado) |
+| `POST` | `/moderacion/incidencias/:id/solicitar-evidencia` | JWT moderador | Abre una re-verificación comunitaria (idempotente) |
+| `POST` | `/auth/cambiar-contrasena` | JWT | `{ actual, nueva }` (M07) |
 | `POST` | `/evidencias` | JWT | Subir foto `{ base64, mimeType }` (JPG/PNG/WEBP ≤ 5 MB) |
 | `GET` | `/evidencias/archivo/:usuario/:archivo` | público | Leer foto |
-| `POST` | `/routes` | público | Ruta peatonal accesible (ver abajo) |
+| `POST` | `/routes` | JWT | Ruta peatonal accesible (ver abajo) |
 | `GET` | `/health` | público | Estado del proceso |
 | `GET` | `/users/me` | JWT | Cuenta autenticada con su rol vigente |
 | `GET` | `/pois?tipo=&search=&page=&limit=` | JWT | POIs publicados, paginados |
@@ -75,6 +83,25 @@ Migraciones SQL aditivas en `sql/` (ej. `001-reporte-es-critico.sql`).
   dejan de valer de inmediato.
 - `@Roles('administrador', …)` + `RolesGuard` restringen por rol.
 - Swagger en `/api/docs` (botón *Authorize* con el JWT).
+
+### Cuentas de moderación (M01)
+
+La app **nunca** permite registrarse como moderador o administrador: el
+registro siempre crea viajeros. Esas cuentas las crea alguien del equipo con
+acceso a la base de datos:
+
+```bash
+npm run crear-admin -- correo@omnitravel.edu.co               # administrador
+npm run crear-admin -- correo@omnitravel.edu.co moderador     # moderador
+```
+
+- Si el correo ya existe, solo le asigna el rol (y reactiva la cuenta).
+- Si no existe, crea la cuenta y pide la contraseña sin mostrarla (o la toma
+  de `ADMIN_PASSWORD`). Aplica la misma política que el registro.
+- Usa `DATABASE_URL`, `DB_SSL` y `DB_SSL_CA` de `backend/.env`.
+
+En la app se entra por **¿Eres moderador? Panel de Moderación** (pantalla
+M01); una cuenta sin rol de moderación no pasa de esa pantalla.
 
 Los errores de negocio llegan como `message: "CODIGO: mensaje"` (ej.
 `AUTOCONFIRMACION: No puedes confirmar tu propio reporte.`).

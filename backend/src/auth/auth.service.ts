@@ -16,6 +16,27 @@ const HASH_SHA256_LEGADO = /^[a-f0-9]{64}$/;
 // tiempo de respuesta no revele qué correos están registrados.
 const HASH_DE_RELLENO = bcrypt.hashSync('relleno-no-es-una-cuenta', 10);
 
+/** Política de contraseñas (registro, cambio y comando crear-admin). */
+function exigirContrasenaSegura(password: string): void {
+  if (
+    password.length < 8 ||
+    !/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(password) ||
+    !/\d/.test(password) ||
+    !/[^A-Za-z0-9\s]/.test(password)
+  ) {
+    throw errorDominio(
+      HttpStatus.BAD_REQUEST,
+      'VALIDATION_ERROR',
+      'La contraseña debe tener mínimo 8 caracteres, con letras, números y un símbolo.',
+    );
+  }
+}
+
+export interface CambioContrasena {
+  actual?: unknown;
+  nueva?: unknown;
+}
+
 export interface Credenciales {
   email?: unknown;
   password?: unknown;
@@ -36,18 +57,7 @@ export class AuthService {
 
     // La app valida lo mismo; se repite aquí porque el servidor no puede
     // confiar en el cliente.
-    if (
-      password.length < 8 ||
-      !/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(password) ||
-      !/\d/.test(password) ||
-      !/[^A-Za-z0-9\s]/.test(password)
-    ) {
-      throw errorDominio(
-        HttpStatus.BAD_REQUEST,
-        'VALIDATION_ERROR',
-        'La contraseña debe tener mínimo 8 caracteres, con letras, números y un símbolo.',
-      );
-    }
+    exigirContrasenaSegura(password);
 
     if (await this.usuarios.existsBy({ email })) {
       throw errorDominio(
@@ -106,6 +116,41 @@ export class AuthService {
 
     const rol = await this.roles.findOneBy({ id: usuario.rolId });
     return this.respuestaSesion(usuario.id, usuario.email, rol);
+  }
+
+  /** M07 «Cambiar contraseña»: exige la contraseña actual. */
+  async cambiarContrasena(usuarioId: string, datos: CambioContrasena) {
+    if (typeof datos?.actual !== 'string' || typeof datos?.nueva !== 'string') {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_ERROR',
+        'Debes enviar la contraseña actual y la nueva.',
+      );
+    }
+    exigirContrasenaSegura(datos.nueva);
+    const usuario = await this.usuarios
+      .createQueryBuilder('u')
+      .addSelect('u.passwordHash')
+      .where('u.id = :id', { id: usuarioId })
+      .getOne();
+    if (!usuario || !(await this.contrasenaValida(usuario, datos.actual))) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'CONTRASENA_ACTUAL_INCORRECTA',
+        'La contraseña actual no es correcta.',
+      );
+    }
+    if (datos.actual === datos.nueva) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_ERROR',
+        'La nueva contraseña debe ser distinta de la actual.',
+      );
+    }
+    await this.usuarios.update(usuario.id, {
+      passwordHash: await bcrypt.hash(datos.nueva, 10),
+    });
+    return { actualizada: true };
   }
 
   /**

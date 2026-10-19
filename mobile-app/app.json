@@ -25,7 +25,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "OmniTravel usa Face ID para que entres a tu cuenta sin escribir la contraseña."
+        }
+      ],
       "expo-asset",
       "expo-font",
       [

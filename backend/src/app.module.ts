@@ -9,6 +9,7 @@ import { EvidenciasModule } from './evidencias/evidencias.module';
 import { HealthModule } from './health/health.module';
 import { MapaModule } from './mapa/mapa.module';
 import { FavoritosModule } from './favoritos/favoritos.module';
+import { ModeracionModule } from './moderacion/moderacion.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { RoutingModule } from './routing/routing.module';
 import { DatabaseModule } from './database/database.module';
@@ -53,6 +54,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     HealthModule,
     MapaModule,
     FavoritosModule,
+    ModeracionModule,
     ReportesModule,
     RoutingModule,
     // Módulos de Jhon (main): roles, diagnóstico y consultas de solo lectura.

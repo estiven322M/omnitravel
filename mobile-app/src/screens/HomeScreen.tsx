@@ -4,10 +4,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AccessibilityInfo,
   FlatList,
   Image,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,7 +22,7 @@ import type { RootStackParamList } from '../navigation/types';
 import type { Coordenada, Poi } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
-import { iconoDeCategoria } from '../utils/categorias';
+import { etiquetaDeCategoria, iconoDeCategoria } from '../utils/categorias';
 import { aplicarFiltros } from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
 import {
@@ -32,7 +30,6 @@ import {
   fontSize,
   fontWeight,
   radii,
-  shadow,
   spacing,
   TOUCH_TARGET,
 } from '../utils/theme';
@@ -78,7 +75,6 @@ export function HomeScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-  const [avisoCampana, setAvisoCampana] = useState<string | null>(null);
 
   // Carga única de POIs del equipo (BD con fallback a demo) al abrir el feed.
   useEffect(() => {
@@ -167,36 +163,26 @@ export function HomeScreen() {
     navigation.navigate('Principal', { screen: 'Perfil' });
   };
 
-  const alternarCampana = () => {
-    const mensaje =
-      avisoCampana == null
-        ? 'No tienes notificaciones nuevas por ahora.'
-        : null;
-    setAvisoCampana(mensaje);
-    // El aviso usa liveRegion (Android); evitamos duplicar announcement.
-    if (mensaje && Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(mensaje);
-    }
-  };
+  const abrirNotificaciones = () => navigation.navigate('Notificaciones');
 
   const primerNombre = nombre?.split(' ')[0] || 'viajero';
 
   const encabezado = (
     <View style={estilos.encabezado}>
       <View style={estilos.filaEncabezado}>
-        <BrandMark tamano={34} variante="lockup" />
+        <BrandMark tamano={42} variante="completo" />
         <View style={estilos.accionesEncabezado}>
           <Pressable
-            onPress={alternarCampana}
+            onPress={abrirNotificaciones}
             style={estilos.botonIcono}
             accessibilityRole="button"
             accessibilityLabel="Notificaciones"
-            accessibilityHint="Muestra si tienes avisos nuevos"
+            accessibilityHint="Abre tus notificaciones"
           >
             <Ionicons
               name="notifications-outline"
-              size={22}
-              color={colors.textPrimary}
+              size={26}
+              color={colors.navy}
             />
           </Pressable>
           <Pressable
@@ -271,17 +257,6 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      {avisoCampana ? (
-        <View style={estilos.avisoCampana} accessibilityLiveRegion="polite">
-          <Ionicons
-            name="information-circle-outline"
-            size={16}
-            color={colors.primary}
-          />
-          <Text style={estilos.avisoCampanaTexto}>{avisoCampana}</Text>
-        </View>
-      ) : null}
-
       {fuentePois === 'mock' ? (
         <View style={estilos.avisoDatos} accessibilityLiveRegion="polite">
           <Ionicons
@@ -309,7 +284,7 @@ export function HomeScreen() {
               key={categoria}
               onPress={() => setCategoriaActiva(activa ? null : categoria)}
               accessibilityRole="button"
-              accessibilityLabel={`Categoría ${categoria}`}
+              accessibilityLabel={`Categoría ${etiquetaDeCategoria(categoria)}`}
               accessibilityState={{ selected: activa }}
               style={[estilos.chip, activa ? estilos.chipActivo : null]}
             >
@@ -324,7 +299,7 @@ export function HomeScreen() {
                   activa ? estilos.chipTextoActivo : null,
                 ]}
               >
-                {categoria}
+                {etiquetaDeCategoria(categoria)}
               </Text>
             </Pressable>
           );
@@ -514,19 +489,6 @@ const estilos = StyleSheet.create({
     fontSize: 10,
     fontWeight: fontWeight.bold,
   },
-  avisoCampana: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-  },
-  avisoCampanaTexto: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textPrimary,
-  },
   avisoDatos: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,22 +511,21 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    minHeight: 38,
+    minHeight: 36,
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadow.card,
   },
   chipActivo: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   chipTexto: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.textPrimary,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    color: colors.navy,
   },
   chipTextoActivo: {
     color: colors.white,

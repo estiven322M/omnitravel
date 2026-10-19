@@ -24,6 +24,10 @@ export const colors = {
   textPrimary: '#101828',
   /** Texto secundario (cumple AA sobre blanco). */
   textSecondary: '#6E7377',
+  /** Gris azulado de subtítulos de los mockups (5.4:1 sobre blanco). */
+  textSlate: '#5B6B86',
+  /** Azul marino de títulos de los mockups. */
+  navy: '#0B1B3F',
   /** Gris claro: solo decorativo, no usar para texto legible (no cumple AA). */
   textMuted: '#9AA1A9',
   background: '#FFFFFF',

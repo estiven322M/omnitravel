@@ -85,9 +85,6 @@ export function ProfileScreen() {
   const [errorReportes, setErrorReportes] = useState<string | null>(null);
   const [cambiandoFoto, setCambiandoFoto] = useState(false);
 
-  const esModerador =
-    perfil?.rol === 'moderador' || perfil?.rol === 'administrador';
-
   // Refresca la actividad cada vez que la pestaña vuelve al foco.
   useFocusEffect(
     useCallback(() => {
@@ -216,19 +213,11 @@ export function ProfileScreen() {
     );
   };
 
-  const abrirConsola = () => {
-    if (navigation.canGoBack()) {
-      navigation.navigate('Moderacion');
-      return;
-    }
-    navigation.navigate('Principal', { screen: 'Reportes' });
-  };
-
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top']}>
       <ScrollView contentContainerStyle={estilos.contenido}>
         <View style={estilos.barraSuperior}>
-          <BrandMark tamano={26} variante="lockup" />
+          <BrandMark tamano={40} variante="completo" />
           <Pressable
             onPress={() =>
               Alert.alert(
@@ -526,33 +515,6 @@ export function ProfileScreen() {
                 pistaAccesibilidad="Borra la foto guardada localmente"
               />
             ) : null}
-          </Card>
-        ) : null}
-
-        {esModerador ? (
-          <Card>
-            <View style={estilos.filaAjuste}>
-              <View style={[estilos.iconoActividad, estilos.fondoAzul]}>
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={20}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={estilos.textosActividad}>
-                <Text style={estilos.tituloActividad}>Consola de reportes</Text>
-                <Text style={estilos.descripcionActividad}>
-                  Revisa, verifica o rechaza con motivo los reportes de la
-                  comunidad (Vía B del Proceso 1).
-                </Text>
-              </View>
-            </View>
-            <AppButton
-              titulo="Abrir consola"
-              icono="shield-checkmark-outline"
-              onPress={abrirConsola}
-              pistaAccesibilidad="Abre la lista de reportes pendientes de moderación"
-            />
           </Card>
         ) : null}
 

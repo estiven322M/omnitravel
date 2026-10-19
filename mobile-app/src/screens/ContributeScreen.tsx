@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../components/AppButton';
 import { Badge } from '../components/Badge';
-import { BrandMark } from '../components/BrandMark';
+import { EncabezadoMarca } from '../components/EncabezadoMarca';
 import { CampoTexto } from '../components/CampoTexto';
 import { Card } from '../components/Card';
 import { Chip } from '../components/Chip';
@@ -603,23 +603,11 @@ export function ContributeScreen() {
         contentContainerStyle={estilos.contenido}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={estilos.barraMarca}>
-          {paso > 1 ? (
-            <Pressable
-              onPress={retroceder}
-              accessibilityRole="button"
-              accessibilityLabel="Atrás"
-              style={estilos.botonAtras}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.primary} />
-              <Text style={estilos.textoAtras}>Atrás</Text>
-            </Pressable>
-          ) : (
-            <View style={estilos.espacioEquilibrado} />
-          )}
-          <BrandMark tamano={28} variante="lockup" />
-          <View style={estilos.espacioEquilibrado} />
-        </View>
+        <EncabezadoMarca
+          tamanoLogo={40}
+          textoAtras="Atrás"
+          onAtras={paso > 1 ? retroceder : () => navigation.navigate('Inicio')}
+        />
 
         <BarraPasos paso={paso} />
 
@@ -746,7 +734,7 @@ export function ContributeScreen() {
             <ListaErrores errores={erroresPaso} />
             <AppButton
               titulo="Continuar"
-              icono="arrow-forward-outline"
+              iconoFinal="arrow-forward"
               onPress={continuar}
             />
           </>
@@ -1001,7 +989,7 @@ export function ContributeScreen() {
               <View style={estilos.botonMitad}>
                 <AppButton
                   titulo="Continuar"
-                  icono="arrow-forward-outline"
+                  iconoFinal="arrow-forward"
                   onPress={continuar}
                 />
               </View>
@@ -1179,7 +1167,7 @@ export function ContributeScreen() {
               <View style={estilos.botonMitad}>
                 <AppButton
                   titulo="Continuar a confirmación"
-                  icono="arrow-forward-outline"
+                  iconoFinal="arrow-forward"
                   onPress={continuar}
                 />
               </View>
@@ -1321,27 +1309,6 @@ const estilos = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.lg,
     paddingBottom: spacing.xxl,
-  },
-  barraMarca: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  botonAtras: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: TOUCH_TARGET,
-    paddingRight: spacing.sm,
-  },
-  textoAtras: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  espacioEquilibrado: {
-    width: 76,
   },
   pasos: {
     gap: spacing.xs,

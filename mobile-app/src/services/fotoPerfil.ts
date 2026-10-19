@@ -24,8 +24,13 @@ export function nombreFotoDePerfil(idCuenta: string): string {
 
 /** URI de la foto guardada de una cuenta, o `null` si nunca subió una. */
 export function uriFotoDePerfilGuardada(idCuenta: string): string | null {
-  const archivo = new File(Paths.document, nombreFotoDePerfil(idCuenta));
-  return archivo.exists ? archivo.uri : null;
+  try {
+    const archivo = new File(Paths.document, nombreFotoDePerfil(idCuenta));
+    return archivo.exists ? archivo.uri : null;
+  } catch {
+    // Sin sistema de archivos (p. ej. la vista web): avatar por defecto.
+    return null;
+  }
 }
 
 /** Copia la imagen elegida al directorio privado de la cuenta y devuelve su URI. */
@@ -81,8 +86,12 @@ export async function elegirFotoDePerfil(
  * defecto). Las fotos de OTRAS cuentas no se tocan.
  */
 export function borrarFotoDePerfil(idCuenta: string): void {
-  const archivo = new File(Paths.document, nombreFotoDePerfil(idCuenta));
-  if (archivo.exists) {
-    archivo.delete();
+  try {
+    const archivo = new File(Paths.document, nombreFotoDePerfil(idCuenta));
+    if (archivo.exists) {
+      archivo.delete();
+    }
+  } catch {
+    // Sin sistema de archivos: no hay foto que borrar.
   }
 }
