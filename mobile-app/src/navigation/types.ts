@@ -22,12 +22,10 @@ export type ModeradorTabParamList = {
 export type RootStackParamList = {
   /** U01 — Presentación. */
   Splash: undefined;
-  /** U02 — Inicio de sesión de viajeros. */
+  /** U02 — Inicio de sesión (con selector Usuario / Moderador). */
   Login: undefined;
   /** U03 — Registro y privacidad. */
   Registro: undefined;
-  /** M01 — Inicio de sesión de moderación. */
-  LoginModerador: undefined;
   Principal: NavigatorScreenParams<MainTabParamList> | undefined;
   /** M02–M07 — Panel de moderación (solo moderador/administrador). */
   PanelModerador: NavigatorScreenParams<ModeradorTabParamList> | undefined;

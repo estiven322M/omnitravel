@@ -18,7 +18,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AlertaPeligroRuta } from '../components/AlertaPeligroRuta';
 import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
 import { Card } from '../components/Card';
@@ -62,7 +61,6 @@ const ETIQUETA_PERFIL: Record<string, string> = {
  * - «Guía por voz» (expo-speech, es-ES) que narra la maniobra vigente.
  * - Tiempo estimado, distancia y sello de ruta libre de escalones (RNF-27).
  * - Lista de pasos navegable y botón rojo «Finalizar ruta».
- * - S02: alerta de barrera crítica con recálculo inmediato (RNF-26).
  */
 export function NavegacionScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'Navegacion'>>();
@@ -94,7 +92,6 @@ export function NavegacionScreen() {
   const [usarAlternativa, setUsarAlternativa] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recalculo, setRecalculo] = useState(0);
-  const [s02Visible, setS02Visible] = useState(false);
   const [avisoRecalculo, setAvisoRecalculo] = useState<string | null>(null);
   const [guiaVoz, setGuiaVoz] = useState(false);
   const [indicePaso, setIndicePaso] = useState(0);
@@ -203,7 +200,6 @@ export function NavegacionScreen() {
   );
 
   const recalcular = (aviso?: string) => {
-    setS02Visible(false);
     if (resultado?.alternativa) {
       // El motor encontró un camino distinto (Valhalla alternates): se cambia
       // a él en lugar de repetir el mismo trayecto. Al pulsar de nuevo
@@ -599,26 +595,10 @@ export function NavegacionScreen() {
                 onPress={() => navigation.goBack()}
                 pistaAccesibilidad="Cierra la navegación paso a paso y vuelve al mapa"
               />
-              <AppButton
-                titulo="Simular barrera crítica (demo)"
-                variante="fantasma"
-                icono="warning-outline"
-                onPress={() => setS02Visible(true)}
-                pistaAccesibilidad="Demostración de la alerta S02 con recálculo de ruta"
-              />
             </>
           ) : null}
         </ScrollView>
       </View>
-
-      <AlertaPeligroRuta
-        visible={s02Visible}
-        descripcion={`La comunidad reportó una barrera crítica muy cerca de «${poi.nombre}». Recalcula para evitar el trayecto afectado.`}
-        onRecalcular={() =>
-          recalcular('Ruta recalculada para evitar la barrera reportada.')
-        }
-        onContinuar={() => setS02Visible(false)}
-      />
     </View>
   );
 }

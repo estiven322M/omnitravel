@@ -1,6 +1,7 @@
 import {
   iniciarSesionCompleta,
   SinPermisoModeracionError,
+  usaPanelModeracion,
 } from '../services/inicioSesion';
 import { useProfileStore } from '../store/profileStore';
 
@@ -62,5 +63,46 @@ describe('inicio de sesión (U02 / M01)', () => {
     ).rejects.toBeInstanceOf(SinPermisoModeracionError);
     expect(mockCerrar).toHaveBeenCalledTimes(1);
     expect(useProfileStore.getState().perfil).toBeNull();
+  });
+
+  it('«Moderador» con rol de moderación abre el panel', async () => {
+    mockIniciar.mockResolvedValue({
+      perfil: {
+        id_usuario: 10,
+        email: 'm@omni.co',
+        rol_id: 4,
+        rol: 'moderador',
+      },
+    });
+    await iniciarSesionCompleta('m@omni.co', 'x', { soloModeracion: true });
+    expect(usaPanelModeracion(useProfileStore.getState().perfil)).toBe(true);
+  });
+
+  it('«Usuario» abre la vista de viajero aunque la cuenta sea de moderación', async () => {
+    mockIniciar.mockResolvedValue({
+      perfil: {
+        id_usuario: 10,
+        email: 'm@omni.co',
+        rol_id: 4,
+        rol: 'moderador',
+      },
+    });
+    await iniciarSesionCompleta('m@omni.co', 'x');
+    const perfil = useProfileStore.getState().perfil;
+    expect(perfil?.modo).toBe('viajero');
+    expect(usaPanelModeracion(perfil)).toBe(false);
+  });
+});
+
+describe('usaPanelModeracion', () => {
+  it('un viajero nunca abre el panel, elija lo que elija', () => {
+    expect(usaPanelModeracion({ rol: 'viajero', modo: 'moderacion' })).toBe(
+      false,
+    );
+  });
+
+  it('perfiles antiguos sin modo conservan el panel si su rol lo permite', () => {
+    expect(usaPanelModeracion({ rol: 'administrador' })).toBe(true);
+    expect(usaPanelModeracion(null)).toBe(false);
   });
 });

@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EncabezadoMarca } from '../components/EncabezadoMarca';
 import type { RootStackParamList } from '../navigation/types';
-import { esRolModeracion } from '../services/inicioSesion';
+import { usaPanelModeracion } from '../services/inicioSesion';
 import { fotoDePoi } from '../services/mocks/fotosPoi';
 import { obtenerResumenModeracion } from '../services/moderacion';
 import {
@@ -94,7 +94,7 @@ export function NotificacionesScreen() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const rol = perfil?.rol;
+  const enPanelModeracion = usaPanelModeracion(perfil);
   const creadoEn = perfil?.creadoEn;
 
   const cargar = async () => {
@@ -103,7 +103,7 @@ export function NotificacionesScreen() {
       const nombreDe = (poiId: string) =>
         poiPorId(poiId)?.nombre ?? `Lugar #${poiId}`;
 
-      if (esRolModeracion(rol)) {
+      if (enPanelModeracion) {
         const resumen = await obtenerResumenModeracion();
         resumen.alertasCriticas.forEach((alerta) =>
           notificaciones.push({

@@ -4,11 +4,10 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useVigilanciaSesion } from '../hooks/useVigilanciaSesion';
 import { LoginScreen } from '../screens/LoginScreen';
 import { IncidenciasScreen } from '../screens/moderacion/IncidenciasScreen';
-import { LoginModeradorScreen } from '../screens/moderacion/LoginModeradorScreen';
 import { RevisionReporteScreen } from '../screens/moderacion/RevisionReporteScreen';
 import { NotificacionesScreen } from '../screens/NotificacionesScreen';
 import { SplashScreen } from '../screens/SplashScreen';
-import { esRolModeracion } from '../services/inicioSesion';
+import { usaPanelModeracion } from '../services/inicioSesion';
 import { MisReportesScreen } from '../screens/MisReportesScreen';
 import { NavegacionScreen } from '../screens/NavegacionScreen';
 import { PoiDetailScreen } from '../screens/PoiDetailScreen';
@@ -45,7 +44,7 @@ export function RootNavigator() {
     );
   }
 
-  const moderacion = esRolModeracion(perfil?.rol);
+  const moderacion = usaPanelModeracion(perfil);
 
   return (
     <NavigationContainer>
@@ -103,11 +102,6 @@ export function RootNavigator() {
             <Stack.Screen
               name="Registro"
               component={RegisterScreen}
-              options={{ animation: 'slide_from_right' }}
-            />
-            <Stack.Screen
-              name="LoginModerador"
-              component={LoginModeradorScreen}
               options={{ animation: 'slide_from_right' }}
             />
           </>
