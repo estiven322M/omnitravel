@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "560c35a3-28e5-5e87-9c27-acdabfa736d7",
     "name": "OmniTravel — Pruebas funcionales (Entrega 2)",
-    "description": "Pruebas funcionales de los dos procesos entregados, contra el backend desplegado.\n\nEjecutar en orden con el Collection Runner (Run collection). Cada ejecución crea 4 usuarios de prueba (postman+…@omnitravel.test) y un reporte de actualización sobre un lugar ya publicado, por lo que no agrega lugares nuevos al mapa.\n\n- 0. Preparación: 6 solicitudes\n- Proceso 1 — Validación colaborativa: 11 casos (PF-101…PF-111)\n- Proceso 2 — Rutas accesibles: 6 casos (PF-201…PF-206)",
+    "description": "Pruebas funcionales de los dos procesos entregados, contra el backend desplegado.\n\nEjecutar en orden con el Collection Runner (Run collection). Cada ejecución crea 4 usuarios de prueba (postman+…@omnitravel.test) y un reporte de actualización sobre un lugar ya publicado, por lo que no agrega lugares nuevos al mapa.\n\n- 0. Preparación: 6 solicitudes\n- Proceso 1 — Validación colaborativa: 11 casos (CP-F101…CP-F111)\n- Proceso 2 — Rutas accesibles: 6 casos (CP-F201…CP-F206)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -10,7 +10,7 @@
       "name": "0. Preparación",
       "item": [
         {
-          "name": "PF-000 Servidor disponible (health)",
+          "name": "CP-F000 Servidor disponible (health)",
           "event": [
             {
               "listen": "test",
@@ -43,7 +43,7 @@
           }
         },
         {
-          "name": "PF-001 Registrar usuario de prueba «autor»",
+          "name": "CP-F001 Registrar usuario de prueba «autor»",
           "event": [
             {
               "listen": "prerequest",
@@ -102,7 +102,7 @@
           }
         },
         {
-          "name": "PF-002 Registrar usuario de prueba «c1»",
+          "name": "CP-F002 Registrar usuario de prueba «c1»",
           "event": [
             {
               "listen": "prerequest",
@@ -161,7 +161,7 @@
           }
         },
         {
-          "name": "PF-003 Registrar usuario de prueba «c2»",
+          "name": "CP-F003 Registrar usuario de prueba «c2»",
           "event": [
             {
               "listen": "prerequest",
@@ -220,7 +220,7 @@
           }
         },
         {
-          "name": "PF-004 Registrar usuario de prueba «c3»",
+          "name": "CP-F004 Registrar usuario de prueba «c3»",
           "event": [
             {
               "listen": "prerequest",
@@ -279,7 +279,7 @@
           }
         },
         {
-          "name": "PF-005 Elegir un lugar publicado del mapa",
+          "name": "CP-F005 Elegir un lugar publicado del mapa",
           "event": [
             {
               "listen": "test",
@@ -319,7 +319,7 @@
       "name": "Proceso 1 — Validación colaborativa",
       "item": [
         {
-          "name": "PF-101 Crear reporte de actualización de un lugar (RF-02)",
+          "name": "CP-F101 Crear reporte de actualización de un lugar (RF-02)",
           "event": [
             {
               "listen": "test",
@@ -367,7 +367,7 @@
           }
         },
         {
-          "name": "PF-102 Crear lugar nuevo sin nombre → rechazado",
+          "name": "CP-F102 Crear lugar nuevo sin nombre → rechazado",
           "event": [
             {
               "listen": "test",
@@ -413,7 +413,7 @@
           }
         },
         {
-          "name": "PF-103 Crear lugar con coordenadas fuera de rango → rechazado",
+          "name": "CP-F103 Crear lugar con coordenadas fuera de rango → rechazado",
           "event": [
             {
               "listen": "test",
@@ -459,7 +459,7 @@
           }
         },
         {
-          "name": "PF-104 Crear reporte sin sesión → 401",
+          "name": "CP-F104 Crear reporte sin sesión → 401",
           "event": [
             {
               "listen": "test",
@@ -500,7 +500,7 @@
           }
         },
         {
-          "name": "PF-105 El autor intenta confirmar su propio reporte (RNF-28)",
+          "name": "CP-F105 El autor intenta confirmar su propio reporte (RNF-28)",
           "event": [
             {
               "listen": "test",
@@ -539,7 +539,7 @@
           }
         },
         {
-          "name": "PF-106 Primera confirmación (usuario c1)",
+          "name": "CP-F106 Primera confirmación (usuario c1)",
           "event": [
             {
               "listen": "test",
@@ -578,7 +578,7 @@
           }
         },
         {
-          "name": "PF-107 Confirmación duplicada del mismo usuario (RNF-18)",
+          "name": "CP-F107 Confirmación duplicada del mismo usuario (RNF-18)",
           "event": [
             {
               "listen": "test",
@@ -617,7 +617,7 @@
           }
         },
         {
-          "name": "PF-108 Segunda confirmación (usuario c2)",
+          "name": "CP-F108 Segunda confirmación (usuario c2)",
           "event": [
             {
               "listen": "test",
@@ -656,7 +656,7 @@
           }
         },
         {
-          "name": "PF-109 Tercera confirmación publica el reporte (RNF-18, RNF-23)",
+          "name": "CP-F109 Tercera confirmación publica el reporte (RNF-18, RNF-23)",
           "event": [
             {
               "listen": "test",
@@ -695,7 +695,7 @@
           }
         },
         {
-          "name": "PF-110 El reporte vigente del lugar aparece publicado",
+          "name": "CP-F110 El reporte vigente del lugar aparece publicado",
           "event": [
             {
               "listen": "test",
@@ -735,7 +735,7 @@
           }
         },
         {
-          "name": "PF-111 Un viajero no puede usar la consola de moderación (RNF-09)",
+          "name": "CP-F111 Un viajero no puede usar la consola de moderación (RNF-09)",
           "event": [
             {
               "listen": "test",
@@ -778,7 +778,7 @@
       "name": "Proceso 2 — Rutas accesibles",
       "item": [
         {
-          "name": "PF-201 Ruta para silla de ruedas evitando escaleras (RF-01, RNF-21)",
+          "name": "CP-F201 Ruta para silla de ruedas evitando escaleras (RF-01, RNF-21)",
           "event": [
             {
               "listen": "test",
@@ -832,7 +832,7 @@
           }
         },
         {
-          "name": "PF-202 Ruta para perfil visual (RNF-12)",
+          "name": "CP-F202 Ruta para perfil visual (RNF-12)",
           "event": [
             {
               "listen": "test",
@@ -886,7 +886,7 @@
           }
         },
         {
-          "name": "PF-203 Ruta peatonal estándar",
+          "name": "CP-F203 Ruta peatonal estándar",
           "event": [
             {
               "listen": "test",
@@ -940,7 +940,7 @@
           }
         },
         {
-          "name": "PF-204 Ruta con coordenada fuera de rango → 400",
+          "name": "CP-F204 Ruta con coordenada fuera de rango → 400",
           "event": [
             {
               "listen": "test",
@@ -985,7 +985,7 @@
           }
         },
         {
-          "name": "PF-205 Ruta sin destino → 400",
+          "name": "CP-F205 Ruta sin destino → 400",
           "event": [
             {
               "listen": "test",
@@ -1030,7 +1030,7 @@
           }
         },
         {
-          "name": "PF-206 Ruta sin sesión → 401 (RNF-06)",
+          "name": "CP-F206 Ruta sin sesión → 401 (RNF-06)",
           "event": [
             {
               "listen": "test",
@@ -1080,7 +1080,7 @@
         "type": "text/javascript",
         "exec": [
           "// La marca se reinicia en cada ejecución del Runner (primera solicitud).",
-          " if (pm.info.iteration === 0 && pm.info.requestName.startsWith('PF-000')) { pm.collectionVariables.unset('marca'); }"
+          " if (pm.info.iteration === 0 && pm.info.requestName.startsWith('CP-F000')) { pm.collectionVariables.unset('marca'); }"
         ]
       }
     }

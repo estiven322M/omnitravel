@@ -5,9 +5,9 @@ procesos de la entrega 2. Por defecto apuntan al backend desplegado en Railway.
 
 | Carpeta | Casos | Qué valida |
 |---|---|---|
-| 0. Preparación | PF-000 a PF-005 | Que el servidor responde, crea 4 usuarios de prueba y elige un lugar publicado |
-| Proceso 1 — Validación colaborativa | PF-101 a PF-111 (11) | Crear un reporte, rechazar datos inválidos, consenso de 3, autoconfirmación, duplicados y permisos de moderación |
-| Proceso 2 — Rutas accesibles | PF-201 a PF-206 (6) | Rutas para silla de ruedas, perfil visual y peatonal; tiempo ≤ 3 s; coordenadas inválidas; uso sin sesión |
+| 0. Preparación | CP-F000 a CP-F005 | Que el servidor responde, crea 4 usuarios de prueba y elige un lugar publicado |
+| Proceso 1 — Validación colaborativa | CP-F101 a CP-F111 (11) | Crear un reporte, rechazar datos inválidos, consenso de 3, autoconfirmación, duplicados y permisos de moderación |
+| Proceso 2 — Rutas accesibles | CP-F201 a CP-F206 (6) | Rutas para silla de ruedas, perfil visual y peatonal; tiempo ≤ 3 s; coordenadas inválidas; uso sin sesión |
 
 ## Cómo ejecutarla
 
