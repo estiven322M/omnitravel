@@ -3,6 +3,12 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { errorDominio } from '../common/errores';
 import { exigirModerador } from '../common/exigir-moderador';
+import {
+  ESTADO_PENDIENTE_BD,
+  ESTADO_PUBLICADO,
+  estadoTrasConfirmaciones,
+  validarNuevoReporte,
+} from './reportes.reglas';
 
 /**
  * Proceso 1 — validación colaborativa. Traslada al backend las funciones
@@ -17,8 +23,6 @@ import { exigirModerador } from '../common/exigir-moderador';
  *   (accion 'aprobar' | 'rechazar') y en `reporte.via_resolucion`.
  */
 
-const CONFIRMACIONES_PARA_PUBLICAR = 3;
-const ESTADO_PENDIENTE_BD = 'pendiente_validacion';
 
 /** Estado de BD → estado que recibe la app (sin traducción). */
 export function estadoParaApp(estado: string): string {
@@ -65,18 +69,14 @@ export class ReportesService {
 
   /** U09/U10: lugar nuevo (crea POI pendiente) o actualización de uno existente. */
   crear(usuarioId: string, datos: DatosNuevoReporte) {
+    // Se valida antes de abrir la transacción: un reporte inválido no toca la BD.
+    validarNuevoReporte(datos);
+
     return this.db.transaction(async (m) => {
       let poiId: string;
 
       if (datos.poiId == null || datos.poiId === '') {
         const nombre = datos.nombre?.trim() ?? '';
-        if (!nombre || !Number.isFinite(datos.lat) || !Number.isFinite(datos.lon)) {
-          throw errorDominio(
-            HttpStatus.BAD_REQUEST,
-            'DATOS_INCOMPLETOS',
-            'El lugar necesita nombre y ubicación.',
-          );
-        }
         const [poi] = await m.query(
           `insert into poi (nombre, descripcion, tipo, direccion, ubicacion, estado)
            values ($1, $2, $3, $4, ST_SetSRID(ST_MakePoint($5, $6), 4326), 'pendiente')
@@ -199,7 +199,10 @@ export class ReportesService {
         [reporteId],
       );
 
-      if (total >= CONFIRMACIONES_PARA_PUBLICAR && reporte.estado !== 'publicado') {
+      if (
+        estadoTrasConfirmaciones(total, reporte.estado) === ESTADO_PUBLICADO &&
+        reporte.estado !== ESTADO_PUBLICADO
+      ) {
         await this.publicar(m, reporteId, 'automatica');
         return { confirmaciones: total, publicado: true };
       }

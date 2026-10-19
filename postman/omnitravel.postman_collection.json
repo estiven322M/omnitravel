@@ -1,0 +1,1229 @@
+{
+  "info": {
+    "name": "OmniTravel · Casos de prueba funcionales",
+    "_postman_id": "omnitravel-cp-020-033",
+    "description": "Casos CP-020 a CP-033 (docs/casos-prueba-funcionales.md). Ejecutar en orden: 00 · Preparación → Proceso 1 → Proceso 2. CP-023 y CP-032 son solo visuales (Expo Go) y no tienen request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 · Preparación (login de las 4 cuentas demo)",
+      "item": [
+        {
+          "name": "Login cuenta A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{passwordA}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login A → 200 con token', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tokenA', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cuenta B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailB}}\",\n  \"password\": \"{{passwordB}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login B → 200 con token', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tokenB', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cuenta C",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailC}}\",\n  \"password\": \"{{passwordC}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login C → 200 con token', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tokenC', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cuenta D",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailD}}\",\n  \"password\": \"{{passwordD}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login D → 200 con token', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tokenD', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Proceso 1 · Validación Colaborativa de Infraestructura",
+      "item": [
+        {
+          "name": "CP-020 · Registrar reporte válido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Museo del Oro Quimbaya\",\n  \"tipoPoi\": \"museo\",\n  \"direccion\": \"Av. Bolívar #40N-80\",\n  \"lat\": 4.5534,\n  \"lon\": -75.6586,\n  \"descripcion\": \"Rampa de acceso en la entrada principal\",\n  \"esCritico\": false,\n  \"caracteristicas\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 creado', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('estado pendiente_validacion', () => pm.expect(r.estado).to.eql('pendiente_validacion'));",
+                  "pm.collectionVariables.set('reporteId', r.id_reporte);",
+                  "pm.collectionVariables.set('poiId', r.id_poi);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-020 · Verificar reporte guardado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reporteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "{{reporteId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.test('guardado como pendiente_validacion', () => pm.expect(pm.response.json().estado).to.eql('pendiente_validacion'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-021 · Reporte sin nombre → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"lat\": 4.5534,\n  \"lon\": -75.6586,\n  \"descripcion\": \"Sin nombre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));",
+                  "pm.test('DATOS_INCOMPLETOS', () => pm.expect(pm.response.json().message).to.match(/^DATOS_INCOMPLETOS:/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-021 · Variante latitud fuera de rango → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Fuera de rango\",\n  \"lat\": 200,\n  \"lon\": -75.6586,\n  \"descripcion\": \"Latitud inválida\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));",
+                  "pm.test('fuera de rango', () => pm.expect(pm.response.json().message).to.match(/fuera de rango/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-022 · Mapa con lugares publicados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mapa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mapa"
+              ]
+            },
+            "description": "Comparar las coordenadas de un lugar publicado con su marcador en la app (U06)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const pois = pm.response.json().pois;",
+                  "pm.test('hay al menos un lugar publicado', () => pm.expect(pois.some(p => p.estado === 'publicado')).to.be.true);",
+                  "pm.test('ubicaciones en GeoJSON Point [lon, lat]', () => pois.forEach(p => {",
+                  "  pm.expect(p.ubicacion.type).to.eql('Point');",
+                  "  pm.expect(p.ubicacion.coordinates).to.have.lengthOf(2);",
+                  "}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-024 · Confirmación 1 (cuenta B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('1 confirmación, no publicado', () => pm.expect(pm.response.json()).to.eql({confirmaciones: 1, publicado: false}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-024 · Confirmación 2 (cuenta C)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenC}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('2 confirmaciones, no publicado', () => pm.expect(pm.response.json()).to.eql({confirmaciones: 2, publicado: false}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-024 · Confirmación 3 (cuenta D) publica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenD}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('3 confirmaciones, publicado', () => pm.expect(pm.response.json()).to.eql({confirmaciones: 3, publicado: true}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-024 · Verificar reporte publicado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pois/{{poiId}}/reporte-activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pois",
+                "{{poiId}}",
+                "reporte-activo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado publicado', () => pm.expect(pm.response.json().reporte.estado).to.eql('publicado'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-025 · Preparación: crear segundo reporte (cuenta A)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parque de la Vida (prueba CP-025)\",\n  \"tipoPoi\": \"parque\",\n  \"direccion\": \"Cra. 6 Calle 21N\",\n  \"lat\": 4.5466,\n  \"lon\": -75.6658,\n  \"descripcion\": \"Sendero sin escalones hacia el lago\",\n  \"esCritico\": false,\n  \"caracteristicas\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('reporteId2', pm.response.json().id_reporte);",
+                  "pm.collectionVariables.set('poiId2', pm.response.json().id_poi);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-025 · Una sola confirmación (cuenta B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId2}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId2}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('1 confirmación, no publicado', () => pm.expect(pm.response.json()).to.eql({confirmaciones: 1, publicado: false}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-025 · Reporte sigue pendiente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pois/{{poiId2}}/reporte-activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pois",
+                "{{poiId2}}",
+                "reporte-activo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json().reporte;",
+                  "pm.test('pendiente_validacion con 1 confirmación', () => {",
+                  "  pm.expect(r.estado).to.eql('pendiente_validacion');",
+                  "  pm.expect(r.confirmaciones).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-025 · El lugar no está publicado en el mapa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mapa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mapa"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const poi = pm.response.json().pois.find(p => p.id_poi === Number(pm.collectionVariables.get('poiId2')));",
+                  "pm.test('lugar en estado pendiente', () => pm.expect(poi.estado).to.eql('pendiente'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-026 · Confirmación duplicada (cuenta B) → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId2}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId2}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('CONFIRMACION_DUPLICADA', () => pm.expect(pm.response.json().message).to.match(/^CONFIRMACION_DUPLICADA:/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-026 · Autoconfirmación del autor (cuenta A) → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId2}}/confirmaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId2}}",
+                "confirmaciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422', () => pm.response.to.have.status(422));",
+                  "pm.test('AUTOCONFIRMACION', () => pm.expect(pm.response.json().message).to.match(/^AUTOCONFIRMACION:/));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Proceso 2 · Planificación de Rutas Accesibles",
+      "item": [
+        {
+          "name": "CP-027 · Ruta peatonal estándar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.5534,\n    -75.6586\n  ],\n  \"restrictions\": {\n    \"perfil\": \"peatonal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 con ruta', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('distancia, duración, shape y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "pm.test('perfil peatonal', () => pm.expect(r.perfil).to.eql('peatonal'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-028 · Destino fuera de cobertura",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.711,\n    -74.0721\n  ],\n  \"restrictions\": {\n    \"perfil\": \"peatonal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El último test documenta el criterio deseado: hoy falla porque el backend responde 500 con el texto de Valhalla. Registrar el resultado en TestRail."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde error, no 2xx', () => pm.expect(pm.response.code).to.be.at.least(400));",
+                  "pm.test('error en JSON con message legible', () => pm.expect(pm.response.json().message).to.be.a('string'));",
+                  "pm.test('error controlado (idealmente 4xx; hoy el backend responde 500)', () => pm.expect(pm.response.code).to.be.below(500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-029 · Silla de ruedas evita escaleras",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "description": "Definir antes escaleraOrigenLat/Lon y escaleraDestinoLat/Lon con un tramo highway=steps conocido. Payload igual al que envía la app para el perfil silla de ruedas.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [{{escaleraOrigenLat}}, {{escaleraOrigenLon}}],\n  \"destination\": [{{escaleraDestinoLat}}, {{escaleraDestinoLon}}],\n  \"restrictions\": {\n    \"perfil\": \"silla_de_ruedas\",\n    \"avoidStairs\": true,\n    \"requireElevator\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 con ruta', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('distancia, duración, shape y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "",
+                  "pm.test('perfil silla_de_ruedas', () => pm.expect(r.perfil).to.eql('silla_de_ruedas'));",
+                  "pm.test('ningún paso indica escaleras', () => pm.expect(r.pasos.some(p => /escaler/i.test(p.instruccion))).to.be.false);",
+                  "pm.collectionVariables.set('distanciaSilla', r.distanciaKm);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-030 · Misma ruta sin perfil",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [{{escaleraOrigenLat}}, {{escaleraOrigenLon}}],\n  \"destination\": [{{escaleraDestinoLat}}, {{escaleraDestinoLon}}],\n  \"restrictions\": { \"perfil\": \"peatonal\" }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 con ruta', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('distancia, duración, shape y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "",
+                  "pm.test('el trazado difiere del de silla de ruedas (CP-029)', () =>",
+                  "  pm.expect(r.distanciaKm).to.not.eql(Number(pm.collectionVariables.get('distanciaSilla'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-031 · Sin camino accesible avisa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "description": "Definir antes sinAccesoLat/Lon: destino al que solo se llega por escaleras.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [4.5339, -75.6811],\n  \"destination\": [{{sinAccesoLat}}, {{sinAccesoLon}}],\n  \"restrictions\": {\n    \"perfil\": \"silla_de_ruedas\",\n    \"avoidStairs\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "pm.test('avisa: error con message o ruta con advertencias', () => {",
+                  "  if (pm.response.code >= 400) {",
+                  "    pm.expect(r.message).to.be.a('string').that.is.not.empty;",
+                  "  } else {",
+                  "    pm.expect(r.advertencias).to.be.an('array').that.is.not.empty;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-033 · Instrucciones coinciden con los tramos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/routes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "routes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": [\n    4.5339,\n    -75.6811\n  ],\n  \"destination\": [\n    4.5534,\n    -75.6586\n  ],\n  \"restrictions\": {\n    \"perfil\": \"peatonal\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Comparar después cada instrucción con el mapa en la navegación U07 (parte visual del caso)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 con ruta', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('distancia, duración, shape y pasos', () => {",
+                  "  pm.expect(r.distanciaKm).to.be.above(0);",
+                  "  pm.expect(r.duracionMin).to.be.above(0);",
+                  "  pm.expect(r.shape).to.be.a('string');",
+                  "  pm.expect(r.pasos).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test('responde en ≤ 3 s (RNF-01)', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+                  "",
+                  "const suma = r.pasos.reduce((total, p) => total + p.distanciaKm, 0);",
+                  "pm.test('suma de tramos ≈ distancia total (±5 %)', () => pm.expect(Math.abs(suma - r.distanciaKm)).to.be.below(r.distanciaKm * 0.05 + 0.01));",
+                  "pm.test('todas las instrucciones tienen texto', () => r.pasos.forEach(p => pm.expect(p.instruccion).to.be.a('string').that.is.not.empty));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "emailA",
+      "value": ""
+    },
+    {
+      "key": "passwordA",
+      "value": ""
+    },
+    {
+      "key": "emailB",
+      "value": ""
+    },
+    {
+      "key": "passwordB",
+      "value": ""
+    },
+    {
+      "key": "emailC",
+      "value": ""
+    },
+    {
+      "key": "passwordC",
+      "value": ""
+    },
+    {
+      "key": "emailD",
+      "value": ""
+    },
+    {
+      "key": "passwordD",
+      "value": ""
+    },
+    {
+      "key": "tokenA",
+      "value": ""
+    },
+    {
+      "key": "tokenB",
+      "value": ""
+    },
+    {
+      "key": "tokenC",
+      "value": ""
+    },
+    {
+      "key": "tokenD",
+      "value": ""
+    },
+    {
+      "key": "reporteId",
+      "value": ""
+    },
+    {
+      "key": "poiId",
+      "value": ""
+    },
+    {
+      "key": "reporteId2",
+      "value": ""
+    },
+    {
+      "key": "poiId2",
+      "value": ""
+    },
+    {
+      "key": "escaleraOrigenLat",
+      "value": ""
+    },
+    {
+      "key": "escaleraOrigenLon",
+      "value": ""
+    },
+    {
+      "key": "escaleraDestinoLat",
+      "value": ""
+    },
+    {
+      "key": "escaleraDestinoLon",
+      "value": ""
+    },
+    {
+      "key": "sinAccesoLat",
+      "value": ""
+    },
+    {
+      "key": "sinAccesoLon",
+      "value": ""
+    },
+    {
+      "key": "distanciaSilla",
+      "value": ""
+    }
+  ]
+}
