@@ -17,7 +17,12 @@ import { DatabaseDiagnosticModule } from './database/database-diagnostic.module'
 import { PoisModule } from './pois/pois.module';
 import { ReportsModule } from './reports/reports.module';
 import { UsersModule } from './users/users.module';
-import { opcionesSsl, telemetriaActiva, urlSinParametrosSsl } from './config/seguridad';
+import {
+  asegurarCaRds,
+  opcionesSsl,
+  telemetriaActiva,
+  urlSinParametrosSsl,
+} from './config/seguridad';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -27,16 +32,22 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     // PostgreSQL en AWS RDS (base omnitravel_db); la URL viene de DATABASE_URL.
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: urlSinParametrosSsl(config.get<string>('DATABASE_URL')),
-        ssl: opcionesSsl(
+      useFactory: async (config: ConfigService) => {
+        await asegurarCaRds(
           config.get<string>('DB_SSL'),
           config.get<string>('DB_SSL_CA'),
-        ),
-        autoLoadEntities: true,
-        synchronize: false, // las tablas ya existen en AWS; no dejar que TypeORM las modifique
-      }),
+        );
+        return {
+          type: 'postgres' as const,
+          url: urlSinParametrosSsl(config.get<string>('DATABASE_URL')),
+          ssl: opcionesSsl(
+            config.get<string>('DB_SSL'),
+            config.get<string>('DB_SSL_CA'),
+          ),
+          autoLoadEntities: true,
+          synchronize: false, // las tablas ya existen en AWS; no dejar que TypeORM las modifique
+        };
+      },
     }),
     // Telemetría externa: solo con credenciales propias del equipo.
     ...(telemetriaActiva(process.env)

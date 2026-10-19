@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 /**
  * Ajustes de seguridad leídos del entorno, en un solo lugar y fáciles de probar.
@@ -95,13 +95,17 @@ const PARAMETROS_SSL_URL = [
  * certificate in certificate chain». El TLS lo gobiernan `DB_SSL` y
  * `DB_SSL_CA`, así que la URL no debe repetirlo.
  */
-export function urlSinParametrosSsl(url: string | undefined): string | undefined {
+export function urlSinParametrosSsl(
+  url: string | undefined,
+): string | undefined {
   if (!url) {
     return url;
   }
   try {
     const parseada = new URL(url);
-    PARAMETROS_SSL_URL.forEach((nombre) => parseada.searchParams.delete(nombre));
+    PARAMETROS_SSL_URL.forEach((nombre) =>
+      parseada.searchParams.delete(nombre),
+    );
     return parseada.toString();
   } catch {
     return url;
@@ -111,4 +115,55 @@ export function urlSinParametrosSsl(url: string | undefined): string | undefined
 /** La telemetría externa solo se activa si el equipo define sus credenciales. */
 export function telemetriaActiva(entorno: NodeJS.ProcessEnv): boolean {
   return Boolean(entorno.OBSERVE_APP_KEY && entorno.OBSERVE_APP_SECRET);
+}
+
+/** CA pública de AWS RDS (la misma de `npm run descargar-ca-rds`). */
+export const URL_CA_RDS =
+  'https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem';
+
+/**
+ * Garantiza que exista el archivo de DB_SSL_CA antes de conectar: si apunta a
+ * un archivo que no está (p. ej. en Railway, donde el disco del build no
+ * siempre llega a la imagen), descarga la CA pública de RDS y la guarda ahí.
+ * No hace nada si DB_SSL no es `true`, si la CA viene en línea (PEM) o si el
+ * archivo ya existe. Si la descarga falla, el error explica qué revisar.
+ */
+export async function asegurarCaRds(
+  dbSsl: string | undefined,
+  ca: string | undefined,
+  descargar: (url: string) => Promise<string> = async (url) => {
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) {
+      throw new Error(`HTTP ${respuesta.status}`);
+    }
+    return respuesta.text();
+  },
+): Promise<void> {
+  if (
+    dbSsl?.toLowerCase() !== 'true' ||
+    !ca ||
+    ca.includes('BEGIN CERTIFICATE')
+  ) {
+    return;
+  }
+  const ruta = resolve(process.cwd(), ca);
+  if (existsSync(ruta)) {
+    return;
+  }
+  let pem: string;
+  try {
+    pem = await descargar(URL_CA_RDS);
+  } catch (error) {
+    throw new Error(
+      `No existe ${ca} y no se pudo descargar la CA de AWS RDS (${(error as Error).message}). ` +
+        'Ejecuta `npm run descargar-ca-rds` o pon el PEM en DB_SSL_CA.',
+    );
+  }
+  if (!pem.includes('BEGIN CERTIFICATE')) {
+    throw new Error(
+      'La descarga de la CA de AWS RDS no devolvió un certificado PEM.',
+    );
+  }
+  mkdirSync(dirname(ruta), { recursive: true });
+  writeFileSync(ruta, pem);
 }

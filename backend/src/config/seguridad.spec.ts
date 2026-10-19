@@ -1,9 +1,12 @@
 import {
+  asegurarCaRds,
   ORIGENES_DESARROLLO,
   opcionesSsl,
   origenesCors,
   revisarSecretoJwt,
-  telemetriaActiva, urlSinParametrosSsl } from './seguridad';
+  telemetriaActiva,
+  urlSinParametrosSsl,
+} from './seguridad';
 
 describe('origenesCors', () => {
   it('sin configurar permite solo Expo web local', () => {
@@ -51,11 +54,15 @@ describe('urlSinParametrosSsl', () => {
       urlSinParametrosSsl(
         'postgresql://u:p%40ss@h.rds.amazonaws.com:5432/omnitravel_db?sslmode=require&application_name=api',
       ),
-    ).toBe('postgresql://u:p%40ss@h.rds.amazonaws.com:5432/omnitravel_db?application_name=api');
+    ).toBe(
+      'postgresql://u:p%40ss@h.rds.amazonaws.com:5432/omnitravel_db?application_name=api',
+    );
   });
 
   it('deja intacta una URL sin parámetros TLS o vacía', () => {
-    expect(urlSinParametrosSsl('postgresql://u:p@h:5432/db')).toBe('postgresql://u:p@h:5432/db');
+    expect(urlSinParametrosSsl('postgresql://u:p@h:5432/db')).toBe(
+      'postgresql://u:p@h:5432/db',
+    );
     expect(urlSinParametrosSsl(undefined)).toBeUndefined();
   });
 });
@@ -95,5 +102,39 @@ describe('telemetriaActiva', () => {
     expect(
       telemetriaActiva({ OBSERVE_APP_KEY: 'k', OBSERVE_APP_SECRET: 's' }),
     ).toBe(true);
+  });
+});
+
+describe('asegurarCaRds', () => {
+  const tmp = require('node:os').tmpdir() as string;
+  const fs = require('node:fs') as typeof import('node:fs');
+  const path = require('node:path') as typeof import('node:path');
+
+  it('descarga la CA cuando el archivo no existe', async () => {
+    const ruta = path.join(tmp, `ca-${Date.now()}`, 'global-bundle.pem');
+    const descargar = jest
+      .fn()
+      .mockResolvedValue('-----BEGIN CERTIFICATE-----\nX');
+    await asegurarCaRds('true', ruta, descargar);
+    expect(descargar).toHaveBeenCalled();
+    expect(fs.readFileSync(ruta, 'utf8')).toContain('BEGIN CERTIFICATE');
+  });
+
+  it('no descarga si el archivo ya existe, sin SSL o con PEM en línea', async () => {
+    const ruta = path.join(tmp, `ca-existe-${Date.now()}.pem`);
+    fs.writeFileSync(ruta, 'x');
+    const descargar = jest.fn();
+    await asegurarCaRds('true', ruta, descargar);
+    await asegurarCaRds('false', '/no/existe.pem', descargar);
+    await asegurarCaRds('true', '-----BEGIN CERTIFICATE-----\\nA', descargar);
+    expect(descargar).not.toHaveBeenCalled();
+  });
+
+  it('explica qué hacer si la descarga falla', async () => {
+    await expect(
+      asegurarCaRds('true', path.join(tmp, `nada-${Date.now()}.pem`), () =>
+        Promise.reject(new Error('sin red')),
+      ),
+    ).rejects.toThrow(/descargar-ca-rds/);
   });
 });
