@@ -23,6 +23,7 @@ import type { RootStackParamList } from '../navigation/types';
 import type { Coordenada, Poi } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
+import { coincideBusqueda, sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria, iconoDeCategoria } from '../utils/categorias';
 import { aplicarFiltros } from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
@@ -36,7 +37,7 @@ import {
 } from '../utils/theme';
 
 /** Mínimo de letras para filtrar el feed por texto (evita listas completas). */
-const MINIMO_BUSQUEDA = 2;
+const MINIMO_BUSQUEDA = 1;
 
 interface EntradaFeed {
   poi: Poi;
@@ -127,12 +128,7 @@ export function HomeScreen() {
       lista = lista.filter((poi) => poi.categoria === categoriaActiva);
     }
     if (termino.length >= MINIMO_BUSQUEDA) {
-      lista = lista.filter(
-        (poi) =>
-          poi.nombre.toLowerCase().includes(termino) ||
-          poi.categoria.toLowerCase().includes(termino) ||
-          poi.direccion.toLowerCase().includes(termino),
-      );
+      lista = lista.filter((poi) => coincideBusqueda(poi, termino));
     }
     if (!ubicacion) {
       return lista.map((poi) => ({ poi }));
@@ -147,6 +143,13 @@ export function HomeScreen() {
       }))
       .sort((a, b) => a.km - b.km);
   }, [pois, filtrosActivos, categoriaActiva, termino, ubicacion]);
+
+  /** Sugerencias mientras se escribe (en todo el catálogo). */
+  const [sugerenciasVisibles, setSugerenciasVisibles] = useState(false);
+  const sugerencias = useMemo(
+    () => sugerenciasDeBusqueda(pois, termino),
+    [pois, termino],
+  );
 
   const hayFiltrosActivos =
     filtrosActivos.length > 0 || categoriaActiva != null || termino !== '';
@@ -219,7 +222,12 @@ export function HomeScreen() {
             placeholder="Busca destinos, lugares o servicios…"
             placeholderTextColor={colors.textMuted}
             value={busqueda}
-            onChangeText={setBusqueda}
+            onChangeText={(texto) => {
+              setBusqueda(texto);
+              setSugerenciasVisibles(true);
+            }}
+            onFocus={() => setSugerenciasVisibles(true)}
+            onSubmitEditing={() => setSugerenciasVisibles(false)}
             accessibilityLabel="Buscar destinos, lugares o servicios"
             autoComplete="off"
             returnKeyType="search"
@@ -258,6 +266,54 @@ export function HomeScreen() {
           ) : null}
         </Pressable>
       </View>
+
+      {sugerenciasVisibles && termino !== '' ? (
+        <View
+          style={estilos.sugerencias}
+          accessibilityLabel="Sugerencias de búsqueda"
+        >
+          {sugerencias.length === 0 ? (
+            <Text style={estilos.sinSugerencias}>
+              No encontramos lugares con «{busqueda.trim()}».
+            </Text>
+          ) : (
+            sugerencias.map((poi) => (
+              <Pressable
+                key={poi.id}
+                onPress={() => {
+                  setSugerenciasVisibles(false);
+                  navigation.navigate('DetallePoi', { poiId: poi.id });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`${poi.nombre}, ${poi.categoria}. Ver detalle`}
+                style={({ pressed }) => [
+                  estilos.filaSugerencia,
+                  pressed ? estilos.filaSugerenciaPresionada : null,
+                ]}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+                <View style={estilos.textosSugerencia}>
+                  <Text style={estilos.nombreSugerencia} numberOfLines={1}>
+                    {poi.nombre}
+                  </Text>
+                  <Text style={estilos.detalleSugerencia} numberOfLines={1}>
+                    {poi.categoria} · {poi.direccion || poi.ciudad}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+            ))
+          )}
+        </View>
+      ) : null}
 
       <AvisoSinConexion />
 
@@ -429,6 +485,47 @@ const estilos = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textSecondary,
     marginTop: -spacing.xs,
+  },
+  sugerencias: {
+    marginTop: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    paddingVertical: spacing.xs,
+    shadowColor: '#0B1B3F',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  filaSugerencia: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    minHeight: 48,
+  },
+  filaSugerenciaPresionada: {
+    backgroundColor: colors.surface,
+  },
+  textosSugerencia: {
+    flex: 1,
+  },
+  nombreSugerencia: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+  detalleSugerencia: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+  },
+  sinSugerencias: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   filaBusqueda: {
     flexDirection: 'row',

@@ -37,6 +37,7 @@ import type {
 } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
+import { sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria } from '../utils/categorias';
 import { aplicarFiltros } from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
@@ -253,17 +254,7 @@ export function MapScreen() {
   /** Resultados de la búsqueda en TODO el catálogo (nombre/categoría/dirección). */
   const termino = busqueda.trim().toLowerCase();
   const resultadosBusqueda = useMemo(() => {
-    if (termino.length < 2) {
-      return [];
-    }
-    return pois
-      .filter(
-        (poi) =>
-          poi.nombre.toLowerCase().includes(termino) ||
-          poi.categoria.toLowerCase().includes(termino) ||
-          poi.direccion.toLowerCase().includes(termino),
-      )
-      .slice(0, 6);
+    return sugerenciasDeBusqueda(pois, termino);
   }, [pois, termino]);
 
   // Índice del catálogo para rotular los valores del destino (rampas, etc.).
@@ -620,9 +611,9 @@ export function MapScreen() {
               ) : null}
             </View>
 
-            {termino.length < 2 ? (
+            {termino.length < 1 ? (
               <Text style={estilos.textoAyudaBusqueda}>
-                Escribe al menos 2 letras del nombre, categoría o dirección.
+                Escribe el nombre, la categoría o la dirección del lugar.
               </Text>
             ) : resultadosBusqueda.length === 0 ? (
               <Text style={estilos.textoAyudaBusqueda}>
