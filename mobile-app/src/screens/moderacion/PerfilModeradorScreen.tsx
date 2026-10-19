@@ -3,7 +3,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Alerta } from '../../utils/alerta';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../../components/AppButton';
 import { CampoTexto } from '../../components/CampoTexto';
@@ -149,7 +149,7 @@ export function PerfilModeradorScreen() {
       setClaveVisible(false);
       setActual('');
       setNueva('');
-      Alert.alert(
+      Alerta.alert(
         'Contraseña actualizada',
         'Úsala la próxima vez que inicies sesión.',
       );
@@ -161,7 +161,7 @@ export function PerfilModeradorScreen() {
   };
 
   const cerrarSesion = () => {
-    Alert.alert('Cerrar sesión', '¿Quieres salir del panel de moderación?', [
+    Alerta.alert('Cerrar sesión', '¿Quieres salir del panel de moderación?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cerrar sesión',

@@ -3,7 +3,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   Linking,
   Modal,
@@ -14,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Alerta } from '../../utils/alerta';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../../components/AppButton';
 import { ConsensoAlcanzado } from '../../components/ConsensoAlcanzado';
@@ -180,7 +180,7 @@ export function RevisionReporteScreen() {
         setS01Visible(true);
       } else {
         setRechazoVisible(false);
-        Alert.alert(
+        Alerta.alert(
           'Reporte rechazado',
           'La persona que lo envió recibirá el motivo del rechazo.',
           [{ text: 'Entendido', onPress: () => navigation.goBack() }],
@@ -199,7 +199,7 @@ export function RevisionReporteScreen() {
 
   const aprobar = () => {
     if (gpsCoincide === 'no' || informacionClara === 'no') {
-      Alert.alert(
+      Alerta.alert(
         'Revisa el checklist',
         'Marcaste que la evidencia no coincide o no es clara. ¿Quieres rechazar el reporte?',
         [

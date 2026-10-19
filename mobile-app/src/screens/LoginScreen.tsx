@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Alerta } from '../utils/alerta';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
@@ -112,7 +112,7 @@ export function LoginScreen() {
     if (biometriaLista || !biometriaDisponible()) {
       return;
     }
-    Alert.alert(
+    Alerta.alert(
       'Ingreso con huella o rostro',
       '¿Quieres entrar la próxima vez con tu huella o Face ID? Tus datos quedan cifrados solo en este teléfono.',
       [
@@ -122,7 +122,7 @@ export function LoginScreen() {
           onPress: () => {
             void activarBiometria({ email: correo, contrasena: clave }).catch(
               () =>
-                Alert.alert(
+                Alerta.alert(
                   'No se pudo activar',
                   'Revisa que tu teléfono tenga una huella o un rostro registrado.',
                 ),
@@ -148,7 +148,7 @@ export function LoginScreen() {
       });
       anunciar('Sesión iniciada. Bienvenido de nuevo.');
       if (aviso) {
-        Alert.alert('Sesión iniciada', aviso);
+        Alerta.alert('Sesión iniciada', aviso);
       }
       if (!conBiometria) {
         ofrecerBiometria(correo.trim(), clave);
@@ -181,7 +181,7 @@ export function LoginScreen() {
 
   const entrarConBiometria = async () => {
     if (!biometriaLista) {
-      Alert.alert(
+      Alerta.alert(
         'Ingreso biométrico',
         biometriaDisponible()
           ? 'Inicia sesión una vez con tu contraseña y activa el ingreso con huella o Face ID.'
@@ -200,7 +200,7 @@ export function LoginScreen() {
    * transparencia en lugar de simular un envío (RNF-17).
    */
   const recuperarContrasena = () => {
-    Alert.alert(
+    Alerta.alert(
       'Recuperar contraseña',
       'La recuperación por correo todavía no está disponible. Pide a un ' +
         'administrador de OmniTravel que restablezca tu contraseña.',

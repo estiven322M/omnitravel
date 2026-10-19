@@ -2,20 +2,19 @@ import type { IconName, ValorCaracteristicaReporte } from '../services/types';
 import { claveDeTexto } from '../services/mocks/fotosPoi';
 import { colors } from './theme';
 
-/** Dimensión de accesibilidad de un reporte (chips de M03). */
-export type Dimension = 'Motriz' | 'Sensorial' | 'Cognitiva' | 'Otra';
+/**
+ * Dimensión de accesibilidad de un reporte (chips de M03). OmniTravel cubre
+ * discapacidad motriz y sensorial; lo que no encaja queda en «Otra».
+ */
+export type Dimension = 'Motriz' | 'Sensorial' | 'Otra';
 
 const SENSORIAL = /(sonoro|podotactil|braille|senal|visual|auditiv|tactil)/;
-const COGNITIVA = /(cognitiv|pictogram|lectura facil)/;
 
 /** Clasifica un reporte por las características que propone. */
 export function dimensionDeReporte(
   valores: Pick<ValorCaracteristicaReporte, 'nombre'>[],
 ): Dimension {
   const nombres = valores.map((valor) => claveDeTexto(valor.nombre));
-  if (nombres.some((nombre) => COGNITIVA.test(nombre))) {
-    return 'Cognitiva';
-  }
   if (nombres.some((nombre) => SENSORIAL.test(nombre))) {
     return 'Sensorial';
   }
@@ -25,7 +24,6 @@ export function dimensionDeReporte(
 export const ICONO_DIMENSION: Record<Dimension, IconName> = {
   Motriz: 'accessibility',
   Sensorial: 'eye-outline',
-  Cognitiva: 'bulb-outline',
   Otra: 'ellipsis-horizontal',
 };
 
