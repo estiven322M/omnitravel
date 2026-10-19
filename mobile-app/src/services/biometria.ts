@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from './almacenamiento';
 
 /**
  * Ingreso con huella / Face ID (U02).

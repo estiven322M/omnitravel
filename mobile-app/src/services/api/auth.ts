@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../almacenamiento';
 import type { RolUsuario } from '../types';
 import { ApiError, apiFetch, CLAVE_TOKEN } from './client';
 

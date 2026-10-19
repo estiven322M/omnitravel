@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../almacenamiento';
 
 /**
  * Cliente HTTP base para el backend OmniTravel (NestJS), única vía de la
