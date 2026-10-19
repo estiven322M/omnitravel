@@ -1,0 +1,14 @@
+# Despliegue del backend NestJS en Railway (raíz del servicio: backend/).
+# Ver docs/DESPLIEGUE.md para las variables y los pasos.
+[build]
+builder = "NIXPACKS"
+# Descarga la CA pública de AWS RDS para validar el TLS de la base de datos
+# (DB_SSL_CA=certs/global-bundle.pem en las variables del servicio).
+buildCommand = "npm ci && npm run build && npm run descargar-ca-rds"
+
+[deploy]
+startCommand = "node dist/main.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

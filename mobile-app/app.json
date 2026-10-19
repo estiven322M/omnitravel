@@ -1,9 +1,10 @@
 {
   "expo": {
+    "owner": "yamis2706s-team",
     "name": "OmniTravel",
     "slug": "omnitravel",
     "scheme": "omnitravel",
-    "version": "0.2.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -41,6 +42,11 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b9a0f082-e6dc-4bec-9957-75a8b0ce0834"
+      }
+    }
   }
 }

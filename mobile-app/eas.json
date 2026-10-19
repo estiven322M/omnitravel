@@ -10,14 +10,21 @@
     },
     "preview": {
       "distribution": "internal",
-      "environment": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://omnitravel-production-4af6.up.railway.app"
       }
     },
     "production": {
       "autoIncrement": true,
-      "environment": "production"
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://omnitravel-production-4af6.up.railway.app"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
