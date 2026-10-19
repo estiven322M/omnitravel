@@ -17,7 +17,7 @@ import { DatabaseDiagnosticModule } from './database/database-diagnostic.module'
 import { PoisModule } from './pois/pois.module';
 import { ReportsModule } from './reports/reports.module';
 import { UsersModule } from './users/users.module';
-import { opcionesSsl, telemetriaActiva } from './config/seguridad';
+import { opcionesSsl, telemetriaActiva, urlSinParametrosSsl } from './config/seguridad';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -29,7 +29,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: config.get<string>('DATABASE_URL'),
+        url: urlSinParametrosSsl(config.get<string>('DATABASE_URL')),
         ssl: opcionesSsl(
           config.get<string>('DB_SSL'),
           config.get<string>('DB_SSL_CA'),

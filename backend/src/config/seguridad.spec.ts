@@ -3,8 +3,7 @@ import {
   opcionesSsl,
   origenesCors,
   revisarSecretoJwt,
-  telemetriaActiva,
-} from './seguridad';
+  telemetriaActiva, urlSinParametrosSsl } from './seguridad';
 
 describe('origenesCors', () => {
   it('sin configurar permite solo Expo web local', () => {
@@ -43,6 +42,21 @@ describe('revisarSecretoJwt', () => {
 
   it('acepta un secreto fuerte', () => {
     expect(revisarSecretoJwt(FUERTE, 'production')).toEqual({});
+  });
+});
+
+describe('urlSinParametrosSsl', () => {
+  it('quita sslmode y demás parámetros TLS sin tocar el resto', () => {
+    expect(
+      urlSinParametrosSsl(
+        'postgresql://u:p%40ss@h.rds.amazonaws.com:5432/omnitravel_db?sslmode=require&application_name=api',
+      ),
+    ).toBe('postgresql://u:p%40ss@h.rds.amazonaws.com:5432/omnitravel_db?application_name=api');
+  });
+
+  it('deja intacta una URL sin parámetros TLS o vacía', () => {
+    expect(urlSinParametrosSsl('postgresql://u:p@h:5432/db')).toBe('postgresql://u:p@h:5432/db');
+    expect(urlSinParametrosSsl(undefined)).toBeUndefined();
   });
 });
 

@@ -77,6 +77,37 @@ export function opcionesSsl(
   return { ca: certificado, rejectUnauthorized: true };
 }
 
+/** Parámetros TLS que `pg` lee de la URL y que REEMPLAZAN la opción `ssl`. */
+const PARAMETROS_SSL_URL = [
+  'ssl',
+  'sslmode',
+  'sslcert',
+  'sslkey',
+  'sslrootcert',
+  'uselibpqcompat',
+];
+
+/**
+ * Quita de `DATABASE_URL` los parámetros TLS (`?sslmode=require`…).
+ *
+ * `pg` da prioridad a la URL sobre la opción `ssl`: con `sslmode` en la URL se
+ * descarta la CA de `DB_SSL_CA` y la conexión falla con «self-signed
+ * certificate in certificate chain». El TLS lo gobiernan `DB_SSL` y
+ * `DB_SSL_CA`, así que la URL no debe repetirlo.
+ */
+export function urlSinParametrosSsl(url: string | undefined): string | undefined {
+  if (!url) {
+    return url;
+  }
+  try {
+    const parseada = new URL(url);
+    PARAMETROS_SSL_URL.forEach((nombre) => parseada.searchParams.delete(nombre));
+    return parseada.toString();
+  } catch {
+    return url;
+  }
+}
+
 /** La telemetría externa solo se activa si el equipo define sus credenciales. */
 export function telemetriaActiva(entorno: NodeJS.ProcessEnv): boolean {
   return Boolean(entorno.OBSERVE_APP_KEY && entorno.OBSERVE_APP_SECRET);
