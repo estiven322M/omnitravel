@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from '../components/AppButton';
+import { AvisoSinConexion } from '../components/AvisoSinConexion';
 import { Badge } from '../components/Badge';
 import { BrandMark } from '../components/BrandMark';
 import { FilterSheet } from '../components/FilterSheet';
@@ -79,8 +80,6 @@ export function MapScreen() {
   const poiPorId = usePoisStore((estado) => estado.poiPorId);
   const cargadoPois = usePoisStore((estado) => estado.cargado);
   const cargarPois = usePoisStore((estado) => estado.cargar);
-  const fuentePois = usePoisStore((estado) => estado.fuente);
-  const advertenciaPois = usePoisStore((estado) => estado.advertencia);
   const catalogo = usePoisStore((estado) => estado.catalogo);
 
   const filtrosActivos = useProfileStore(
@@ -673,19 +672,7 @@ export function MapScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={estilos.contenidoPanel}
         >
-          {fuentePois === 'mock' ? (
-            <View style={estilos.avisoDatos} accessibilityLiveRegion="polite">
-              <Ionicons
-                name="cloud-offline-outline"
-                size={16}
-                color={colors.warning}
-              />
-              <Text style={estilos.avisoDatosTexto} numberOfLines={2}>
-                {advertenciaPois ??
-                  'Mostrando lugares de demostración: sin conexión a la base de datos del equipo.'}
-              </Text>
-            </View>
-          ) : null}
+          <AvisoSinConexion />
 
           {estadoMapaWeb === 'sin-red' ? (
             <View style={estilos.avisoDatos} accessibilityLiveRegion="polite">

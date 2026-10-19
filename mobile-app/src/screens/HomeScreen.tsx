@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMark } from '../components/BrandMark';
+import { AvisoSinConexion } from '../components/AvisoSinConexion';
 import { EmptyState } from '../components/EmptyState';
 import { FilterSheet } from '../components/FilterSheet';
 import { PoiCardFeed } from '../components/PoiCardFeed';
@@ -67,9 +68,10 @@ export function HomeScreen() {
 
   const pois = usePoisStore((estado) => estado.pois);
   const cargadoPois = usePoisStore((estado) => estado.cargado);
+  const sinConexionPois = usePoisStore(
+    (estado) => estado.fuente === 'sin-conexion',
+  );
   const cargarPois = usePoisStore((estado) => estado.cargar);
-  const fuentePois = usePoisStore((estado) => estado.fuente);
-  const advertenciaPois = usePoisStore((estado) => estado.advertencia);
 
   const [ubicacion, setUbicacion] = useState<Coordenada | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -257,19 +259,7 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      {fuentePois === 'mock' ? (
-        <View style={estilos.avisoDatos} accessibilityLiveRegion="polite">
-          <Ionicons
-            name="cloud-offline-outline"
-            size={16}
-            color={colors.warning}
-          />
-          <Text style={estilos.avisoDatosTexto} numberOfLines={2}>
-            {advertenciaPois ??
-              'Mostrando lugares de demostración: sin conexión a la base de datos del equipo.'}
-          </Text>
-        </View>
-      ) : null}
+      <AvisoSinConexion />
 
       <ScrollView
         horizontal
@@ -345,7 +335,7 @@ export function HomeScreen() {
           />
         )}
         ListEmptyComponent={
-          cargadoPois ? (
+          cargadoPois && !sinConexionPois ? (
             <EmptyState
               icono="search-outline"
               titulo="Sin lugares que coincidan"
