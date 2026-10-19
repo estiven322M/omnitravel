@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -12,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Alerta } from '../../utils/alerta';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AvatarInicial,
@@ -94,7 +94,7 @@ export function IncidenciasScreen() {
     accion: 'desactivar' | 'evidencia',
   ) => {
     const desactivar = accion === 'desactivar';
-    Alert.alert(
+    Alerta.alert(
       desactivar ? 'Desactivar punto del mapa' : 'Solicitar nueva evidencia',
       desactivar
         ? `«${incidencia.poi.nombre}» saldrá del mapa público hasta que se verifique de nuevo.`
@@ -116,7 +116,7 @@ export function IncidenciasScreen() {
                 return cargar();
               })
               .catch((causa: Error) =>
-                Alert.alert('No se pudo completar', causa.message),
+                Alerta.alert('No se pudo completar', causa.message),
               )
               .finally(() => setProcesando(null));
           },

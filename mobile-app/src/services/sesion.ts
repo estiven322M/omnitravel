@@ -1,5 +1,6 @@
+import { Alerta } from '../utils/alerta';
 import * as SecureStore from './almacenamiento';
-import { Alert } from 'react-native';
+
 import { useFavoritosStore } from '../store/favoritosStore';
 import { useProfileStore } from '../store/profileStore';
 import { cerrarSesionCuenta } from './api/auth';
@@ -37,7 +38,7 @@ export async function cerrarSesionPorVencimiento(): Promise<void> {
   avisando = true;
   try {
     await cerrarSesionCompleta();
-    Alert.alert('Sesión vencida', MENSAJE_SESION_VENCIDA);
+    Alerta.alert('Sesión vencida', MENSAJE_SESION_VENCIDA);
   } finally {
     avisando = false;
   }

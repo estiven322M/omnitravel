@@ -21,6 +21,7 @@ import {
 } from '../../components/EncabezadoMarca';
 import type { RootStackParamList } from '../../navigation/types';
 import { urlPublicaEvidencia } from '../../services/evidencias';
+import { fotoDePoi } from '../../services/mocks/fotosPoi';
 import { listarReportesModeracion } from '../../services/reportes';
 import type { ReporteModeracion } from '../../services/types';
 import { useModeracionStore } from '../../store/moderacionStore';
@@ -41,9 +42,48 @@ import {
 } from '../../utils/theme';
 
 type Filtro = 'Todos' | Dimension;
-const FILTROS: Filtro[] = ['Todos', 'Motriz', 'Sensorial', 'Cognitiva', 'Otra'];
+const FILTROS: Filtro[] = ['Todos', 'Motriz', 'Sensorial', 'Otra'];
 
 /** M03 — Lista de reportes pendientes con filtros por dimensión y orden. */
+/**
+ * Foto de la tarjeta: la del lugar como base y, encima, la evidencia del
+ * reporte. Si la evidencia no existe o no carga (p. ej. reportes antiguos
+ * cuya foto quedó en Supabase), queda visible la foto del lugar.
+ */
+function FotoReporte({
+  uri,
+  nombre,
+  tipo,
+}: {
+  uri: string | null;
+  nombre: string;
+  tipo: string;
+}) {
+  return (
+    <View
+      style={estilos.foto}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={
+        uri ? `Evidencia del reporte de ${nombre}` : `Foto de ${nombre}`
+      }
+    >
+      <Image
+        source={fotoDePoi(nombre, tipo).fuente}
+        style={StyleSheet.absoluteFill}
+        accessibilityIgnoresInvertColors
+      />
+      {uri ? (
+        <Image
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          accessibilityIgnoresInvertColors
+        />
+      ) : null}
+    </View>
+  );
+}
+
 export function ReportesPendientesScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -204,23 +244,11 @@ export function ReportesPendientesScreen() {
           const foto = item.evidencia.find((e) => e.storageKey !== '');
           return (
             <View style={estilos.tarjeta}>
-              {foto ? (
-                <Image
-                  source={{ uri: urlPublicaEvidencia(foto.storageKey) }}
-                  style={estilos.foto}
-                  accessibilityRole="image"
-                  accessibilityIgnoresInvertColors
-                  accessibilityLabel={`Evidencia del reporte de ${item.poi.nombre}`}
-                />
-              ) : (
-                <View style={[estilos.foto, estilos.sinFoto]}>
-                  <Ionicons
-                    name="image-outline"
-                    size={24}
-                    color={colors.textMuted}
-                  />
-                </View>
-              )}
+              <FotoReporte
+                uri={foto ? urlPublicaEvidencia(foto.storageKey) : null}
+                nombre={item.poi.nombre}
+                tipo={item.poi.tipo}
+              />
               <View style={estilos.cuerpo}>
                 <Text style={estilos.nombre} numberOfLines={1}>
                   {item.poi.nombre}
@@ -370,11 +398,8 @@ const estilos = StyleSheet.create({
     width: 70,
     height: 86,
     borderRadius: radii.sm,
-  },
-  sinFoto: {
+    overflow: 'hidden',
     backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cuerpo: {
     flex: 1,

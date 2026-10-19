@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   AccessibilityInfo,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Alerta } from '../utils/alerta';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -157,10 +157,10 @@ export function RegisterScreen() {
 
       // Aviso informativo (no error), si el backend devuelve alguno.
       if (resultado.aviso) {
-        Alert.alert('Cuenta creada', resultado.aviso);
+        Alerta.alert('Cuenta creada', resultado.aviso);
       }
     } catch (error) {
-      Alert.alert(
+      Alerta.alert(
         'No se pudo crear la cuenta',
         (error as Error)?.message ?? 'Verifica tu conexión e intenta de nuevo.',
       );

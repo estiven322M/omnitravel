@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  Alert,
   Image,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Alerta } from '../utils/alerta';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
@@ -149,7 +149,7 @@ export function ProfileScreen() {
 
   const cambiarFoto = async () => {
     if (!idCuenta) {
-      Alert.alert(
+      Alerta.alert(
         'Foto de perfil',
         'No pudimos identificar tu cuenta. Cierra sesión y vuelve a entrar para poder elegir una foto.',
       );
@@ -163,7 +163,7 @@ export function ProfileScreen() {
         anunciar('Foto de perfil actualizada en este dispositivo.');
       }
     } catch (error) {
-      Alert.alert(
+      Alerta.alert(
         'Foto de perfil',
         error instanceof FotoPerfilError
           ? error.message
@@ -175,7 +175,7 @@ export function ProfileScreen() {
   };
 
   const quitarFoto = () => {
-    Alert.alert(
+    Alerta.alert(
       'Quitar foto',
       'Tu foto se eliminará de este dispositivo. ¿Deseas continuar?',
       [
@@ -196,7 +196,7 @@ export function ProfileScreen() {
   };
 
   const confirmarCierre = () => {
-    Alert.alert(
+    Alerta.alert(
       'Cerrar sesión',
       'Tu perfil de accesibilidad se eliminará de este dispositivo. ¿Deseas continuar?',
       [
@@ -220,7 +220,7 @@ export function ProfileScreen() {
           <BrandMark tamano={40} variante="completo" />
           <Pressable
             onPress={() =>
-              Alert.alert(
+              Alerta.alert(
                 'OmniTravel',
                 'Tu mundo, sin barreras. Los ajustes generales de la app llegarán en una próxima iteración; mientras tanto, todo se configura desde este perfil.',
               )
