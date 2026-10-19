@@ -30,6 +30,11 @@ export function estadoParaBd(estado: string): string {
   return estado === 'pendiente' ? ESTADO_PENDIENTE_BD : estado;
 }
 
+/** Latitud en [-90, 90] y longitud en [-180, 180]. */
+export function coordenadaValida(lat: number, lon: number): boolean {
+  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+}
+
 /** Columnas del resumen de reporte para los listados del viajero. */
 const SELECT_RESUMEN = `select r.id_reporte::int, r.poi_id::int, r.tipo, r.estado, r.descripcion,
               coalesce(r.es_critico, false) as es_critico, r.fecha_creacion,
@@ -75,6 +80,13 @@ export class ReportesService {
             HttpStatus.BAD_REQUEST,
             'DATOS_INCOMPLETOS',
             'El lugar necesita nombre y ubicación.',
+          );
+        }
+        if (!coordenadaValida(datos.lat as number, datos.lon as number)) {
+          throw errorDominio(
+            HttpStatus.BAD_REQUEST,
+            'COORDENADAS_INVALIDAS',
+            'La ubicación está fuera de rango (latitud ±90, longitud ±180).',
           );
         }
         const [poi] = await m.query(
