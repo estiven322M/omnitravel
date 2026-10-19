@@ -7,7 +7,9 @@ builder = "NIXPACKS"
 buildCommand = "npm ci && npm run build && npm run descargar-ca-rds"
 
 [deploy]
-startCommand = "node dist/main.js"
+# La CA también se descarga al arrancar: así existe aunque el build se haya
+# hecho en otra imagen o con otra configuración del servicio.
+startCommand = "npm run descargar-ca-rds && node dist/main.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
