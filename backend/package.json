@@ -14,6 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "crear-admin": "node --env-file-if-exists=.env scripts/crear-admin.mjs",
+    "diagnostico-ssl": "node --env-file-if-exists=.env scripts/diagnostico-ssl.mjs",
     "lint": "oxlint --type-aware src/ test/",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
