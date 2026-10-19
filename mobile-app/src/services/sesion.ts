@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from './almacenamiento';
 import { Alert } from 'react-native';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { useProfileStore } from '../store/profileStore';

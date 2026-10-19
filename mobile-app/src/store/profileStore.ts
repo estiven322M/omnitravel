@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../services/almacenamiento';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { RolUsuario } from '../services/types';
