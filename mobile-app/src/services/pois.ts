@@ -1,6 +1,5 @@
-import { apiFetch } from './api/client';
+import { API_URL, apiFetch } from './api/client';
 import { leerCoordenada } from './coordenadas';
-import { POIS_MOCK } from './mocks/pois';
 import { CATALOGO_CARACTERISTICAS } from './mocks/catalog';
 import type {
   CaracteristicaAccesibilidad,
@@ -19,14 +18,15 @@ import type {
  * `retroalimentacion`, `reporte` y `confirmacion`.
  *
  * Contrato del front intacto (`services/types.ts`): los mapeadores traducen
- * el esquema físico de la BD del equipo al modelo del C4. Cuando el backend
- * no responde o la BD está vacía se degradan los datos a los mocks tipados
- * para que la demo no se rompa; el estado lo comunica `cargarDatosMapa()`
- * con `fuente: 'mock'` y una advertencia.
+ * el esquema físico de la BD del equipo al modelo del C4. La app NUNCA
+ * muestra lugares inventados: si el backend no responde, `cargarDatosMapa()`
+ * devuelve `fuente: 'sin-conexion'`, sin lugares, y una advertencia con la
+ * causa para que la persona reintente. Así todo reporte se hace sobre lugares
+ * reales de la BD y queda persistido.
  */
 
 /** Origen declarado de los datos tras cada carga. */
-export type FuenteDatos = 'backend' | 'mock';
+export type FuenteDatos = 'backend' | 'sin-conexion';
 
 /** Filas crudas de la BD (mismos nombres de columnas del esquema físico). */
 interface FilaPoi {
@@ -266,8 +266,7 @@ function mapearPois(
 
 /**
  * Carga los datos del equipo (BD OmniTravel vía backend). Si la lectura
- * falla o la BD está vacía, degrada a los mocks del repositorio con una advertencia clara
- * para no bloquear la entrega/demos.
+ * falla devuelve `sin-conexion` (sin lugares de demostración) con la causa.
  */
 export async function cargarDatosMapa(): Promise<DatosMapa> {
   try {
@@ -281,10 +280,6 @@ export async function cargarDatosMapa(): Promise<DatosMapa> {
     } = await apiFetch<RespuestaMapa>('/mapa');
 
     const { catalogo, idPorNumerico } = obtenerCatalogo(caracteristicas);
-
-    if (filasPoi.length === 0) {
-      throw new Error('Sin POIs publicados en la BD.');
-    }
 
     const reportePorId = new Map(filasReporte.map((r) => [r.id_reporte, r]));
     const confirmacionesPorPoi = filasConfirmacion.reduce<Map<number, number>>(
@@ -335,13 +330,12 @@ export async function cargarDatosMapa(): Promise<DatosMapa> {
     const motivo =
       error instanceof Error ? error.message : 'rechazo desconocido';
     return {
-      pois: POIS_MOCK,
+      pois: [],
       catalogo: CATALOGO_CARACTERISTICAS,
-      fuente: 'mock',
+      fuente: 'sin-conexion',
       advertencia:
-        `Datos de demostración (motivo: ${motivo}). ` +
-        'Revisa que el backend esté corriendo y que EXPO_PUBLIC_API_URL ' +
-        'apunte a él.',
+        `Sin conexión con el servidor de OmniTravel (${API_URL}). ${motivo} ` +
+        'Revisa que el backend esté encendido y en la misma red, y toca Reintentar.',
     };
   }
 }

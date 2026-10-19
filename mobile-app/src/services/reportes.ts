@@ -219,13 +219,25 @@ async function llamarBackend<T>(ruta: string, init?: RequestInit): Promise<T> {
 export async function crearReporte(
   datos: DatosNuevoReporte,
 ): Promise<{ idReporte: string; idPoi: string }> {
+  // Un lugar existente SIEMPRE viaja con su id numérico de la BD. Antes, un id
+  // no numérico se convertía en null y el backend lo trataba como lugar nuevo
+  // sin nombre («El lugar necesita nombre y ubicación»).
+  const poiId =
+    datos.poiId == null || datos.poiId === '' ? null : Number(datos.poiId);
+  if (poiId !== null && !Number.isInteger(poiId)) {
+    throw new ReporteError(
+      'POI_NO_ENCONTRADO',
+      'Ese lugar no está registrado en la base de datos. Toca Reintentar para cargar los lugares reales y vuelve a elegirlo.',
+    );
+  }
+
   const resultado = await llamarBackend<{
     id_reporte: number;
     id_poi: number;
   } | null>('/reportes', {
     method: 'POST',
     body: JSON.stringify({
-      poiId: datos.poiId ? Number(datos.poiId) : null,
+      poiId,
       nombre: datos.nombre ?? null,
       tipoPoi: datos.tipoPoi ?? null,
       direccion: datos.direccion ?? null,

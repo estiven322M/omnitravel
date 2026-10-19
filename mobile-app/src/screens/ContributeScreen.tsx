@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '../components/AppButton';
+import { AvisoSinConexion } from '../components/AvisoSinConexion';
 import { Badge } from '../components/Badge';
 import { EncabezadoMarca } from '../components/EncabezadoMarca';
 import { CampoTexto } from '../components/CampoTexto';
@@ -384,6 +385,12 @@ export function ContributeScreen() {
   };
 
   const enviar = async () => {
+    if (fuente !== 'backend') {
+      setErrorEnvio(
+        'Sin conexión con la base de datos: toca Reintentar arriba y vuelve a enviar.',
+      );
+      return;
+    }
     setEnviando(true);
     setErrorEnvio(null);
     try {
@@ -611,21 +618,7 @@ export function ContributeScreen() {
 
         <BarraPasos paso={paso} />
 
-        {fuente === 'mock' ? (
-          <Card estilo={estilos.tarjetaAviso}>
-            <View style={estilos.filaAviso}>
-              <Ionicons
-                name="cloud-offline-outline"
-                size={18}
-                color={colors.warning}
-              />
-              <Text style={estilos.textoAviso}>
-                Estás viendo datos de demostración: para enviar reportes se
-                necesita la conexión con la base de datos del equipo.
-              </Text>
-            </View>
-          </Card>
-        ) : null}
+        <AvisoSinConexion titulo="Sin conexión con la base de datos: los reportes no se pueden enviar hasta reconectar." />
 
         <View style={estilos.encabezadoPaso}>
           <View style={estilos.kickerFila}>
@@ -1616,11 +1609,6 @@ const estilos = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
     gap: spacing.sm,
-  },
-  tarjetaAviso: {
-    backgroundColor: colors.warningSoft,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   filaAviso: {
     flexDirection: 'row',
