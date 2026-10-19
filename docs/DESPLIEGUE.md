@@ -13,7 +13,10 @@ todo se configura como variable de cada servicio.
 
 ## 1. Backend en Railway
 
-Requisitos: Node 24 en tu computador y la CLI de Railway.
+Requisitos: Node 24 en tu computador y la CLI de Railway (si `railway` no
+se reconoce en Windows, usa `npx @railway/cli` en su lugar). Railway construye
+con `backend/Dockerfile`; al arrancar, el backend descarga la CA de RDS si
+falta.
 
 ```powershell
 npm install -g @railway/cli
@@ -81,7 +84,8 @@ versión web.
 ## 3. Versión web en Railway
 
 En el mismo proyecto de Railway: **New → Empty Service** (p. ej.
-`omnitravel-web`). Variables:
+`omnitravel-web`). Railway construye con `mobile-app/Dockerfile` (exporta la
+web con Expo y la sirve con `scripts/servir-web.mjs`). Variables:
 
 | Variable | Valor |
 |---|---|
