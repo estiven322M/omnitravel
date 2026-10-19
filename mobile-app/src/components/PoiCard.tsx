@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
 import type { Poi } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
-import { iconoDeCategoria } from '../utils/categorias';
+import { fotoDePoi } from '../services/mocks/fotosPoi';
 import { formatearDistancia } from '../utils/format';
 import { colors, fontSize, fontWeight, radii, spacing } from '../utils/theme';
 import { Badge } from './Badge';
@@ -39,6 +39,7 @@ export function PoiCard({
 }: Props) {
   const etiquetas = etiquetasAccesibles(poi);
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
+  const foto = fotoDePoi(poi.nombre, poi.categoria);
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poi.id));
   const alternarFavorito = useFavoritosStore((estado) => estado.alternar);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
@@ -67,19 +68,20 @@ export function PoiCard({
         pressed ? estilos.presionado : null,
       ]}
     >
-      <View style={estilos.iconoCategoria}>
-        <Ionicons
-          name={iconoDeCategoria(poi.categoria)}
-          size={22}
-          color={colors.primary}
-        />
-      </View>
+      <Image
+        source={foto.fuente}
+        style={estilos.foto}
+        resizeMode="cover"
+        accessibilityIgnoresInvertColors
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
       <View style={estilos.contenido}>
         <Text style={estilos.nombre} numberOfLines={1}>
           {poi.nombre}
         </Text>
         <Text style={estilos.subtitulo} numberOfLines={1}>
-          {poi.categoria} · {poi.ciudad}
+          {poi.categoria} • {poi.ciudad}
         </Text>
         {etiquetas.length > 0 ? (
           <View style={estilos.etiquetas}>
@@ -157,13 +159,11 @@ const estilos = StyleSheet.create({
   presionado: {
     opacity: 0.9,
   },
-  iconoCategoria: {
-    width: 46,
-    height: 46,
+  foto: {
+    width: 64,
+    height: 64,
     borderRadius: radii.md,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: colors.surface,
   },
   contenido: {
     flex: 1,

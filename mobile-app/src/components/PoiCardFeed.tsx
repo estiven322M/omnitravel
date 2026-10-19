@@ -2,9 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { fotoDePoi } from '../services/mocks/fotosPoi';
-import type { Poi } from '../services/types';
+import type { IconName, Poi } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
-import { iconoDeCategoria } from '../utils/categorias';
 import { formatearDistancia } from '../utils/format';
 import { colors, fontSize, fontWeight, radii, spacing } from '../utils/theme';
 
@@ -17,30 +16,49 @@ interface Props {
   muestraFavorito?: boolean;
 }
 
-/** Etiqueta legible (estilo mockup U04) de una característica confirmada. */
-function etiquetaDeCaracteristica(
+interface Etiqueta {
+  texto: string;
+  icono: IconName;
+}
+
+/** Etiqueta con icono (estilo mockup U04) de una característica confirmada. */
+export function etiquetaDeCaracteristica(
   caracteristicaId: string,
   booleano?: boolean,
   numerico?: number,
-): string | null {
+): Etiqueta | null {
   switch (caracteristicaId) {
     case 'tiene_rampa':
-      return booleano === true ? 'Rampa confirmada' : null;
+      return booleano === true
+        ? { texto: 'Rampa confirmada', icono: 'accessibility' }
+        : null;
     case 'tiene_escaleras':
-      return booleano === false ? 'Sin escalones' : null;
+      return booleano === false
+        ? { texto: 'Sin escalones', icono: 'trending-up' }
+        : null;
     case 'tiene_bano_accesible':
-      return booleano === true ? 'Baño adaptado' : null;
+      return booleano === true
+        ? { texto: 'Baño adaptado', icono: 'man' }
+        : null;
     case 'tiene_ascensor':
-      return booleano === true ? 'Ascensor' : null;
+      return booleano === true
+        ? { texto: 'Ascensor', icono: 'swap-vertical' }
+        : null;
     case 'tiene_braille':
-      return booleano === true ? 'Menú Braille' : null;
+      return booleano === true
+        ? { texto: 'Menú Braille', icono: 'restaurant' }
+        : null;
     case 'tiene_piso_podotactil':
-      return booleano === true ? 'Piso podotáctil' : null;
+      return booleano === true
+        ? { texto: 'Señalización táctil', icono: 'eye' }
+        : null;
     case 'tiene_semaforo_sonoro':
-      return booleano === true ? 'Semáforo sonoro' : null;
+      return booleano === true
+        ? { texto: 'Semáforo sonoro', icono: 'volume-high' }
+        : null;
     case 'ancho_puerta':
       return numerico !== undefined && numerico >= 80
-        ? `Puerta ${numerico} cm`
+        ? { texto: `Puerta ${numerico} cm`, icono: 'resize' }
         : null;
     default:
       return null;
@@ -57,7 +75,7 @@ export function PoiCardFeed({
   onPress,
   muestraFavorito = true,
 }: Props) {
-  const foto = fotoDePoi(poi.nombre);
+  const foto = fotoDePoi(poi.nombre, poi.categoria);
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poi.id));
   const alternarFavorito = useFavoritosStore((estado) => estado.alternar);
@@ -71,7 +89,7 @@ export function PoiCardFeed({
         valor.valorNumerico,
       ),
     )
-    .filter((etiqueta): etiqueta is string => etiqueta != null)
+    .filter((etiqueta): etiqueta is Etiqueta => etiqueta != null)
     .slice(0, MAX_ETIQUETAS);
 
   const alternarGuardado = () => {
@@ -108,35 +126,27 @@ export function PoiCardFeed({
         pressed ? estilos.presionado : null,
       ]}
     >
-      {foto ? (
+      <View style={estilos.foto}>
         <Image
-          source={foto}
-          style={estilos.foto}
+          source={foto.fuente}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
           accessibilityRole="image"
-          accessibilityLabel={`Foto de ${poi.nombre}`}
+          accessibilityLabel={
+            foto.referencia
+              ? `Foto de referencia de ${poi.categoria}`
+              : `Foto de ${poi.nombre}`
+          }
           accessibilityIgnoresInvertColors
         />
-      ) : (
-        <View
-          style={[estilos.foto, estilos.fotoGenerica]}
-          accessibilityRole="image"
-          accessibilityLabel={`Ilustración de la categoría ${poi.categoria}`}
-        >
-          <Ionicons
-            name={iconoDeCategoria(poi.categoria)}
-            size={30}
-            color={colors.primary}
-          />
-        </View>
-      )}
+      </View>
 
       <View style={estilos.contenido}>
         <Text style={estilos.nombre} numberOfLines={1}>
           {poi.nombre}
         </Text>
         <Text style={estilos.subtitulo} numberOfLines={1}>
-          {poi.categoria} · {poi.ciudad}
+          {poi.categoria} • {poi.ciudad}
         </Text>
 
         {etiquetaDistancia ? (
@@ -149,23 +159,25 @@ export function PoiCardFeed({
         {etiquetas.length > 0 ? (
           <View style={estilos.etiquetas}>
             {etiquetas.map((etiqueta) => (
-              <View key={etiqueta} style={estilos.etiqueta}>
+              <View key={etiqueta.texto} style={estilos.etiqueta}>
                 <Ionicons
-                  name="accessibility"
+                  name={etiqueta.icono}
                   size={12}
                   color={colors.success}
                 />
-                <Text style={estilos.etiquetaTexto}>{etiqueta}</Text>
+                <Text style={estilos.etiquetaTexto}>{etiqueta.texto}</Text>
               </View>
             ))}
           </View>
         ) : null}
 
         <View style={estilos.pie}>
-          <Ionicons name="people" size={16} color={colors.primary} />
+          <Ionicons name="people" size={20} color={colors.primary} />
           <View style={estilos.textosPie}>
             <Text style={estilos.validaciones}>{textoValidaciones}</Text>
-            <Text style={estilos.confiabilidad}>Confiabilidad comunitaria</Text>
+            <Text style={estilos.confiabilidad} numberOfLines={1}>
+              Confiabilidad comunitaria
+            </Text>
           </View>
           <Ionicons
             name="chevron-forward"
@@ -213,31 +225,31 @@ const estilos = StyleSheet.create({
     opacity: 0.9,
   },
   foto: {
-    width: 118,
+    width: 116,
     alignSelf: 'stretch',
-    minHeight: 138,
+    minHeight: 132,
+    margin: spacing.sm,
+    marginRight: 0,
+    borderRadius: radii.md,
+    overflow: 'hidden',
     backgroundColor: colors.surface,
-  },
-  fotoGenerica: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   contenido: {
     flex: 1,
     padding: spacing.sm,
     paddingTop: spacing.md,
-    paddingRight: 40,
+    paddingRight: spacing.sm,
     gap: 2,
   },
   nombre: {
+    paddingRight: 30,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
+    color: colors.navy,
   },
   subtitulo: {
     fontSize: fontSize.xs,
-    color: colors.textSecondary,
+    color: colors.textSlate,
   },
   filaDistancia: {
     flexDirection: 'row',
@@ -262,11 +274,11 @@ const estilos = StyleSheet.create({
     gap: 3,
     backgroundColor: colors.successSoft,
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   etiquetaTexto: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: fontWeight.medium,
     color: colors.success,
   },
@@ -276,6 +288,8 @@ const estilos = StyleSheet.create({
     gap: spacing.sm,
     marginTop: 'auto',
     paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   textosPie: {
     flex: 1,
@@ -288,7 +302,7 @@ const estilos = StyleSheet.create({
   },
   confiabilidad: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: colors.primary,
   },
   chevron: {
     marginRight: -2,

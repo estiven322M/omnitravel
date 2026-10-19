@@ -1,113 +1,130 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createBottomTabNavigator,
+  type BottomTabBarButtonProps,
+} from '@react-navigation/bottom-tabs';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ContributeScreen } from '../screens/ContributeScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MapScreen } from '../screens/MapScreen';
-import { ModeracionScreen } from '../screens/ModeracionScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { SavedScreen } from '../screens/SavedScreen';
-import { useProfileStore } from '../store/profileStore';
+import type { IconName } from '../services/types';
 import { colors, fontSize, fontWeight } from '../utils/theme';
+import { opcionesBarraInferior } from './estiloPestanas';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-/** Consola de moderación como pestaña (evita crear un componente por render). */
-function ReportesTab() {
-  return <ModeracionScreen embebida />;
+function icono(activo: IconName, inactivo: IconName) {
+  return function IconoPestana({
+    color,
+    focused,
+  }: {
+    color: string;
+    focused: boolean;
+  }) {
+    return (
+      <Ionicons name={focused ? activo : inactivo} size={24} color={color} />
+    );
+  };
+}
+
+/** Botón central elevado «+ Contribuir» del mockup U04. */
+function BotonContribuir({
+  onPress,
+  accessibilityState,
+}: BottomTabBarButtonProps) {
+  const activo = accessibilityState?.selected ?? false;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={estilos.contenedorCentral}
+      accessibilityRole="button"
+      accessibilityLabel="Contribuir: crear un reporte"
+      accessibilityState={{ selected: activo }}
+    >
+      <View style={estilos.circulo}>
+        <Ionicons name="add" size={34} color={colors.white} />
+      </View>
+      <Text
+        style={[
+          estilos.etiquetaCentral,
+          activo ? estilos.etiquetaActiva : null,
+        ]}
+      >
+        Contribuir
+      </Text>
+    </Pressable>
+  );
 }
 
 /**
- * Shell de navegación del módulo Viajero/Comunidad.
- *
- * - Viajeros: Inicio · Mapa · Contribuir · Guardados · Perfil (mockups U04+).
- * - Moderadores/administradores: la pestaña de contribuir se reemplaza por
- *   «Reportes», la vista de reportes para revisar/verificar/modificar (M03–M05)
- *   y la app abre directamente en ella tras iniciar sesión.
+ * Pestañas del viajero (mockup U04): Inicio · Mapa · Contribuir · Guardados ·
+ * Perfil. Las cuentas de moderación usan su propio panel (ModeradorTabs).
  */
 export function MainTabs() {
-  const rol = useProfileStore((estado) => estado.perfil?.rol);
-  const esModerador = rol === 'moderador' || rol === 'administrador';
-
   return (
-    <Tab.Navigator
-      initialRouteName={esModerador ? 'Reportes' : 'Inicio'}
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: {
-          fontSize: fontSize.xs - 1,
-          fontWeight: fontWeight.semibold,
-        },
-      }}
-    >
+    <Tab.Navigator screenOptions={opcionesBarraInferior}>
       <Tab.Screen
         name="Inicio"
         component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ tabBarIcon: icono('home', 'home-outline') }}
       />
       <Tab.Screen
         name="Mapa"
         component={MapScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ tabBarIcon: icono('map', 'map-outline') }}
       />
-      {esModerador ? (
-        <Tab.Screen
-          name="Reportes"
-          component={ReportesTab}
-          options={{
-            tabBarLabel: 'Reportes',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-      ) : (
-        <Tab.Screen
-          name="Contribuir"
-          component={ContributeScreen}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="add-circle" size={34} color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tab.Screen
+        name="Contribuir"
+        component={ContributeScreen}
+        options={{ tabBarButton: (props) => <BotonContribuir {...props} /> }}
+      />
       <Tab.Screen
         name="Guardados"
         component={SavedScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ tabBarIcon: icono('heart', 'heart-outline') }}
       />
       <Tab.Screen
         name="Perfil"
         component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ tabBarIcon: icono('person', 'person-outline') }}
       />
     </Tab.Navigator>
   );
 }
+
+const estilos = StyleSheet.create({
+  contenedorCentral: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 6,
+  },
+  circulo: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -28,
+    borderWidth: 4,
+    borderColor: colors.white,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  etiquetaCentral: {
+    fontSize: fontSize.xs - 1,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSlate,
+    marginTop: 2,
+  },
+  etiquetaActiva: {
+    color: colors.primary,
+  },
+});

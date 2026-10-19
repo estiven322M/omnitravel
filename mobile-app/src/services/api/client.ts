@@ -67,9 +67,11 @@ export function registrarManejadorSesionVencida(
   };
 }
 
-/** Las rutas de login/registro responden 401 por credenciales, no por sesión. */
+/** Login y registro responden 401 por credenciales, no por sesión vencida. */
+const RUTAS_SIN_SESION = new Set(['/auth/login', '/auth/register']);
+
 function esRutaDeAutenticacion(path: string): boolean {
-  return path.startsWith('/auth/');
+  return RUTAS_SIN_SESION.has(path.split('?')[0]);
 }
 
 export class ApiError extends Error {

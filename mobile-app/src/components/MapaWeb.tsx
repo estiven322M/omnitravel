@@ -34,6 +34,12 @@ export interface PoiEnMapa {
   barrera?: boolean;
   /** Texto del globo cuando es una barrera (qué se reportó). */
   descripcion?: string;
+  /** Miniatura (data URI) para la tarjeta del mockup U06. */
+  foto?: string;
+  /** Segunda línea de la tarjeta («A 5 min»). */
+  detalle?: string;
+  /** Lugar accesible verificado (sello «♿ Accesible»). */
+  accesible?: boolean;
 }
 
 export interface RutaEnMapa {
@@ -65,6 +71,15 @@ html,body,#mapa{height:100%;margin:0;padding:0;}
 #mapa{background:#E8EEF4;}
 .leaflet-container{font-family:-apple-system,Roboto,'Helvetica Neue',sans-serif;}
 .barrera-icono{font-size:13px;line-height:22px;text-align:center;color:#FFFFFF;font-weight:bold;}
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #FFF;box-shadow:0 2px 5px rgba(16,24,40,.35);display:flex;align-items:center;justify-content:center;}
+.pin span{transform:rotate(45deg);color:#FFF;font-size:14px;font-weight:bold;}
+.leaflet-tooltip.tarjeta{padding:4px;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(16,24,40,.18);}
+.tarjeta .fila{display:flex;gap:6px;align-items:center;}
+.tarjeta img{width:40px;height:40px;border-radius:6px;object-fit:cover;}
+.tarjeta b{display:block;font-size:11px;color:#0B1B3F;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tarjeta small{display:block;font-size:10px;color:#5B6B86;}
+.tarjeta .ok{color:#0E7F43;}
+.tarjeta .alerta{color:#C2410C;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 </head><body><div id="mapa"></div>
@@ -83,6 +98,22 @@ function enviar(json) {
   if (window.ReactNativeWebView) { window.ReactNativeWebView.postMessage(json); }
 }
 enviar(JSON.stringify({ tipo: 'listo' }));
+function escapar(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function tarjeta(p) {
+  var foto = p.foto && p.foto.indexOf('data:image/') === 0 ? '<img src="' + p.foto + '"/>' : '';
+  var lineas = '<b>' + escapar(p.nombre) + '</b>';
+  if (p.barrera) {
+    lineas += '<small class="alerta">Reportada por la comunidad</small>';
+  } else {
+    if (p.detalle) { lineas += '<small>' + escapar(p.detalle) + '</small>'; }
+    lineas += p.accesible ? '<small class="ok">♿ Accesible</small>' : '<small>En validación</small>';
+  }
+  return '<div class="fila">' + foto + '<div>' + lineas + '</div></div>';
+}
 window.renderizar = function(pois, ruta, yo, ajustar) {
   var grupo = L.featureGroup();
   pois.forEach(function(p) {
@@ -96,17 +127,20 @@ window.renderizar = function(pois, ruta, yo, ajustar) {
           iconAnchor: [12, 12]
         })
       });
-      marca.bindTooltip('Barrera: ' + (p.descripcion || p.nombre), { direction: 'top', offset: [0, -12] });
+      marca.bindTooltip(tarjeta({ nombre: p.descripcion || p.nombre, barrera: true }),
+        { direction: 'top', offset: [0, -12], permanent: true, className: 'tarjeta' });
     } else {
-      var color = p.activo ? '#0E7F43' : (p.pendiente ? '#F57B15' : '#0455BE');
-      marca = L.circleMarker([p.latitud, p.longitud], {
-        radius: p.activo ? 12 : 9,
-        color: '#FFFFFF',
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 1
+      var color = p.activo ? '#0455BE' : (p.pendiente ? '#F57B15' : '#0E7F43');
+      marca = L.marker([p.latitud, p.longitud], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div class="pin" style="background:' + color + '"><span>' + (p.pendiente ? '?' : '✓') + '</span></div>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        })
       });
-      marca.bindTooltip(p.nombre, { direction: 'top', offset: [0, -10] });
+      marca.bindTooltip(tarjeta(p),
+        { direction: 'top', offset: [0, -30], permanent: true, className: 'tarjeta' });
     }
     marca.on('click', function() {
       enviar(JSON.stringify({ tipo: 'poi', id: String(p.id) }));

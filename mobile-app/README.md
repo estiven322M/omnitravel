@@ -76,18 +76,25 @@ npx expo start              # escanea el QR con Expo Go
 
 | Pantalla | Estado | Notas |
 | --- | --- | --- |
-| **U01/U02** Inicio de sesión | ✅ | Primero se elige el rol (viajero/admin. de campaña); luego credenciales contra el backend `POST /auth/login` (JWT cifrado con SecureStore). El rol **informativo**: los permisos reales se validan contra `usuario.rol_id`. Recordamos el último correo con "Entrar sin registrarme" |
-| **U03** Registro y Privacidad | ✅ | Cuenta real vía backend `POST /auth/register` (tabla `usuario` en AWS) + perfil de accesibilidad local + aviso Ley 1581 |
-| **U04** Inicio (feed) | ✅ | BrandMark + campana (aviso honesto "sin notificaciones") + avatar con foto, buscador con filtros, chips de categorías reales, tarjetas con foto demo, distancia (haversine), etiquetas verdes del mockup, fila "validaciones / confiabilidad" y corazón de guardados |
-| **U05** Filtros de accesibilidad | ✅ | Bottom sheet generado desde el catálogo (motriz/sensorial); comparte estado con el mapa y el feed; filtro estricto (sin dato ≠ pasa) |
+| **U01** Presentación | ✅ | Logo, «Explora / Descubre / Viaja sin límites», «Comenzar» e ilustración del mockup |
+| **U02** Inicio de sesión | ✅ | Credenciales contra `POST /auth/login` (JWT cifrado con SecureStore). **Huella / Face ID**: tras un ingreso con contraseña se puede activar; las credenciales quedan en el llavero del sistema con `requireAuthentication` (nunca salen del teléfono). El rol sale de la BD: una cuenta de moderación abre su panel. Enlace a M01 |
+| **U03** Registro y Privacidad | ✅ | Cuenta real vía `POST /auth/register` (siempre rol viajero) + perfil de accesibilidad local + aviso Ley 1581, con la cabecera «Volver · ES» del mockup |
+| **U04** Inicio (feed) | ✅ | Logo, campana (abre U11), avatar, buscador con filtros, chips de categorías en plural, **tarjetas con foto** (propia del lugar o de referencia de su categoría), distancia, etiquetas con icono, «validaciones / confiabilidad» y corazón de guardados. Barra inferior con el botón central «+ Contribuir» |
+| **U05** Filtros de accesibilidad | ✅ | Hoja inferior con bandas Físico/Motriz y Sensorial, iconos por filtro, «Limpiar» y «Aplicar filtros»; filtro estricto (sin dato ≠ pasa) |
 | **U06** Mapa y Ruteo | ✅ | Leaflet en WebView con tiles OSM + POIs reales de la BD (fallback demo con aviso) + buscador, chips de categorías, FAB "mi ubicación", **barreras comunitarias** (`GET /reportes/barreras`, marcador naranja) y ruta real contra `POST /routes` con panel "Ruta peatonal" (distancia/duración/advertencias). El mapa mantiene **mínimo la mitad de la pantalla** cuando el panel crece (el contenido se desplaza dentro) |
 | **U07** Navegación paso a paso | ✅ | `maneuvers` de Valhalla + tarjeta de maniobra + **guía por voz con `expo-speech` (es-ES)** activable, stats del avance y "Finalizar ruta"; fallo del motor con mensaje y reintento (RNF-17). «Recalcular ruta» **alterna a un camino distinto** (Valhalla `alternates`) en lugar de repetir el trayecto, con sello "Ruta alternativa" |
-| **U08** Detalle del lugar | ✅ | Ficha dinámica por `tipo_valor` + verificación comunitaria |
+| **U08** Detalle del lugar | ✅ | Galería con foto grande, contador y miniaturas con leyenda; calificación, «Accesibilidad Verificada», fichas de características con check (Ver todas), «Cómo llegar (Ruta Segura)» / «Validar información», experiencias de viajeros y compartir |
 | **U09–U10** Contribuir (reporte) | ✅ | Wizard de **4 pasos = mockup U09/U10**: Tipo (Lugar accesible vs Barrera) → Ubicación (nuevo/actualizar + GPS) → Detalles (descripción 0/500 + **etiquetas rápidas** + foto) → Confirmación. Las etiquetas fijan valores del catálogo y viajan en el mismo `POST /reportes`; pantalla de éxito estilo mockup ("3 confirmaciones") |
 | **S01 / S02** Modales | ✅ | S01 Consenso alcanzado (P1) y S02 barrera crítica en ruta con recálculo (P2) |
-| **M03–M05** Consola de moderación | ✅ | Lista priorizada, detalle con evidencia y decisión con motivo obligatorio; para admin/moderador la pestaña "Reportes" la embebe con chips por estado (pendientes · en revisión · publicados · rechazados · todos) y badges de estado |
+| **M01** Login de moderador | ✅ | «Panel de Moderación» con correo corporativo; solo entran cuentas moderador/administrador (creadas con `npm run crear-admin` en el backend) |
+| **M02** Tablero | ✅ | Pendientes, discrepancias post-viaje y verificados hoy (datos reales de `GET /moderacion/resumen`), alertas críticas y actividad reciente |
+| **M03** Pendientes de revisión | ✅ | Filtros Motriz/Sensorial/Cognitiva/Otra, orden por fecha y «Revisar evidencia» |
+| **M04 / M05** Revisión y rechazo | ✅ | Evidencia, mapa y coordenadas, comentario del colaborador, checklist de auditoría visual; rechazo con motivo obligatorio (4 motivos del mockup + detalle) y S01 al aprobar |
+| **M06** Incidencias post-viaje | ✅ | Gravedad Alta/Media/Baja; «Desactivar punto del mapa» y «Solicitar nueva evidencia» contra el backend (auditado) |
+| **M07** Perfil del moderador | ✅ | Tasa de resolución, reportes del mes y tiempo promedio reales; cambiar contraseña y cerrar sesión |
+| **U11** Notificaciones | ✅ | Estado de tus reportes, alertas de barreras y bienvenida (Hoy / Anteriores); para moderación, lo pendiente |
 | **Guardados** (favorito) | ✅ | Sincronizado con la tabla `favorito` vía backend (`GET/PUT/DELETE /favoritos`, solo el dueño): corazón en U08 y en el feed con rollback optimista + lista con tarjetas del feed (el corazón lleno quita) |
-| **U12** Perfil | ✅ | Avatar con foto **local por cuenta** (picker + archivo `perfil-foto-<idCuenta>.jpg`; nunca al servidor — Ley 1581; al entrar con otro usuario no se hereda la foto anterior), nivel comunitario calculado de datos reales (puntos = publicados×100 + en validación×40 + confirmaciones×10), stats, "Mis reportes" (`GET /reportes/mios`) con ver-en-mapa, ajustes de privacidad y cerrar sesión; admins ven además su consola |
+| **U12** Perfil | ✅ | Avatar con foto **local por cuenta** (picker + archivo `perfil-foto-<idCuenta>.jpg`; nunca al servidor — Ley 1581; al entrar con otro usuario no se hereda la foto anterior), nivel comunitario calculado de datos reales (puntos = publicados×100 + en validación×40 + confirmaciones×10), stats, "Mis reportes" (`GET /reportes/mios`) con ver-en-mapa, ajustes de privacidad y cerrar sesión |
 
 ## Decisiones clave
 
@@ -118,9 +125,11 @@ npx expo start              # escanea el QR con Expo Go
 - **Mapa ≥ media pantalla (U06/U07):** `minHeight: '50%'` sobre el contenedor
   del mapa y las hojas inferiores con `flexShrink: 1` + ScrollView interno:
   el panel puede crecer pero ya no aplasta el lienzo del mapa.
-- **Login por roles con honestidad de permisos:** la pantalla pide primero el
-  rol (mockup U01), pero la elección solo orienta la UI; los permisos reales
-  (pestaña "Reportes", consola) salen de `usuario.rol_id` de la BD.
+- **Dos entradas, un solo origen de permisos:** viajeros por U02 y moderación
+  por M01, como en los mockups. El rol siempre sale de `usuario.rol_id`: una
+  cuenta de moderación abre su panel (pestañas Inicio · Reportes · Mapa ·
+  Estadísticas · Perfil) aunque entre por U02, y una cuenta de viajero no pasa
+  de M01. Nadie puede registrarse como moderador desde la app.
 - **Sesión persistente:** el perfil local y el JWT quedan cifrados en el
   dispositivo, así que la app abre directo en Inicio (U04) sin pasar por login.
 - **Gamificación de datos reales:** puntos y niveles se calculan de los
@@ -128,11 +137,15 @@ npx expo start              # escanea el QR con Expo Go
   inventados.
 - **Guía por voz con `expo-speech`** (voz es-ES, preconfigurada en el
   perfil): lee cada maniobra en U07 mientras la tarjeta y el mapa avanzan.
-- **Fotos demo del feed U04** recortadas de los mockups oficiales
-  (`assets/photos/*.jpg`) y mapeadas por nombre normalizado (sin acentos,
-  `services/mocks/fotosPoi.ts`): la BD **no almacena fotos de POI** (solo
-  evidencias de reportes), así que los lugares sin foto muestran un bloque
-  con el ícono de su categoría. Deviation documentada, no fake data.
+- **Fotos de los lugares** recortadas de los mockups oficiales
+  (`assets/photos/*.jpg`, `services/mocks/fotosPoi.ts`): la BD **no almacena
+  fotos de POI** (solo evidencias de reportes). Un lugar con el mismo nombre
+  que uno del mockup usa su foto; los demás usan una **foto de referencia de
+  su categoría** (restaurante, hotel, museo, parque, atracción), sin letreros
+  con nombres y marcada como «Foto de referencia» en el detalle. El mapa usa
+  miniaturas embebidas (`miniaturasPoi.ts`, generadas de esas fotos) porque el
+  WebView no lee los assets de la app en todas las plataformas. Cuando la BD
+  tenga fotos por POI, `fotosDePoi` debe devolverlas primero.
 - **Mocks tipados con la forma de los contratos reales** (POI, GeoJSON del
   `MapController`, catálogo de características) para conectar endpoints sin
   refactor.

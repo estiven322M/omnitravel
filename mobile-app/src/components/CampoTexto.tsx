@@ -28,6 +28,15 @@ interface CampoTextoProps {
   accesorio?: ReactNode;
   /** Área de texto de varias líneas (descripciones de reportes, motivos). */
   multilinea?: boolean;
+  /**
+   * Los mockups U02/U03/M01 muestran solo el placeholder: la etiqueta se oculta
+   * visualmente pero sigue siendo el nombre accesible del campo.
+   */
+  ocultarEtiqueta?: boolean;
+  /** Campo alto (56 px) de las pantallas de cuenta. */
+  grande?: boolean;
+  /** Límite de caracteres (se muestra el contador «0/500»). */
+  maximo?: number;
 }
 
 /**
@@ -49,14 +58,20 @@ export function CampoTexto({
   autoComplete,
   accesorio,
   multilinea = false,
+  ocultarEtiqueta = false,
+  grande = false,
+  maximo,
 }: CampoTextoProps) {
   return (
     <View>
-      <Text style={estilos.etiqueta}>{etiqueta}</Text>
+      {ocultarEtiqueta ? null : (
+        <Text style={estilos.etiqueta}>{etiqueta}</Text>
+      )}
       <View
         style={[
           estilos.contenedor,
           multilinea ? estilos.contenedorMultilinea : null,
+          grande ? estilos.contenedorGrande : null,
           error ? estilos.contenedorError : null,
         ]}
       >
@@ -80,6 +95,7 @@ export function CampoTexto({
           multiline={multilinea}
           numberOfLines={multilinea ? 3 : undefined}
           textAlignVertical={multilinea ? 'top' : 'center'}
+          maxLength={maximo}
         />
         {accesorio}
       </View>
@@ -89,6 +105,11 @@ export function CampoTexto({
         </Text>
       ) : ayuda ? (
         <Text style={estilos.textoAyuda}>{ayuda}</Text>
+      ) : null}
+      {maximo ? (
+        <Text style={estilos.contador} accessibilityElementsHidden>
+          {value.length}/{maximo}
+        </Text>
       ) : null}
     </View>
   );
@@ -111,6 +132,16 @@ const estilos = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.white,
+  },
+  contenedorGrande: {
+    minHeight: 56,
+    borderRadius: radii.sm,
+  },
+  contador: {
+    alignSelf: 'flex-end',
+    fontSize: fontSize.xs,
+    color: colors.textSlate,
+    marginTop: 2,
   },
   contenedorError: {
     borderColor: colors.danger,

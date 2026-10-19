@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
   Alert,
@@ -18,154 +18,106 @@ import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
 import { CampoTexto } from '../components/CampoTexto';
 import type { RootStackParamList } from '../navigation/types';
-import { iniciarSesionCuenta, rolDeUsuarioId } from '../services/api/auth';
-import { uriFotoDePerfilGuardada } from '../services/fotoPerfil';
+import {
+  activarBiometria,
+  biometriaActivada,
+  biometriaDisponible,
+  leerCredencialesBiometricas,
+} from '../services/biometria';
+import { iniciarSesionCompleta } from '../services/inicioSesion';
 import { useProfileStore } from '../store/profileStore';
-import { colors, fontSize, fontWeight, radii, spacing } from '../utils/theme';
-
-/** Rol elegido ANTES de autenticar en esta pantalla (U01). */
-type RolElegido = 'viajero' | 'administrador';
+import {
+  colors,
+  fontSize,
+  fontWeight,
+  radii,
+  spacing,
+  TOUCH_TARGET,
+} from '../utils/theme';
 
 interface Errores {
   email?: string;
   contrasena?: string;
 }
 
-/** Nombre amable derivado del correo cuando la fila `usuario` aún no se lee. */
-function nombreDesdeEmail(email: string): string {
-  const usuario = email.split('@')[0]?.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]+/g, ' ');
-  const limpio = usuario?.trim();
-  if (!limpio) {
-    return 'Viajero OmniTravel';
+function anunciar(mensaje: string) {
+  if (Platform.OS === 'ios') {
+    AccessibilityInfo.announceForAccessibility(mensaje);
   }
-  return limpio
-    .split(' ')
-    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
-    .join(' ');
 }
 
-const OPCIONES_ROL: {
-  rol: RolElegido;
-  titulo: string;
-  descripcion: string;
-  icono: keyof typeof Ionicons.glyphMap;
-}[] = [
-  {
-    rol: 'viajero',
-    titulo: 'Viajero / Comunidad',
-    descripcion:
-      'Explora lugares accesibles, guarda favoritos y reporta barreras con la comunidad.',
-    icono: 'accessibility-outline',
-  },
-  {
-    rol: 'administrador',
-    titulo: 'Administrador / Moderación',
-    descripcion:
-      'Revisa, verifica o rechaza los reportes de accesibilidad de la comunidad.',
-    icono: 'shield-checkmark-outline',
-  },
-];
-
 /**
- * U01/U02 — Inicio de sesión con selección previa de rol.
+ * U02 — Inicio de sesión (mockup oficial).
  *
- * Paso 1: la persona elige cómo quiere entrar (viajero/comunidad o
- * administración). Paso 2: credenciales contra el backend (`POST /auth/login`, JWT).
- *
- * El rol EFECTIVO siempre se valida contra la fila `usuario` de la BD
- * (`rol_id`): elegir «Administrador» sin permisos no otorga nada, solo
- * informa con transparencia (mínimo privilegio, RNF-09). La cuenta se guarda
- * cifrada en el dispositivo para entrar la próxima vez sin registrarse.
+ * Credenciales contra el backend (`POST /auth/login`, JWT). El rol sale de la
+ * BD: una cuenta de moderación abre su panel aunque entre por aquí. Huella y
+ * Face ID usan credenciales guardadas en el llavero con autenticación
+ * biométrica del sistema (se activan tras el primer ingreso con contraseña).
  */
 export function LoginScreen() {
-  const guardarPerfil = useProfileStore((estado) => estado.guardarPerfil);
-  const establecerFoto = useProfileStore((estado) => estado.establecerFoto);
-  const recordarEmail = useProfileStore((estado) => estado.recordarEmail);
-  const ultimoEmail = useProfileStore((estado) => estado.ultimoEmail);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const ultimoEmail = useProfileStore((estado) => estado.ultimoEmail);
 
-  const [rolElegido, setRolElegido] = useState<RolElegido | null>(null);
-  const [ingresando, setIngresando] = useState(false);
   const [email, setEmail] = useState(ultimoEmail ?? '');
   const [contrasena, setContrasena] = useState('');
   const [verContrasena, setVerContrasena] = useState(false);
   const [errores, setErrores] = useState<Errores>({});
+  const [ingresando, setIngresando] = useState(false);
+  const [biometriaLista, setBiometriaLista] = useState(false);
 
-  const anunciar = (mensaje: string) => {
-    if (Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(mensaje);
-    }
-  };
+  useEffect(() => {
+    let vigente = true;
+    void biometriaActivada().then((activa) => {
+      if (vigente) {
+        setBiometriaLista(activa);
+      }
+    });
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
-  const enviar = async () => {
-    const nuevosErrores: Errores = {};
-    if (!email.trim()) {
-      nuevosErrores.email = 'Ingresa tu correo electrónico.';
-    }
-    if (!contrasena) {
-      nuevosErrores.contrasena = 'Ingresa tu contraseña.';
-    }
-
-    setErrores(nuevosErrores);
-
-    if (Object.keys(nuevosErrores).length > 0) {
-      anunciar('Hay errores en el formulario. Revisa los campos marcados.');
+  /** Ofrece activar la huella después de un ingreso con contraseña. */
+  const ofrecerBiometria = (correo: string, clave: string) => {
+    if (biometriaLista || !biometriaDisponible()) {
       return;
     }
+    Alert.alert(
+      'Ingreso con huella o rostro',
+      '¿Quieres entrar la próxima vez con tu huella o Face ID? Tus datos quedan cifrados solo en este teléfono.',
+      [
+        { text: 'Ahora no', style: 'cancel' },
+        {
+          text: 'Activar',
+          onPress: () => {
+            void activarBiometria({ email: correo, contrasena: clave }).catch(
+              () =>
+                Alert.alert(
+                  'No se pudo activar',
+                  'Revisa que tu teléfono tenga una huella o un rostro registrado.',
+                ),
+            );
+          },
+        },
+      ],
+    );
+  };
 
+  const entrar = async (
+    correo: string,
+    clave: string,
+    conBiometria: boolean,
+  ) => {
     setIngresando(true);
     try {
-      const resultado = await iniciarSesionCuenta(email.trim(), contrasena);
-
-      // Rol efectivo: la BD manda; la elección solo orienta la experiencia.
-      const rolEfectivo = rolDeUsuarioId(resultado.perfil?.rol_id);
-      const esModerador =
-        rolEfectivo === 'moderador' || rolEfectivo === 'administrador';
-
-      // Id de la cuenta (dueña de preferencias y foto local): la fila `usuario`.
-      const idCuenta =
-        resultado.perfil?.id_usuario != null
-          ? String(resultado.perfil.id_usuario)
-          : undefined;
-
-      // El perfil de accesibilidad sigue siendo 100 % local (Ley 1581).
-      guardarPerfil({
-        nombre:
-          resultado.perfil?.email?.split('@')[0] ?? nombreDesdeEmail(email),
-        necesidades: [],
-        filtrosActivos: [],
-        rol: rolEfectivo,
-        idCuenta,
-      });
-
-      // La foto volvió a la sesión: cada cuenta tiene SU archivo en el
-      // dispositivo y aquí se recupera (nunca se comparte entre cuentas).
-      if (idCuenta) {
-        const uriGuardada = uriFotoDePerfilGuardada(idCuenta);
-        if (uriGuardada) {
-          establecerFoto(uriGuardada);
-        }
-      }
-
-      // "Entrar la próxima vez sin registrarse": correo recordado y JWT
-      // persistido cifrado en el dispositivo (expo-secure-store).
-      recordarEmail(email.trim());
-
+      const { aviso } = await iniciarSesionCompleta(correo, clave);
       anunciar('Sesión iniciada. Bienvenido de nuevo.');
-
-      if (rolElegido === 'administrador' && !esModerador) {
-        const mensaje =
-          'Tu cuenta no tiene permisos de moderación en la base de datos: ' +
-          'entrarás con tu rol real.';
-        Alert.alert('Rol verificado en la BD', mensaje);
-      } else if (rolElegido === 'viajero' && esModerador) {
-        Alert.alert(
-          'Cuenta con permisos de moderación',
-          'Entraste como viajero, pero tu cuenta puede abrir la consola de reportes desde el Perfil.',
-        );
-      } else if (resultado.aviso) {
-        Alert.alert('Sesión iniciada', resultado.aviso);
+      if (aviso) {
+        Alert.alert('Sesión iniciada', aviso);
+      }
+      if (!conBiometria) {
+        ofrecerBiometria(correo.trim(), clave);
       }
     } catch (error) {
       Alert.alert(
@@ -174,6 +126,38 @@ export function LoginScreen() {
       );
     } finally {
       setIngresando(false);
+    }
+  };
+
+  const enviar = () => {
+    const nuevosErrores: Errores = {};
+    if (!email.trim()) {
+      nuevosErrores.email = 'Ingresa tu correo electrónico.';
+    }
+    if (!contrasena) {
+      nuevosErrores.contrasena = 'Ingresa tu contraseña.';
+    }
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) {
+      anunciar('Hay errores en el formulario. Revisa los campos marcados.');
+      return;
+    }
+    void entrar(email, contrasena, false);
+  };
+
+  const entrarConBiometria = async () => {
+    if (!biometriaLista) {
+      Alert.alert(
+        'Ingreso biométrico',
+        biometriaDisponible()
+          ? 'Inicia sesión una vez con tu contraseña y activa el ingreso con huella o Face ID.'
+          : 'Este teléfono no tiene huella ni rostro registrados. Configúralos en los ajustes del sistema.',
+      );
+      return;
+    }
+    const credenciales = await leerCredencialesBiometricas();
+    if (credenciales) {
+      void entrar(credenciales.email, credenciales.contrasena, true);
     }
   };
 
@@ -189,91 +173,6 @@ export function LoginScreen() {
     );
   };
 
-  // ---------------------------------------------------------------------------
-  // Paso 1 — ¿Cómo quieres entrar? (selección de rol)
-  // ---------------------------------------------------------------------------
-  if (!rolElegido) {
-    return (
-      <SafeAreaView style={estilos.pantalla} edges={['top', 'bottom']}>
-        <ScrollView contentContainerStyle={estilos.contenido}>
-          <View style={estilos.encabezado}>
-            <BrandMark tamano={64} variante="completo" />
-            <Text style={estilos.titulo} accessibilityRole="header">
-              ¿Cómo quieres entrar?
-            </Text>
-            <Text style={estilos.subtitulo}>
-              Elige tu rol para personalizar la experiencia
-            </Text>
-          </View>
-
-          <View style={estilos.opciones}>
-            {OPCIONES_ROL.map((opcion) => (
-              <Pressable
-                key={opcion.rol}
-                onPress={() => setRolElegido(opcion.rol)}
-                accessibilityRole="button"
-                accessibilityLabel={opcion.titulo}
-                accessibilityHint={opcion.descripcion}
-                style={({ pressed }) => [
-                  estilos.opcionRol,
-                  pressed ? estilos.presionado : null,
-                ]}
-              >
-                <View style={estilos.iconoRol}>
-                  <Ionicons
-                    name={opcion.icono}
-                    size={26}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={estilos.textosRol}>
-                  <Text style={estilos.tituloRol}>{opcion.titulo}</Text>
-                  <Text style={estilos.descripcionRol}>
-                    {opcion.descripcion}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.textMuted}
-                />
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={estilos.notaPrivacidad}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={16}
-              color={colors.success}
-            />
-            <Text style={estilos.textoNota}>
-              Tus datos de accesibilidad se guardan cifrados solo en este
-              teléfono (Ley 1581).
-            </Text>
-          </View>
-
-          <View style={estilos.pie}>
-            <Text style={estilos.pieTexto}>¿Aún no tienes una cuenta?</Text>
-            <Pressable
-              onPress={() => navigation.navigate('Registro')}
-              accessibilityRole="button"
-              accessibilityLabel="Crear una cuenta"
-              style={estilos.botonCrear}
-            >
-              <Text style={estilos.pieEnlace}>Crear una cuenta</Text>
-            </Pressable>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Paso 2 — Credenciales del rol elegido
-  // ---------------------------------------------------------------------------
-  const esRolAdmin = rolElegido === 'administrador';
-
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -284,58 +183,68 @@ export function LoginScreen() {
           contentContainerStyle={estilos.contenido}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable
-            onPress={() => {
-              setRolElegido(null);
-              setErrores({});
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Cambiar rol"
-            accessibilityHint="Regresa a la pantalla para elegir tu rol"
-            style={estilos.botonVolver}
-          >
-            <Ionicons name="chevron-back" size={18} color={colors.primary} />
-            <Text style={estilos.textoVolver}>Cambiar rol</Text>
-          </Pressable>
+          <View style={estilos.barra}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={estilos.volver}
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+              disabled={!navigation.canGoBack()}
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.primary} />
+              <Text style={estilos.volverTexto}>Volver</Text>
+            </Pressable>
+            <View
+              style={estilos.idioma}
+              accessible
+              accessibilityLabel="Idioma: español"
+            >
+              <Text style={estilos.idiomaTexto}>ES</Text>
+              <Ionicons name="chevron-down" size={14} color={colors.primary} />
+            </View>
+          </View>
 
-          <BrandMark tamano={56} variante="completo" />
+          <View style={estilos.marca}>
+            <BrandMark variante="pin" tamano={92} />
+            <Text style={estilos.wordmark} accessibilityLabel="OmniTravel">
+              <Text style={estilos.omni}>Omni</Text>
+              <Text style={estilos.travel}>Travel</Text>
+            </Text>
+            <Text style={estilos.lema}>Tu mundo, sin barreras</Text>
+          </View>
 
           <View style={estilos.encabezado}>
-            <View style={estilos.chipRol}>
-              <Ionicons
-                name={esRolAdmin ? 'shield-checkmark' : 'accessibility'}
-                size={14}
-                color={colors.primary}
-              />
-              <Text style={estilos.textoChipRol}>
-                {esRolAdmin ? 'Acceso de moderación' : 'Acceso de viajero'}
-              </Text>
-            </View>
-            <Text style={estilos.titulo}>Inicia sesión</Text>
+            <Text style={estilos.titulo} accessibilityRole="header">
+              Inicia sesión
+            </Text>
             <Text style={estilos.subtitulo}>Continúa tu próxima aventura</Text>
           </View>
 
           <View style={estilos.campos}>
             <CampoTexto
               etiqueta="Email"
+              ocultarEtiqueta
               icono="mail-outline"
-              placeholder="tucorreo@ejemplo.com"
+              placeholder="Email"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
               error={errores.email}
+              grande
             />
             <CampoTexto
               etiqueta="Contraseña"
+              ocultarEtiqueta
               icono="lock-closed-outline"
-              placeholder="Tu contraseña"
+              placeholder="Contraseña"
               value={contrasena}
               onChangeText={setContrasena}
               secureTextEntry={!verContrasena}
-              autoComplete="password"
+              autoComplete="current-password"
               error={errores.contrasena}
+              grande
               accesorio={
                 <Pressable
                   onPress={() => setVerContrasena((visible) => !visible)}
@@ -347,8 +256,8 @@ export function LoginScreen() {
                 >
                   <Ionicons
                     name={verContrasena ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={colors.textSecondary}
+                    size={22}
+                    color={colors.textSlate}
                   />
                 </Pressable>
               }
@@ -358,45 +267,74 @@ export function LoginScreen() {
           <Pressable
             onPress={recuperarContrasena}
             accessibilityRole="button"
-            accessibilityLabel="¿Olvidaste tu contraseña?"
-            style={estilos.enlaceOlvido}
+            style={estilos.olvido}
           >
-            <Text style={estilos.textoOlvido}>¿Olvidaste tu contraseña?</Text>
+            <Text style={estilos.enlace}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
 
           <AppButton
             titulo="Iniciar sesión"
-            icono="arrow-forward-outline"
+            iconoFinal="arrow-forward"
             onPress={enviar}
             cargando={ingresando}
-            pistaAccesibilidad={
-              esRolAdmin
-                ? 'Entra a la consola de reportes de la comunidad'
-                : 'Abre el mapa de lugares accesibles con tu cuenta'
-            }
+            pistaAccesibilidad="Abre OmniTravel con tu cuenta"
           />
 
-          {ultimoEmail ? (
-            <Text style={estilos.notaCuenta}>
-              Cuenta recordada en este dispositivo: {ultimoEmail}
-            </Text>
-          ) : null}
-
-          <View style={estilos.separador}>
+          <View style={estilos.separador} accessibilityElementsHidden>
             <View style={estilos.linea} />
-            <View style={estilos.punto} />
+            <Text style={estilos.separadorTexto}>o</Text>
             <View style={estilos.linea} />
           </View>
 
+          <View style={estilos.biometria}>
+            <Pressable
+              onPress={() => void entrarConBiometria()}
+              style={estilos.botonBiometria}
+              accessibilityRole="button"
+              accessibilityLabel="Usar huella"
+              accessibilityHint="Entra con la huella registrada en este teléfono"
+            >
+              <Ionicons name="finger-print" size={44} color={colors.primary} />
+              <Text style={estilos.textoBiometria}>Usar huella</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => void entrarConBiometria()}
+              style={estilos.botonBiometria}
+              accessibilityRole="button"
+              accessibilityLabel="Usar Face ID"
+              accessibilityHint="Entra con el reconocimiento facial de este teléfono"
+            >
+              <Ionicons name="scan-outline" size={44} color={colors.primary} />
+              <Text style={estilos.textoBiometria}>Usar Face ID</Text>
+            </Pressable>
+          </View>
+
           <View style={estilos.pie}>
+            <View style={estilos.lineaPie} />
             <Text style={estilos.pieTexto}>¿No tienes una cuenta?</Text>
             <Pressable
               onPress={() => navigation.navigate('Registro')}
+              style={estilos.botonCrear}
               accessibilityRole="button"
               accessibilityLabel="Crear una cuenta"
-              style={estilos.botonCrear}
             >
-              <Text style={estilos.pieEnlace}>Crear una cuenta</Text>
+              <Text style={estilos.textoCrear}>Crear una cuenta</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('LoginModerador')}
+              accessibilityRole="button"
+              accessibilityLabel="¿Eres moderador? Panel de Moderación"
+              accessibilityHint="Abre el inicio de sesión de moderación"
+              style={estilos.accesoModeracion}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={16}
+                color={colors.textSlate}
+              />
+              <Text style={estilos.textoModeracion}>
+                ¿Eres moderador? Panel de Moderación
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -411,162 +349,156 @@ const estilos = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contenido: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
     gap: spacing.lg,
+  },
+  barra: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  volver: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: TOUCH_TARGET,
+  },
+  volverTexto: {
+    fontSize: fontSize.md,
+    color: colors.primary,
+    fontWeight: fontWeight.medium,
+  },
+  idioma: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  idiomaTexto: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
+  },
+  marca: {
+    alignItems: 'center',
+  },
+  wordmark: {
+    fontSize: 38,
+    marginTop: spacing.xs,
+  },
+  omni: {
+    fontWeight: fontWeight.bold,
+    color: '#0B4DB0',
+  },
+  travel: {
+    color: '#0B4DB0',
+  },
+  lema: {
+    fontSize: fontSize.md,
+    color: colors.textSlate,
   },
   encabezado: {
     alignItems: 'center',
     gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   titulo: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.xxl + 2,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-    textAlign: 'center',
+    color: colors.navy,
   },
   subtitulo: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  opciones: {
-    gap: spacing.md,
-  },
-  opcionRol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.white,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-  },
-  presionado: {
-    opacity: 0.9,
-  },
-  iconoRol: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textosRol: {
-    flex: 1,
-    gap: 2,
-  },
-  tituloRol: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  descripcionRol: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: 17,
-  },
-  notaPrivacidad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.successSoft,
-    borderRadius: radii.md,
-    padding: spacing.md,
-  },
-  textoNota: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textPrimary,
-    lineHeight: 17,
-  },
-  botonVolver: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: 32,
-    alignSelf: 'flex-start',
-  },
-  textoVolver: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  chipRol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  textoChipRol: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
+    color: colors.textSlate,
   },
   campos: {
     gap: spacing.md,
   },
-  enlaceOlvido: {
+  olvido: {
     alignSelf: 'flex-end',
+    marginTop: -spacing.sm,
     minHeight: 32,
     justifyContent: 'center',
   },
-  textoOlvido: {
+  enlace: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
     color: colors.primary,
-  },
-  notaCuenta: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    fontWeight: fontWeight.medium,
   },
   separador: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   linea: {
     flex: 1,
     height: 1,
     backgroundColor: colors.border,
   },
-  punto: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.textMuted,
+  separadorTexto: {
+    color: colors.textSlate,
+    fontSize: fontSize.sm,
+  },
+  biometria: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  botonBiometria: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+  },
+  textoBiometria: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.navy,
   },
   pie: {
     alignItems: 'center',
     gap: spacing.sm,
   },
+  lineaPie: {
+    alignSelf: 'stretch',
+    height: 1,
+    backgroundColor: colors.border,
+    marginBottom: spacing.sm,
+  },
   pieTexto: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    color: colors.textSlate,
   },
   botonCrear: {
-    minHeight: 44,
+    minHeight: TOUCH_TARGET,
+    paddingHorizontal: spacing.xxl + spacing.md,
     borderWidth: 1.5,
     borderColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.xl,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pieEnlace: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
+  textoCrear: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
     color: colors.primary,
   },
+  accesoModeracion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: TOUCH_TARGET,
+  },
+  textoModeracion: {
+    fontSize: fontSize.sm,
+    color: colors.textSlate,
+    textDecorationLine: 'underline',
+  },
   botonOjo: {
-    width: 44,
-    height: 44,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: -spacing.sm,

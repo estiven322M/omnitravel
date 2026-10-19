@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import request from 'supertest';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { LIMITE_AUTH } from './limite-intentos.guard';
 
 describe('AuthController — límite de intentos', () => {
@@ -19,7 +20,11 @@ describe('AuthController — límite de intentos', () => {
       imports: [ThrottlerModule.forRoot([LIMITE_AUTH])],
       controllers: [AuthController],
       providers: [{ provide: AuthService, useValue: authService }],
-    }).compile();
+    })
+      // El cambio de contraseña usa JwtAuthGuard; aquí solo importa el límite.
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
     app = modulo.createNestApplication();
     await app.init();
   });

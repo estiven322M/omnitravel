@@ -252,7 +252,7 @@ export function NavegacionScreen() {
             />
           </Pressable>
           <View style={estilos.marca}>
-            <BrandMark tamano={24} variante="lockup" />
+            <BrandMark tamano={38} variante="completo" />
           </View>
           <Pressable
             onPress={alternarGuiaVoz}

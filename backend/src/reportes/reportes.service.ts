@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { errorDominio } from '../common/errores';
+import { exigirModerador } from '../common/exigir-moderador';
 
 /**
  * Proceso 1 — validación colaborativa. Traslada al backend las funciones
@@ -385,20 +386,8 @@ export class ReportesService {
     );
   }
 
-  /** RNF-09: el rol se consulta en la BD, no se confía en el token ni en el cliente. */
-  private async exigirModerador(usuarioId: string) {
-    const filas = await this.db.query(
-      `select 1 from usuario u join rol r on r.id_rol = u.rol_id
-        where u.id_usuario = $1 and u.estado_cuenta = 'activo'
-          and r.nombre_rol in ('moderador', 'administrador')`,
-      [usuarioId],
-    );
-    if (filas.length === 0) {
-      throw errorDominio(
-        HttpStatus.FORBIDDEN,
-        'ACCESO_DENEGADO',
-        'Solo moderación puede hacer esto.',
-      );
-    }
+  private exigirModerador(usuarioId: string) {
+    return exigirModerador(this.db, usuarioId);
   }
+
 }

@@ -123,3 +123,21 @@ export async function iniciarSesionCuenta(
 export async function cerrarSesionCuenta(): Promise<void> {
   await SecureStore.deleteItemAsync(CLAVE_TOKEN).catch(() => undefined);
 }
+
+/** M07 «Cambiar contraseña»: exige la actual; el backend aplica la política. */
+export async function cambiarContrasena(
+  actual: string,
+  nueva: string,
+): Promise<void> {
+  try {
+    await apiFetch('/auth/cambiar-contrasena', {
+      method: 'POST',
+      body: JSON.stringify({ actual, nueva }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw new ApiError(mensajeLegible(error.message), error.status);
+    }
+    throw error;
+  }
+}

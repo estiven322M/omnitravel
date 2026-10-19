@@ -23,6 +23,7 @@ import { Badge } from '../components/Badge';
 import { BrandMark } from '../components/BrandMark';
 import { FilterSheet } from '../components/FilterSheet';
 import { MapaWeb, type PoiEnMapa } from '../components/MapaWeb';
+import { miniaturaDePoi } from '../services/mocks/fotosPoi';
 import { PoiCard } from '../components/PoiCard';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { calcularRutaAccesible } from '../services/api/routes';
@@ -35,7 +36,9 @@ import type {
 } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
+import { etiquetaDeCategoria } from '../utils/categorias';
 import { aplicarFiltros } from '../utils/filters';
+import { distanciaKm } from '../utils/geo';
 import { formatearDistancia } from '../utils/format';
 import { datosDesactualizados, restriccionesDesdePerfil } from '../utils/ruta';
 import {
@@ -227,10 +230,26 @@ export function MapScreen() {
           ? (barreras.find((barrera) => barrera.poiId === poi.id)
               ?.descripcion ?? 'Reportada por la comunidad')
           : undefined,
+        foto: miniaturaDePoi(poi.nombre, poi.categoria),
+        // Caminata a ~4,8 km/h (80 m/min) desde tu ubicación (U06).
+        detalle: ubicacionUsuario
+          ? `A ${Math.max(
+              1,
+              Math.round(
+                (distanciaKm(ubicacionUsuario, {
+                  latitude: poi.latitud,
+                  longitude: poi.longitud,
+                }) *
+                  1000) /
+                  80,
+              ),
+            )} min`
+          : poi.categoria,
+        accesible: poi.estadoVerificacion === 'VERIFICADO',
       });
     }
     return lista;
-  }, [poisVisibles, barreras, seleccionado?.id]);
+  }, [poisVisibles, barreras, seleccionado?.id, ubicacionUsuario]);
 
   /** Resultados de la búsqueda en TODO el catálogo (nombre/categoría/dirección). */
   const termino = busqueda.trim().toLowerCase();
@@ -473,7 +492,7 @@ export function MapScreen() {
       <View style={[estilos.barraSuperior, { top: insets.top + spacing.sm }]}>
         <View style={estilos.filaEncabezado}>
           <View style={estilos.marca}>
-            <BrandMark tamano={26} variante="lockup" />
+            <BrandMark tamano={40} variante="completo" />
           </View>
           <View style={estilos.accionesEncabezado}>
             <Pressable
@@ -526,7 +545,11 @@ export function MapScreen() {
                   key={categoria}
                   onPress={() => setCategoriaActiva(categoria)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Categoría ${categoria}`}
+                  accessibilityLabel={`Categoría ${
+                    categoria === 'Todos'
+                      ? categoria
+                      : etiquetaDeCategoria(categoria)
+                  }`}
                   accessibilityState={{ selected: activa }}
                   style={[
                     estilos.chip,
@@ -539,7 +562,9 @@ export function MapScreen() {
                       activa ? estilos.chipTextoActivo : null,
                     ]}
                   >
-                    {categoria}
+                    {categoria === 'Todos'
+                      ? categoria
+                      : etiquetaDeCategoria(categoria)}
                   </Text>
                 </Pressable>
               );

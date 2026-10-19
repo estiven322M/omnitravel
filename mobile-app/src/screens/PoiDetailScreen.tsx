@@ -7,9 +7,11 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   AccessibilityInfo,
+  Image,
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -18,12 +20,13 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccessibilityValueRow } from '../components/AccessibilityValueRow';
 import { AppButton } from '../components/AppButton';
-import { Badge } from '../components/Badge';
+import { BrandMark } from '../components/BrandMark';
 import { Card } from '../components/Card';
 import { ConsensoAlcanzado } from '../components/ConsensoAlcanzado';
 import { EmptyState } from '../components/EmptyState';
 import type { RootStackParamList } from '../navigation/types';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
+import { fotosDePoi, type FotoPoi } from '../services/mocks/fotosPoi';
 import {
   confirmarReporte,
   obtenerReporteDePoi,
@@ -32,6 +35,8 @@ import {
 import type { ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { usePoisStore } from '../store/poisStore';
+import { useProfileStore } from '../store/profileStore';
+import { esRolModeracion } from '../services/inicioSesion';
 import { formatearFechaCorta } from '../utils/format';
 import {
   colors,
@@ -53,8 +58,8 @@ function Estrellas({ calificacion }: { calificacion: number }) {
         <Ionicons
           key={indice}
           name={indice <= Math.round(calificacion) ? 'star' : 'star-outline'}
-          size={14}
-          color={colors.warning}
+          size={13}
+          color="#F5B301"
         />
       ))}
     </View>
@@ -74,6 +79,7 @@ export function PoiDetailScreen() {
   const poisCargados = usePoisStore((estado) => estado.cargado);
   const cargarPois = usePoisStore((estado) => estado.cargar);
   const poiId = route.params.poiId;
+  const rol = useProfileStore((estado) => estado.perfil?.rol);
 
   // Guardados (favorito en la BD del equipo): corazón de la barra superior.
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poiId));
@@ -98,6 +104,7 @@ export function PoiDetailScreen() {
   );
   const [s01Visible, setS01Visible] = useState(false);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
+  const [verTodas, setVerTodas] = useState(false);
 
   // Carga el listado de favoritos para el estado del corazón (una sola vez).
   useEffect(() => {
@@ -151,12 +158,6 @@ export function PoiDetailScreen() {
   const reporteConfirmable =
     reporteActivo?.estado === 'pendiente_validacion' ||
     reporteActivo?.estado === 'pendiente'; // 'pendiente': formato heredado
-
-  const tituloBotonConfirmar = yaConfirme
-    ? 'Ya confirmaste este reporte'
-    : verificado
-      ? 'Accesibilidad confirmada'
-      : 'Confirmar accesibilidad';
 
   /**
    * C3 — suma una confirmación comunitaria. A la tercera de usuarios
@@ -231,20 +232,48 @@ export function PoiDetailScreen() {
     }
   };
 
+  const fotos = fotosDePoi(poi.nombre, poi.categoria);
+  const confirmados = CATALOGO_CARACTERISTICAS.filter((caracteristica) => {
+    const valor = poi.valores.find(
+      (v) => v.caracteristicaId === caracteristica.id,
+    );
+    if (!valor) {
+      return false;
+    }
+    if (caracteristica.id === 'tiene_escaleras') {
+      return valor.valorBooleano === false;
+    }
+    if (caracteristica.tipoValor === 'NUMERICO') {
+      return (valor.valorNumerico ?? 0) > 0;
+    }
+    return valor.valorBooleano === true;
+  });
+
+  const compartir = () => {
+    void Share.share({
+      message: `${poi.nombre} (${poi.categoria}, ${poi.ciudad}) en OmniTravel: ${
+        verificado ? 'accesibilidad verificada' : 'en revisión por la comunidad'
+      }.`,
+    });
+  };
+
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top']}>
       <View style={estilos.barraNavegacion}>
         <Pressable
           onPress={() => navigation.goBack()}
-          style={estilos.botonAtras}
+          style={estilos.botonBarra}
           accessibilityRole="button"
           accessibilityLabel="Volver"
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={26} color={colors.primary} />
         </Pressable>
+        <View style={estilos.marcaBarra}>
+          <BrandMark variante="completo" tamano={34} />
+        </View>
         <Pressable
           onPress={() => void alternarGuardado()}
-          style={estilos.botonAtras}
+          style={estilos.botonBarra}
           accessibilityRole="button"
           accessibilityLabel={
             esFavorito
@@ -256,110 +285,193 @@ export function PoiDetailScreen() {
         >
           <Ionicons
             name={esFavorito ? 'heart' : 'heart-outline'}
+            size={26}
+            color={esFavorito ? colors.danger : colors.primary}
+          />
+        </Pressable>
+        <Pressable
+          onPress={compartir}
+          style={estilos.botonBarra}
+          accessibilityRole="button"
+          accessibilityLabel={`Compartir ${poi.nombre}`}
+        >
+          <Ionicons
+            name="share-social-outline"
             size={24}
-            color={esFavorito ? colors.danger : colors.textPrimary}
+            color={colors.primary}
           />
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={estilos.contenido}>
-        <View style={estilos.heroe}>
-          <Ionicons name="accessibility" size={56} color={colors.primary} />
-          <Text style={estilos.heroeNota}>
-            Foto del lugar (llegará desde el servicio de evidencias)
-          </Text>
-        </View>
+        <GaleriaFotos fotos={fotos} nombre={poi.nombre} />
 
-        <View style={estilos.encabezado}>
-          <Text style={estilos.nombre}>{poi.nombre}</Text>
-          <View style={estilos.filaCalificacion}>
-            <Estrellas calificacion={poi.calificacion} />
-            <Text style={estilos.calificacion}>
-              {poi.calificacion.toFixed(1)} ({poi.totalExperiencias})
-            </Text>
-          </View>
-          <Text style={estilos.subtitulo}>
-            {poi.categoria} · {poi.ciudad}
-          </Text>
-          <View style={estilos.filaDireccion}>
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color={colors.textSecondary}
-            />
-            <Text style={estilos.direccion}>{poi.direccion}</Text>
-          </View>
-        </View>
-
-        <Card estilo={estilos.tarjetaVerificacion}>
-          <View style={estilos.filaVerificacion}>
-            <View style={estilos.iconoVerificacion}>
-              <Ionicons
-                name={verificado ? 'shield-checkmark' : 'time-outline'}
-                size={22}
-                color={verificado ? colors.success : colors.warning}
-              />
+        <View style={estilos.cuerpo}>
+          <View style={estilos.encabezado}>
+            <View style={estilos.filaNombre}>
+              <Text style={estilos.nombre} accessibilityRole="header">
+                {poi.nombre}
+              </Text>
+              <View
+                style={estilos.filaCalificacion}
+                accessible
+                accessibilityLabel={`Calificación ${poi.calificacion.toFixed(
+                  1,
+                )} de 5, ${poi.totalExperiencias} opiniones`}
+              >
+                <Ionicons name="star" size={18} color="#F5B301" />
+                <Text style={estilos.calificacion}>
+                  {poi.calificacion.toFixed(1)}
+                </Text>
+                <Text style={estilos.totalOpiniones}>
+                  ({poi.totalExperiencias})
+                </Text>
+              </View>
             </View>
+            <Text style={estilos.subtitulo}>
+              {poi.categoria} • {poi.ciudad}
+            </Text>
+            <View style={estilos.filaDireccion}>
+              <Ionicons name="location" size={15} color={colors.primary} />
+              <Text style={estilos.direccion}>{poi.direccion}</Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              estilos.tarjetaVerificacion,
+              verificado ? null : estilos.tarjetaPendiente,
+            ]}
+            accessible
+            accessibilityLabel={`${
+              verificado
+                ? 'Accesibilidad verificada'
+                : 'En revisión por la comunidad'
+            }, ${poi.confirmaciones} confirmaciones. Última verificación ${formatearFechaCorta(
+              poi.ultimaVerificacion,
+            )}`}
+          >
+            <Ionicons
+              name={verificado ? 'checkmark-circle' : 'time'}
+              size={34}
+              color={verificado ? colors.success : colors.warning}
+            />
             <View style={estilos.textosVerificacion}>
-              <Text style={estilos.tituloVerificacion}>
+              <Text
+                style={[
+                  estilos.tituloVerificacion,
+                  verificado ? null : estilos.tituloPendiente,
+                ]}
+              >
                 {verificado
                   ? 'Accesibilidad Verificada'
                   : 'En revisión por la comunidad'}
               </Text>
               <Text style={estilos.detalleVerificacion}>
-                {poi.confirmaciones} confirmaciones de la comunidad
+                ({poi.confirmaciones} confirmaciones de la comunidad)
               </Text>
-              <Text style={estilos.detalleVerificacion}>
-                Última verificación:{' '}
+            </View>
+            <View style={estilos.fechaVerificacion}>
+              <Text style={estilos.detalleFecha}>Última verificación</Text>
+              <Text style={estilos.detalleFecha}>
                 {formatearFechaCorta(poi.ultimaVerificacion)}
               </Text>
             </View>
-            <Badge
-              tono={verificado ? 'exito' : 'alerta'}
-              texto={verificado ? 'Verificado' : 'Pendiente'}
+          </View>
+
+          <View style={estilos.seccion}>
+            <View style={estilos.filaTituloSeccion}>
+              <Text style={estilos.tituloSeccion}>
+                Características de accesibilidad
+              </Text>
+              <Pressable
+                onPress={() => setVerTodas((actual) => !actual)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: verTodas }}
+                hitSlop={8}
+              >
+                <Text style={estilos.enlace}>
+                  {verTodas ? 'Ver menos' : 'Ver todas'}
+                </Text>
+              </Pressable>
+            </View>
+            {confirmados.length > 0 ? (
+              <View style={estilos.mosaico}>
+                {confirmados.slice(0, 4).map((caracteristica) => (
+                  <View
+                    key={caracteristica.id}
+                    style={estilos.ficha}
+                    accessible
+                    accessibilityLabel={`${caracteristica.nombre}: confirmado`}
+                  >
+                    <Ionicons
+                      name={caracteristica.icono}
+                      size={20}
+                      color={colors.navy}
+                    />
+                    <Text style={estilos.fichaTexto} numberOfLines={2}>
+                      {caracteristica.nombre}
+                    </Text>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={14}
+                      color={colors.success}
+                      style={estilos.fichaCheck}
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={estilos.sinExperiencias}>
+                La comunidad aún no confirma características de este lugar.
+              </Text>
+            )}
+            {verTodas ? (
+              <Card>
+                {CATALOGO_CARACTERISTICAS.map((caracteristica) => (
+                  <AccessibilityValueRow
+                    key={caracteristica.id}
+                    caracteristica={caracteristica}
+                    valor={poi.valores.find(
+                      (valor) => valor.caracteristicaId === caracteristica.id,
+                    )}
+                  />
+                ))}
+              </Card>
+            ) : null}
+          </View>
+
+          <View style={estilos.botones}>
+            <AppButton
+              titulo={'Cómo llegar\n(Ruta Segura)'}
+              icono="navigate"
+              onPress={() =>
+                // Moderación y viajeros tienen pestañas distintas.
+                esRolModeracion(rol)
+                  ? navigation.navigate('PanelModerador', {
+                      screen: 'Mapa',
+                      params: { destinoPoiId: poi.id },
+                    })
+                  : navigation.navigate('Principal', {
+                      screen: 'Mapa',
+                      params: { destinoPoiId: poi.id },
+                    })
+              }
+              forma="redondeado"
+              estilo={estilos.boton}
+            />
+            <AppButton
+              titulo={yaConfirme ? 'Ya validaste' : 'Validar información'}
+              variante="contorno"
+              icono="people"
+              cargando={cargandoReporte || confirmando}
+              deshabilitado={!reporteConfirmable || yaConfirme || confirmando}
+              onPress={() => void confirmarAccesibilidad()}
+              pistaAccesibilidad="Suma tu confirmación: con 3, la comunidad publica el lugar"
+              forma="redondeado"
+              estilo={estilos.boton}
             />
           </View>
-        </Card>
-
-        <View style={estilos.seccion}>
-          <Text style={estilos.tituloSeccion}>
-            Características de accesibilidad
-          </Text>
-          <Card>
-            {CATALOGO_CARACTERISTICAS.map((caracteristica) => (
-              <AccessibilityValueRow
-                key={caracteristica.id}
-                caracteristica={caracteristica}
-                valor={poi.valores.find(
-                  (valor) => valor.caracteristicaId === caracteristica.id,
-                )}
-              />
-            ))}
-          </Card>
-        </View>
-
-        <View style={estilos.botones}>
-          <AppButton
-            titulo="Cómo llegar (Ruta Segura)"
-            icono="navigate-outline"
-            onPress={() =>
-              navigation.navigate('Principal', {
-                screen: 'Mapa',
-                params: { destinoPoiId: poi.id },
-              })
-            }
-            estilo={estilos.boton}
-          />
-          <AppButton
-            titulo={tituloBotonConfirmar}
-            variante="contorno"
-            icono="checkmark-done-outline"
-            cargando={cargandoReporte || confirmando}
-            deshabilitado={!reporteConfirmable || yaConfirme || confirmando}
-            onPress={() => void confirmarAccesibilidad()}
-            pistaAccesibilidad="Suma tu confirmación: con 3, la comunidad publica el lugar"
-            estilo={estilos.boton}
-          />
           {reporteConfirmable ? (
             <Text
               style={estilos.progresoConfirmaciones}
@@ -381,39 +493,61 @@ export function PoiDetailScreen() {
               {mensajeConfirmacion}
             </Text>
           ) : null}
-        </View>
 
-        <View style={estilos.seccion}>
-          <Text style={estilos.tituloSeccion}>
-            Experiencias de otros viajeros
-          </Text>
-          {poi.experiencias.length === 0 ? (
-            <Text style={estilos.sinExperiencias}>
-              Aún no hay experiencias registradas para este lugar.
-            </Text>
-          ) : (
-            poi.experiencias.map((experiencia) => (
-              <Card key={experiencia.autor} estilo={estilos.tarjetaExperiencia}>
-                <View style={estilos.filaExperiencia}>
+          <View style={estilos.seccion}>
+            <View style={estilos.filaTituloSeccion}>
+              <Text style={estilos.tituloSeccion}>
+                Experiencias de otros viajeros
+              </Text>
+              {poi.experiencias.length > 0 ? (
+                <Text style={estilos.enlace}>
+                  Ver todas ({poi.experiencias.length})
+                </Text>
+              ) : null}
+            </View>
+            {poi.experiencias.length === 0 ? (
+              <Text style={estilos.sinExperiencias}>
+                Aún no hay experiencias registradas para este lugar.
+              </Text>
+            ) : (
+              poi.experiencias.map((experiencia) => (
+                <View
+                  key={experiencia.autor}
+                  style={estilos.tarjetaExperiencia}
+                >
                   <View style={estilos.avatar}>
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={22}
-                      color={colors.primary}
-                    />
+                    <Text style={estilos.avatarInicial}>
+                      {experiencia.autor.charAt(0).toUpperCase()}
+                    </Text>
                   </View>
                   <View style={estilos.textosExperiencia}>
-                    <Text style={estilos.autor}>{experiencia.autor}</Text>
+                    <View style={estilos.filaAutor}>
+                      <Text style={estilos.autor}>{experiencia.autor}</Text>
+                      {experiencia.calificacion >= 4 ? (
+                        <View style={estilos.sello}>
+                          <Ionicons
+                            name="thumbs-up"
+                            size={11}
+                            color={colors.success}
+                          />
+                          <Text style={estilos.selloTexto}>
+                            Experiencia positiva
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={estilos.perfilExperiencia}>
                       {experiencia.perfil}
                     </Text>
+                    <Estrellas calificacion={experiencia.calificacion} />
+                    <Text style={estilos.comentario}>
+                      {experiencia.comentario}
+                    </Text>
                   </View>
-                  <Estrellas calificacion={experiencia.calificacion} />
                 </View>
-                <Text style={estilos.comentario}>{experiencia.comentario}</Text>
-              </Card>
-            ))
-          )}
+              ))
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -426,65 +560,195 @@ export function PoiDetailScreen() {
   );
 }
 
+/** Galería del mockup U08: foto grande con contador y miniaturas con leyenda. */
+function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
+  const [indice, setIndice] = useState(0);
+  const actual = fotos[indice] ?? fotos[0];
+  return (
+    <View>
+      <View>
+        <Image
+          source={actual.fuente}
+          style={estilos.heroe}
+          resizeMode="cover"
+          accessibilityRole="image"
+          accessibilityLabel={`${actual.leyenda} de ${nombre}${
+            actual.referencia ? ' (foto de referencia)' : ''
+          }`}
+          accessibilityIgnoresInvertColors
+        />
+        <View style={estilos.contador}>
+          <Text style={estilos.contadorTexto}>
+            {indice + 1}/{fotos.length}
+          </Text>
+        </View>
+        {actual.referencia ? (
+          <View style={estilos.referencia}>
+            <Text style={estilos.referenciaTexto}>Foto de referencia</Text>
+          </View>
+        ) : null}
+      </View>
+      {fotos.length > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={estilos.miniaturas}
+        >
+          {fotos.map((foto, i) => (
+            <Pressable
+              key={foto.leyenda}
+              onPress={() => setIndice(i)}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver foto: ${foto.leyenda}`}
+              accessibilityState={{ selected: i === indice }}
+              style={estilos.miniatura}
+            >
+              <Image
+                source={foto.fuente}
+                style={[
+                  estilos.miniaturaImagen,
+                  i === indice ? estilos.miniaturaActiva : null,
+                ]}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+              <Text
+                style={[
+                  estilos.miniaturaLeyenda,
+                  i === indice ? estilos.miniaturaLeyendaActiva : null,
+                ]}
+              >
+                {foto.leyenda}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
 const estilos = StyleSheet.create({
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,
   },
   barraNavegacion: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  botonAtras: {
+  marcaBarra: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  botonBarra: {
     width: TOUCH_TARGET,
     height: TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contenido: {
+    paddingBottom: spacing.xxl,
+  },
+  cuerpo: {
     padding: spacing.lg,
-    paddingTop: spacing.sm,
     gap: spacing.lg,
   },
   heroe: {
-    height: 160,
-    borderRadius: radii.lg,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
+    width: '100%',
+    height: 230,
+    backgroundColor: colors.surface,
   },
-  heroeNota: {
+  contador: {
+    position: 'absolute',
+    right: spacing.md,
+    bottom: spacing.md,
+    backgroundColor: 'rgba(16, 24, 40, 0.7)',
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+  },
+  contadorTexto: {
+    color: colors.white,
     fontSize: fontSize.xs,
-    color: colors.textSecondary,
+    fontWeight: fontWeight.semibold,
+  },
+  referencia: {
+    position: 'absolute',
+    left: spacing.md,
+    bottom: spacing.md,
+    backgroundColor: 'rgba(16, 24, 40, 0.7)',
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  referenciaTexto: {
+    color: colors.white,
+    fontSize: 11,
+  },
+  miniaturas: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  miniatura: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  miniaturaImagen: {
+    width: 76,
+    height: 56,
+    borderRadius: radii.sm,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  miniaturaActiva: {
+    borderColor: colors.primary,
+  },
+  miniaturaLeyenda: {
+    fontSize: 11,
+    color: colors.textSlate,
+  },
+  miniaturaLeyendaActiva: {
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
   },
   encabezado: {
-    gap: spacing.xs,
+    gap: 4,
+  },
+  filaNombre: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   nombre: {
-    fontSize: fontSize.xl,
+    flex: 1,
+    fontSize: fontSize.xxl - 4,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
+    color: colors.navy,
   },
   filaCalificacion: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 3,
   },
   estrellas: {
     flexDirection: 'row',
     gap: 2,
   },
   calificacion: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.navy,
+  },
+  totalOpiniones: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.textPrimary,
+    color: colors.textSlate,
   },
   subtitulo: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    color: colors.textSlate,
   },
   filaDireccion: {
     flexDirection: 'row',
@@ -493,63 +757,110 @@ const estilos = StyleSheet.create({
   },
   direccion: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    color: colors.textSlate,
   },
   tarjetaVerificacion: {
-    backgroundColor: colors.successSoft,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  filaVerificacion: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  iconoVerificacion: {
-    width: 44,
-    height: 44,
+    backgroundColor: colors.successSoft,
+    borderWidth: 1,
+    borderColor: '#CDE8D6',
     borderRadius: radii.md,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.md,
+  },
+  tarjetaPendiente: {
+    backgroundColor: colors.warningSoft,
+    borderColor: '#F8D9B5',
   },
   textosVerificacion: {
     flex: 1,
     gap: 2,
   },
   tituloVerificacion: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
+    color: colors.success,
+  },
+  tituloPendiente: {
+    color: '#9A4A06',
   },
   detalleVerificacion: {
     fontSize: fontSize.xs,
-    color: colors.textSecondary,
+    color: colors.textSlate,
+  },
+  fechaVerificacion: {
+    alignItems: 'flex-end',
+  },
+  detalleFecha: {
+    fontSize: 11,
+    color: colors.textSlate,
   },
   seccion: {
     gap: spacing.sm,
   },
+  filaTituloSeccion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   tituloSeccion: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
+    color: colors.navy,
+  },
+  enlace: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  mosaico: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  ficha: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 6,
+    minHeight: 52,
+  },
+  fichaTexto: {
+    flex: 1,
+    fontSize: 11,
+    color: colors.navy,
+  },
+  fichaCheck: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.white,
+    borderRadius: 7,
   },
   botones: {
+    flexDirection: 'row',
     gap: spacing.sm,
   },
   boton: {
-    width: '100%',
+    flex: 1,
   },
   progresoConfirmaciones: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
     textAlign: 'center',
+    marginTop: -spacing.sm,
   },
   sinReporte: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: -spacing.sm,
   },
   mensajeConfirmacion: {
     fontSize: fontSize.sm,
@@ -562,32 +873,58 @@ const estilos = StyleSheet.create({
     color: colors.textSecondary,
   },
   tarjetaExperiencia: {
-    gap: spacing.sm,
-  },
-  filaExperiencia: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.md,
   },
   avatar: {
-    width: 38,
-    height: 38,
+    width: 44,
+    height: 44,
     borderRadius: radii.pill,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarInicial: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
   textosExperiencia: {
     flex: 1,
+    gap: 3,
+  },
+  filaAutor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   autor: {
     fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.navy,
+  },
+  sello: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.successSoft,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  selloTexto: {
+    fontSize: 10,
+    color: colors.success,
     fontWeight: fontWeight.semibold,
-    color: colors.textPrimary,
   },
   perfilExperiencia: {
     fontSize: fontSize.xs,
-    color: colors.textSecondary,
+    color: colors.textSlate,
   },
   comentario: {
     fontSize: fontSize.sm,
