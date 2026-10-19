@@ -36,7 +36,7 @@ import type { ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
-import { esRolModeracion } from '../services/inicioSesion';
+import { usaPanelModeracion } from '../services/inicioSesion';
 import { formatearFechaCorta } from '../utils/format';
 import {
   colors,
@@ -79,7 +79,9 @@ export function PoiDetailScreen() {
   const poisCargados = usePoisStore((estado) => estado.cargado);
   const cargarPois = usePoisStore((estado) => estado.cargar);
   const poiId = route.params.poiId;
-  const rol = useProfileStore((estado) => estado.perfil?.rol);
+  const enPanelModeracion = useProfileStore((estado) =>
+    usaPanelModeracion(estado.perfil),
+  );
 
   // Guardados (favorito en la BD del equipo): corazón de la barra superior.
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poiId));
@@ -447,7 +449,7 @@ export function PoiDetailScreen() {
               icono="navigate"
               onPress={() =>
                 // Moderación y viajeros tienen pestañas distintas.
-                esRolModeracion(rol)
+                enPanelModeracion
                   ? navigation.navigate('PanelModerador', {
                       screen: 'Mapa',
                       params: { destinoPoiId: poi.id },

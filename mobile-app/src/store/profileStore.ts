@@ -38,7 +38,14 @@ export interface PerfilAccesibilidad {
    * privado de la app y NUNCA sale del dispositivo (Ley 1581).
    */
   fotoUri?: string;
+  /**
+   * Cómo entró la persona en el login: «viajero» abre la vista de usuario y
+   * «moderacion» el panel de moderación (solo si su rol de la BD lo permite).
+   */
+  modo?: ModoIngreso;
 }
+
+export type ModoIngreso = 'viajero' | 'moderacion';
 
 interface EstadoPerfil {
   /** true cuando el store terminó de leer el almacenamiento seguro. */

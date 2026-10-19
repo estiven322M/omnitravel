@@ -77,7 +77,7 @@ npx expo start              # escanea el QR con Expo Go
 | Pantalla | Estado | Notas |
 | --- | --- | --- |
 | **U01** Presentación | ✅ | Logo, «Explora / Descubre / Viaja sin límites», «Comenzar» e ilustración del mockup |
-| **U02** Inicio de sesión | ✅ | Credenciales contra `POST /auth/login` (JWT cifrado con SecureStore). **Huella / Face ID**: tras un ingreso con contraseña se puede activar; las credenciales quedan en el llavero del sistema con `requireAuthentication` (nunca salen del teléfono). El rol sale de la BD: una cuenta de moderación abre su panel. Enlace a M01 |
+| **U02** Inicio de sesión | ✅ | Credenciales contra `POST /auth/login` (JWT cifrado con SecureStore). **Huella / Face ID**: tras un ingreso con contraseña se puede activar; las credenciales quedan en el llavero del sistema con `requireAuthentication` (nunca salen del teléfono). Selector **Usuario / Moderador**: «Usuario» abre la vista de viajero; «Moderador» abre el panel de moderación solo si el rol de la cuenta en la BD lo permite (si no, se niega el ingreso con un aviso) |
 | **U03** Registro y Privacidad | ✅ | Cuenta real vía `POST /auth/register` (siempre rol viajero) + perfil de accesibilidad local + aviso Ley 1581, con la cabecera «Volver · ES» del mockup |
 | **U04** Inicio (feed) | ✅ | Logo, campana (abre U11), avatar, buscador con filtros, chips de categorías en plural, **tarjetas con foto** (propia del lugar o de referencia de su categoría), distancia, etiquetas con icono, «validaciones / confiabilidad» y corazón de guardados. Barra inferior con el botón central «+ Contribuir» |
 | **U05** Filtros de accesibilidad | ✅ | Hoja inferior con bandas Físico/Motriz y Sensorial, iconos por filtro, «Limpiar» y «Aplicar filtros»; filtro estricto (sin dato ≠ pasa) |
@@ -85,8 +85,7 @@ npx expo start              # escanea el QR con Expo Go
 | **U07** Navegación paso a paso | ✅ | `maneuvers` de Valhalla + tarjeta de maniobra + **guía por voz con `expo-speech` (es-ES)** activable, stats del avance y "Finalizar ruta"; fallo del motor con mensaje y reintento (RNF-17). «Recalcular ruta» **alterna a un camino distinto** (Valhalla `alternates`) en lugar de repetir el trayecto, con sello "Ruta alternativa" |
 | **U08** Detalle del lugar | ✅ | Galería con foto grande, contador y miniaturas con leyenda; calificación, «Accesibilidad Verificada», fichas de características con check (Ver todas), «Cómo llegar (Ruta Segura)» / «Validar información», experiencias de viajeros y compartir |
 | **U09–U10** Contribuir (reporte) | ✅ | Wizard de **4 pasos = mockup U09/U10**: Tipo (Lugar accesible vs Barrera) → Ubicación (nuevo/actualizar + GPS) → Detalles (descripción 0/500 + **etiquetas rápidas** + foto) → Confirmación. Las etiquetas fijan valores del catálogo y viajan en el mismo `POST /reportes`; pantalla de éxito estilo mockup ("3 confirmaciones") |
-| **S01 / S02** Modales | ✅ | S01 Consenso alcanzado (P1) y S02 barrera crítica en ruta con recálculo (P2) |
-| **M01** Login de moderador | ✅ | «Panel de Moderación» con correo corporativo; solo entran cuentas moderador/administrador (creadas con `npm run crear-admin` en el backend) |
+| **S01** Modal | ✅ | «¡Validación alcanzada!» al publicarse un reporte |
 | **M02** Tablero | ✅ | Pendientes, discrepancias post-viaje y verificados hoy (datos reales de `GET /moderacion/resumen`), alertas críticas y actividad reciente |
 | **M03** Pendientes de revisión | ✅ | Filtros Motriz/Sensorial/Cognitiva/Otra, orden por fecha y «Revisar evidencia» |
 | **M04 / M05** Revisión y rechazo | ✅ | Evidencia, mapa y coordenadas, comentario del colaborador, checklist de auditoría visual; rechazo con motivo obligatorio (4 motivos del mockup + detalle) y S01 al aprobar |
@@ -125,11 +124,12 @@ npx expo start              # escanea el QR con Expo Go
 - **Mapa ≥ media pantalla (U06/U07):** `minHeight: '50%'` sobre el contenedor
   del mapa y las hojas inferiores con `flexShrink: 1` + ScrollView interno:
   el panel puede crecer pero ya no aplasta el lienzo del mapa.
-- **Dos entradas, un solo origen de permisos:** viajeros por U02 y moderación
-  por M01, como en los mockups. El rol siempre sale de `usuario.rol_id`: una
-  cuenta de moderación abre su panel (pestañas Inicio · Reportes · Mapa ·
-  Estadísticas · Perfil) aunque entre por U02, y una cuenta de viajero no pasa
-  de M01. Nadie puede registrarse como moderador desde la app.
+- **Rol elegido en el login, permisos de la BD:** U02 tiene el selector
+  Usuario / Moderador. «Moderador» abre el panel (Inicio · Reportes · Mapa ·
+  Estadísticas · Perfil) solo si `usuario.rol_id` es moderador/administrador;
+  «Usuario» abre la vista de viajero para cualquier cuenta. Nadie puede
+  registrarse como moderador desde la app: esas cuentas se crean con
+  `npm run crear-admin` en el backend.
 - **Sesión persistente:** el perfil local y el JWT quedan cifrados en el
   dispositivo, así que la app abre directo en Inicio (U04) sin pasar por login.
 - **Gamificación de datos reales:** puntos y niveles se calculan de los

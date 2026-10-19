@@ -1,4 +1,8 @@
-import { useProfileStore } from '../store/profileStore';
+import {
+  useProfileStore,
+  type ModoIngreso,
+  type PerfilAccesibilidad,
+} from '../store/profileStore';
 import type { RolUsuario } from './types';
 import {
   cerrarSesionCuenta,
@@ -14,6 +18,20 @@ export const ROLES_MODERACION: readonly RolUsuario[] = [
 
 export function esRolModeracion(rol?: RolUsuario | null): boolean {
   return rol != null && ROLES_MODERACION.includes(rol);
+}
+
+/**
+ * ¿La sesión abre el panel de moderación? Solo si la persona eligió entrar
+ * como moderador Y su rol de la BD lo permite. Perfiles guardados antes de
+ * existir el selector (sin `modo`) conservan el panel si su rol lo permite.
+ */
+export function usaPanelModeracion(
+  perfil: Pick<PerfilAccesibilidad, 'rol' | 'modo'> | null | undefined,
+): boolean {
+  if (!perfil || !esRolModeracion(perfil.rol)) {
+    return false;
+  }
+  return (perfil.modo ?? 'moderacion') === 'moderacion';
 }
 
 /** Nombre amable derivado del correo (la BD no guarda nombre de persona). */
@@ -32,18 +50,19 @@ export function nombreDesdeEmail(email: string): string {
 export class SinPermisoModeracionError extends Error {
   constructor() {
     super(
-      'Esta cuenta no tiene permisos de moderación. Entra desde el inicio de sesión de viajeros.',
+      'Esta cuenta no tiene permisos de moderación. Elige «Usuario» para entrar.',
     );
     this.name = 'SinPermisoModeracionError';
   }
 }
 
 /**
- * Inicio de sesión completo (U02 y M01): autentica contra el backend, guarda
- * el perfil local con el rol REAL de la BD y recupera la foto de esa cuenta.
+ * Inicio de sesión completo (U02): autentica contra el backend, guarda el
+ * perfil local con el rol REAL de la BD y recupera la foto de esa cuenta.
  *
- * Con `soloModeracion` (M01) una cuenta sin rol de moderación no entra: se
- * borra el token recién emitido y se informa con claridad.
+ * Con `soloModeracion` (rol «Moderador» elegido en el login) una cuenta sin
+ * rol de moderación no entra: se borra el token recién emitido y se informa.
+ * Sin él, toda cuenta entra a la vista de usuario, incluso las de moderación.
  */
 export async function iniciarSesionCompleta(
   email: string,
@@ -72,6 +91,9 @@ export async function iniciarSesionCompleta(
     filtrosActivos: [],
     rol,
     idCuenta,
+    modo: (opciones.soloModeracion
+      ? 'moderacion'
+      : 'viajero') satisfies ModoIngreso,
   });
 
   // Cada cuenta tiene SU foto en el dispositivo (nunca se comparte).

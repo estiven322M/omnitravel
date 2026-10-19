@@ -84,7 +84,7 @@ Migraciones SQL aditivas en `sql/` (ej. `001-reporte-es-critico.sql`).
 - `@Roles('administrador', …)` + `RolesGuard` restringen por rol.
 - Swagger en `/api/docs` (botón *Authorize* con el JWT).
 
-### Cuentas de moderación (M01)
+### Cuentas de moderación
 
 La app **nunca** permite registrarse como moderador o administrador: el
 registro siempre crea viajeros. Esas cuentas las crea alguien del equipo con
@@ -100,8 +100,8 @@ npm run crear-admin -- correo@omnitravel.edu.co moderador     # moderador
   de `ADMIN_PASSWORD`). Aplica la misma política que el registro.
 - Usa `DATABASE_URL`, `DB_SSL` y `DB_SSL_CA` de `backend/.env`.
 
-En la app se entra por **¿Eres moderador? Panel de Moderación** (pantalla
-M01); una cuenta sin rol de moderación no pasa de esa pantalla.
+En la app se elige **Moderador** en el login; una cuenta sin rol de
+moderación no puede entrar al panel (puede entrar como «Usuario»).
 
 Los errores de negocio llegan como `message: "CODIGO: mensaje"` (ej.
 `AUTOCONFIRMACION: No puedes confirmar tu propio reporte.`).

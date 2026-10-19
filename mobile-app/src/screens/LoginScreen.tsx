@@ -25,7 +25,8 @@ import {
   leerCredencialesBiometricas,
 } from '../services/biometria';
 import { iniciarSesionCompleta } from '../services/inicioSesion';
-import { useProfileStore } from '../store/profileStore';
+import type { IconName } from '../services/types';
+import { type ModoIngreso, useProfileStore } from '../store/profileStore';
 import {
   colors,
   fontSize,
@@ -34,6 +35,29 @@ import {
   spacing,
   TOUCH_TARGET,
 } from '../utils/theme';
+
+const OPCIONES_ROL: {
+  modo: ModoIngreso;
+  titulo: string;
+  ayuda: string;
+  icono: IconName;
+  iconoActivo: IconName;
+}[] = [
+  {
+    modo: 'viajero',
+    titulo: 'Usuario',
+    ayuda: 'Entra a explorar lugares accesibles',
+    icono: 'person-outline',
+    iconoActivo: 'person',
+  },
+  {
+    modo: 'moderacion',
+    titulo: 'Moderador',
+    ayuda: 'Entra al panel de moderación (requiere permisos)',
+    icono: 'shield-checkmark-outline',
+    iconoActivo: 'shield-checkmark',
+  },
+];
 
 interface Errores {
   email?: string;
@@ -47,10 +71,12 @@ function anunciar(mensaje: string) {
 }
 
 /**
- * U02 — Inicio de sesión (mockup oficial).
+ * U02 — Inicio de sesión (mockup oficial) con selector de rol.
  *
- * Credenciales contra el backend (`POST /auth/login`, JWT). El rol sale de la
- * BD: una cuenta de moderación abre su panel aunque entre por aquí. Huella y
+ * Credenciales contra el backend (`POST /auth/login`, JWT). «Usuario» abre la
+ * vista de viajero; «Moderador» abre el panel de moderación solo si el rol de
+ * la cuenta en la BD lo permite (si no, se niega el ingreso y se borra el
+ * token). Huella y
  * Face ID usan credenciales guardadas en el llavero con autenticación
  * biométrica del sistema (se activan tras el primer ingreso con contraseña).
  */
@@ -65,6 +91,9 @@ export function LoginScreen() {
   const [errores, setErrores] = useState<Errores>({});
   const [ingresando, setIngresando] = useState(false);
   const [biometriaLista, setBiometriaLista] = useState(false);
+  const [modo, setModo] = useState<ModoIngreso>('viajero');
+  const [errorIngreso, setErrorIngreso] = useState<string | null>(null);
+  const esModeracion = modo === 'moderacion';
 
   useEffect(() => {
     let vigente = true;
@@ -110,8 +139,13 @@ export function LoginScreen() {
     conBiometria: boolean,
   ) => {
     setIngresando(true);
+    setErrorIngreso(null);
     try {
-      const { aviso } = await iniciarSesionCompleta(correo, clave);
+      // «Moderador» exige el rol en la BD y abre el panel; «Usuario» abre la
+      // vista de viajero (también para cuentas de moderación).
+      const { aviso } = await iniciarSesionCompleta(correo, clave, {
+        soloModeracion: esModeracion,
+      });
       anunciar('Sesión iniciada. Bienvenido de nuevo.');
       if (aviso) {
         Alert.alert('Sesión iniciada', aviso);
@@ -120,10 +154,10 @@ export function LoginScreen() {
         ofrecerBiometria(correo.trim(), clave);
       }
     } catch (error) {
-      Alert.alert(
-        'No se pudo iniciar sesión',
-        (error as Error)?.message ?? 'Verifica tu conexión e intenta de nuevo.',
-      );
+      const mensaje =
+        (error as Error)?.message ?? 'Verifica tu conexión e intenta de nuevo.';
+      setErrorIngreso(mensaje);
+      anunciar(mensaje);
     } finally {
       setIngresando(false);
     }
@@ -217,7 +251,52 @@ export function LoginScreen() {
             <Text style={estilos.titulo} accessibilityRole="header">
               Inicia sesión
             </Text>
-            <Text style={estilos.subtitulo}>Continúa tu próxima aventura</Text>
+            <Text style={estilos.subtitulo}>
+              {esModeracion
+                ? 'Gestiona y valida los aportes de la comunidad'
+                : 'Continúa tu próxima aventura'}
+            </Text>
+          </View>
+
+          <View
+            style={estilos.selectorRol}
+            accessibilityRole="radiogroup"
+            accessibilityLabel="¿Cómo quieres entrar?"
+          >
+            {OPCIONES_ROL.map((opcion) => {
+              const activa = modo === opcion.modo;
+              return (
+                <Pressable
+                  key={opcion.modo}
+                  onPress={() => {
+                    setModo(opcion.modo);
+                    setErrorIngreso(null);
+                  }}
+                  style={[
+                    estilos.opcionRol,
+                    activa ? estilos.opcionRolActiva : null,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: activa }}
+                  accessibilityLabel={opcion.titulo}
+                  accessibilityHint={opcion.ayuda}
+                >
+                  <Ionicons
+                    name={activa ? opcion.iconoActivo : opcion.icono}
+                    size={22}
+                    color={activa ? colors.white : colors.primary}
+                  />
+                  <Text
+                    style={[
+                      estilos.textoRol,
+                      activa ? estilos.textoRolActivo : null,
+                    ]}
+                  >
+                    {opcion.titulo}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           <View style={estilos.campos}>
@@ -272,6 +351,13 @@ export function LoginScreen() {
             <Text style={estilos.enlace}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
 
+          {errorIngreso ? (
+            <View style={estilos.errorIngreso} accessibilityLiveRegion="polite">
+              <Ionicons name="alert-circle" size={20} color={colors.danger} />
+              <Text style={estilos.textoErrorIngreso}>{errorIngreso}</Text>
+            </View>
+          ) : null}
+
           <AppButton
             titulo="Iniciar sesión"
             iconoFinal="arrow-forward"
@@ -311,31 +397,27 @@ export function LoginScreen() {
 
           <View style={estilos.pie}>
             <View style={estilos.lineaPie} />
-            <Text style={estilos.pieTexto}>¿No tienes una cuenta?</Text>
-            <Pressable
-              onPress={() => navigation.navigate('Registro')}
-              style={estilos.botonCrear}
-              accessibilityRole="button"
-              accessibilityLabel="Crear una cuenta"
-            >
-              <Text style={estilos.textoCrear}>Crear una cuenta</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate('LoginModerador')}
-              accessibilityRole="button"
-              accessibilityLabel="¿Eres moderador? Panel de Moderación"
-              accessibilityHint="Abre el inicio de sesión de moderación"
-              style={estilos.accesoModeracion}
-            >
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={16}
-                color={colors.textSlate}
-              />
-              <Text style={estilos.textoModeracion}>
-                ¿Eres moderador? Panel de Moderación
-              </Text>
-            </Pressable>
+            {esModeracion ? (
+              <View style={estilos.avisoModeracion}>
+                <Ionicons name="shield" size={22} color={colors.primary} />
+                <Text style={estilos.textoAvisoModeracion}>
+                  Acceso exclusivo para moderadores autorizados. Las cuentas de
+                  moderación las crea el equipo de OmniTravel.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <Text style={estilos.pieTexto}>¿No tienes una cuenta?</Text>
+                <Pressable
+                  onPress={() => navigation.navigate('Registro')}
+                  style={estilos.botonCrear}
+                  accessibilityRole="button"
+                  accessibilityLabel="Crear una cuenta"
+                >
+                  <Text style={estilos.textoCrear}>Crear una cuenta</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -410,6 +492,7 @@ const estilos = StyleSheet.create({
   subtitulo: {
     fontSize: fontSize.md,
     color: colors.textSlate,
+    textAlign: 'center',
   },
   campos: {
     gap: spacing.md,
@@ -485,16 +568,59 @@ const estilos = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.primary,
   },
-  accesoModeracion: {
+  errorIngreso: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: TOUCH_TARGET,
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radii.sm,
+    padding: spacing.md,
   },
-  textoModeracion: {
+  textoErrorIngreso: {
+    flex: 1,
     fontSize: fontSize.sm,
+    color: '#8A1C1C',
+  },
+  selectorRol: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.md,
+    padding: 4,
+  },
+  opcionRol: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+    borderRadius: radii.sm,
+  },
+  opcionRolActiva: {
+    backgroundColor: colors.primary,
+  },
+  textoRol: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  textoRolActivo: {
+    color: colors.white,
+  },
+  avisoModeracion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: '#EEF3FA',
+    borderRadius: radii.md,
+    padding: spacing.md,
+  },
+  textoAvisoModeracion: {
+    flex: 1,
+    fontSize: fontSize.xs,
     color: colors.textSlate,
-    textDecorationLine: 'underline',
+    lineHeight: 17,
   },
   botonOjo: {
     width: TOUCH_TARGET,
