@@ -22,8 +22,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -41,7 +41,7 @@ jobs:
           JEST_JUNIT_OUTPUT_NAME: junit-backend.xml
       - name: Publicar reportes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: reportes-backend
           path: |
@@ -56,8 +56,8 @@ jobs:
       run:
         working-directory: mobile-app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -79,7 +79,7 @@ jobs:
           EXPO_PUBLIC_API_URL: https://omnitravel-production-4af6.up.railway.app
       - name: Publicar reportes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: reportes-app
           path: |
@@ -106,7 +106,7 @@ jobs:
           else
             echo "hay=si" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         if: steps.secreto.outputs.hay == 'si'
       - name: Subir resultados JUnit (trcli)
         if: steps.secreto.outputs.hay == 'si'
