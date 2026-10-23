@@ -18,19 +18,23 @@ jobs:
     name: Colección Postman (17 casos)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Ejecutar la colección
         run: |
           npx --yes newman@6 run postman/omnitravel.postman_collection.json \
             --env-var "baseUrl=${{ inputs.base_url || 'https://omnitravel-production-4af6.up.railway.app' }}" \
-            --reporters cli,junit \
-            --reporter-junit-export reports/junit-postman.xml
+            --reporters cli,junit,json \
+            --reporter-junit-export reports/junit-postman.xml \
+            --reporter-json-export reports/newman.json
+      - name: Anotar resultados
+        if: always()
+        run: node postman/anotar-resultados.mjs reports/newman.json
       - name: Publicar reporte
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: reporte-postman
           path: reports/
