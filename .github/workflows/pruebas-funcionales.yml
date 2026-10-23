@@ -1,0 +1,36 @@
+# Pruebas funcionales de la API desplegada (Postman + Newman).
+# Se lanza a mano (Actions → Pruebas funcionales → Run workflow) o cada
+# lunes. Crea 4 usuarios de prueba por ejecución, por eso no corre en cada push.
+name: Pruebas funcionales
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: URL del backend a probar
+        required: true
+        default: https://omnitravel-production-4af6.up.railway.app
+  schedule:
+    - cron: '0 13 * * 1'
+
+jobs:
+  newman:
+    name: Colección Postman (17 casos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Ejecutar la colección
+        run: |
+          npx --yes newman@6 run postman/omnitravel.postman_collection.json \
+            --env-var "baseUrl=${{ inputs.base_url || 'https://omnitravel-production-4af6.up.railway.app' }}" \
+            --reporters cli,junit \
+            --reporter-junit-export reports/junit-postman.xml
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-postman
+          path: reports/

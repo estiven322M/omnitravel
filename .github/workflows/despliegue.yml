@@ -1,0 +1,49 @@
+# Entrega continua (CD): despliega el backend y la versión web en Railway
+# cuando main pasa la CI. Requiere el secreto RAILWAY_TOKEN (token del
+# proyecto en Railway → Settings → Tokens). Sin ese secreto el job se omite y
+# el despliegue sigue siendo manual con `railway up`.
+name: Despliegue
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  railway:
+    name: Railway (backend y web)
+    if: >-
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - name: Verificar el secreto
+        id: secreto
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "Sin RAILWAY_TOKEN: se omite el despliegue automático." >> "$GITHUB_STEP_SUMMARY"
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secreto.outputs.hay == 'si'
+      - name: Desplegar backend
+        if: steps.secreto.outputs.hay == 'si'
+        working-directory: backend
+        run: npx --yes @railway/cli up --service omnitravel --detach
+      - name: Desplegar versión web
+        if: steps.secreto.outputs.hay == 'si'
+        working-directory: mobile-app
+        run: npx --yes @railway/cli up --service omnitravel-web --detach
+      - name: Comprobar salud del backend
+        if: steps.secreto.outputs.hay == 'si'
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS https://omnitravel-production-4af6.up.railway.app/health; then exit 0; fi
+            sleep 15
+          done
+          echo "El backend no respondió /health" && exit 1

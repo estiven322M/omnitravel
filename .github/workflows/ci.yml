@@ -1,0 +1,119 @@
+# Integración continua (CI) de OmniTravel.
+# Se ejecuta en cada push y en cada pull request hacia main: si algo falla,
+# el PR queda en rojo y no debe integrarse.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Lint (oxlint)
+        run: npm run lint
+      - name: Compilar (tsc + nest build)
+        run: npm run build
+      - name: Pruebas unitarias con cobertura (Jest)
+        run: npm run test:cov -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports
+          JEST_JUNIT_OUTPUT_NAME: junit-backend.xml
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-backend
+          path: |
+            backend/reports/
+            backend/coverage/lcov-report/
+          if-no-files-found: ignore
+
+  app:
+    name: App móvil (Expo)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Revisión de tipos (TypeScript)
+        run: npm run typecheck
+      - name: Lint (ESLint de Expo)
+        run: npm run lint
+      - name: Pruebas unitarias con cobertura (Jest)
+        run: npx jest --ci --coverage --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports
+          JEST_JUNIT_OUTPUT_NAME: junit-app.xml
+      - name: Compilar la versión web (verifica que la app empaqueta)
+        run: npx expo export -p web --output-dir dist
+        env:
+          EXPO_PUBLIC_API_URL: https://omnitravel-production-4af6.up.railway.app
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-app
+          path: |
+            mobile-app/reports/
+            mobile-app/coverage/lcov-report/
+          if-no-files-found: ignore
+
+  testrail:
+    name: Resultados a TestRail
+    needs: [backend, app]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      TESTRAIL_URL: ${{ secrets.TESTRAIL_URL }}
+      TESTRAIL_USER: ${{ secrets.TESTRAIL_USER }}
+      TESTRAIL_KEY: ${{ secrets.TESTRAIL_KEY }}
+    steps:
+      - name: Verificar secretos
+        id: secreto
+        run: |
+          if [ -z "$TESTRAIL_URL" ] || [ -z "$TESTRAIL_USER" ] || [ -z "$TESTRAIL_KEY" ]; then
+            echo "Sin secretos de TestRail: se omite la carga de resultados." >> "$GITHUB_STEP_SUMMARY"
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.secreto.outputs.hay == 'si'
+      - name: Subir resultados JUnit (trcli)
+        if: steps.secreto.outputs.hay == 'si'
+        run: |
+          pip install --quiet trcli
+          for f in reportes-backend/reports/junit-backend.xml reportes-app/reports/junit-app.xml; do
+            trcli -y -h "$TESTRAIL_URL" --project "OmniTravel" \
+              --username "$TESTRAIL_USER" --key "$TESTRAIL_KEY" \
+              parse_junit --title "CI ${GITHUB_RUN_NUMBER} · $(basename "$f" .xml)" -f "$f"
+          done
