@@ -1,0 +1,88 @@
+# Integración continua (CI) de OmniTravel.
+# Se ejecuta en cada push y en cada pull request hacia main: si algo falla,
+# el PR queda en rojo y no debe integrarse.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Lint (oxlint)
+        run: npm run lint
+      - name: Compilar (tsc + nest build)
+        run: npm run build
+      - name: Pruebas unitarias con cobertura (Jest)
+        run: npm run test:cov -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports
+          JEST_JUNIT_OUTPUT_NAME: junit-backend.xml
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-backend
+          path: |
+            backend/reports/
+            backend/coverage/lcov-report/
+          if-no-files-found: ignore
+
+  app:
+    name: App móvil (Expo)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Revisión de tipos (TypeScript)
+        run: npm run typecheck
+      - name: Lint (ESLint de Expo)
+        run: npm run lint
+      - name: Pruebas unitarias con cobertura (Jest)
+        run: npx jest --ci --coverage --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: reports
+          JEST_JUNIT_OUTPUT_NAME: junit-app.xml
+      - name: Compilar la versión web (verifica que la app empaqueta)
+        run: npx expo export -p web --output-dir dist
+        env:
+          EXPO_PUBLIC_API_URL: https://omnitravel-production-4af6.up.railway.app
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-app
+          path: |
+            mobile-app/reports/
+            mobile-app/coverage/lcov-report/
+          if-no-files-found: ignore

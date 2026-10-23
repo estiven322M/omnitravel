@@ -69,3 +69,4 @@ certs/
 
 # Exportaciones de datos (contienen correos y hashes de contraseñas)
 datos-supabase*.json
+reports/
