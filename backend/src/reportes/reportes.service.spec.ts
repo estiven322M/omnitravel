@@ -25,8 +25,8 @@ async function capturar(promesa: Promise<unknown>): Promise<HttpException> {
 
 const codigo = (error: HttpException) => (error.getResponse() as { error: string }).error;
 
-/** Respuestas de `publicar`: poi del reporte, bloqueo y 4 escrituras. */
-const PUBLICAR = [[{ poi_id: '7' }], [], [], [], [], []];
+/** Respuestas de `publicar`: poi del reporte, bloqueo, 4 escrituras y cierre de re-verificaciones. */
+const PUBLICAR = [[{ poi_id: '7' }], [], [], [], [], [], []];
 const ES_MODERADOR = [{ '?column?': 1 }];
 const LUGAR_NUEVO = { nombre: 'Museo del Oro Quimbaya', lat: 4.537, lon: -75.675 };
 
@@ -142,6 +142,18 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
         String(sql).includes("set estado = 'publicado', via_resolucion"),
       );
       expect(actualizacion?.[1]).toEqual(['11', 'automatica']);
+    });
+
+    it('CP-U19 publicar resuelve las re-verificaciones pendientes del lugar (Proceso 3 → 1)', async () => {
+      const { db, query } = crearDb([pendienteDe('5'), [], [], [{ total: 3 }], ...PUBLICAR]);
+      await new ReportesService(db).confirmar('7', '11');
+
+      const cierre = query.mock.calls.find(([sql]) =>
+        String(sql).includes('update solicitud_reverificacion'),
+      );
+      expect(cierre?.[1]).toEqual(['7', '11']);
+      expect(String(cierre?.[0])).toContain("s.estado in ('pendiente', 'en_proceso')");
+      expect(String(cierre?.[0])).toContain("set estado = 'resuelta'");
     });
   });
 

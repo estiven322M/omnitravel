@@ -11,6 +11,7 @@ import { MapaModule } from './mapa/mapa.module';
 import { FavoritosModule } from './favoritos/favoritos.module';
 import { ModeracionModule } from './moderacion/moderacion.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { RetroalimentacionModule } from './retroalimentacion/retroalimentacion.module';
 import { RoutingModule } from './routing/routing.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseDiagnosticModule } from './database/database-diagnostic.module';
@@ -67,6 +68,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     FavoritosModule,
     ModeracionModule,
     ReportesModule,
+    RetroalimentacionModule,
     RoutingModule,
     // Módulos de Jhon (main): roles, diagnóstico y consultas de solo lectura.
     DatabaseDiagnosticModule,

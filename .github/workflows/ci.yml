@@ -76,7 +76,7 @@ jobs:
       - name: Compilar la versión web (verifica que la app empaqueta)
         run: npx expo export -p web --output-dir dist
         env:
-          EXPO_PUBLIC_API_URL: https://omnitravel-production-4af6.up.railway.app
+          EXPO_PUBLIC_API_URL: ${{ vars.API_URL || 'http://localhost:3000' }}
       - name: Publicar reportes
         if: always()
         uses: actions/upload-artifact@v5

@@ -396,6 +396,23 @@ export class ReportesService {
         where id_poi = $1 and estado is distinct from 'publicado'`,
       [poiId],
     );
+    // Cierre del ciclo Proceso 3 → Proceso 1: el reporte publicado resuelve las
+    // re-verificaciones pendientes del lugar y sus incidencias post-viaje.
+    await m.query(
+      `with cerradas as (
+         update solicitud_reverificacion s
+            set estado = 'resuelta', fecha_resolucion = now(), reporte_generado_id = $2
+           from incidencia i
+           join retroalimentacion r on r.id_retroalimentacion = i.retroalimentacion_id
+          where s.incidencia_id = i.id_incidencia
+            and r.poi_id = $1
+            and s.estado in ('pendiente', 'en_proceso')
+         returning s.incidencia_id)
+       update incidencia
+          set estado = 'resuelta', fecha_resolucion = now()
+        where id_incidencia in (select incidencia_id from cerradas)`,
+      [poiId, reporteId],
+    );
   }
 
   private exigirModerador(usuarioId: string) {

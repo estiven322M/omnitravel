@@ -1,42 +1,64 @@
-# Despliegue de OmniTravel
+# Despliegue de OmniTravel en AWS
 
-Tres piezas, todas desde la rama `main`:
+Todo el sistema corre en **Amazon Web Services**, desde la rama `main`:
 
-| Pieza | Dónde | Quién la usa |
+| Pieza | Servicio de AWS | Cómo se publica |
 |---|---|---|
-| Backend NestJS | Railway, servicio existente (`omnitravel-production-4af6.up.railway.app`) | La app Android y la web |
-| App Android (APK) | EAS Build (cuenta Expo `yamis2706s-team`) | Cualquier teléfono Android |
-| Versión web | Railway, servicio nuevo | iPhone, computadores y cualquier navegador |
+| Backend NestJS (API) | **Amazon ECS – Express Mode** (Fargate + Application Load Balancer con HTTPS) | GitHub Actions: imagen Docker → **Amazon ECR** → ECS |
+| Versión web | **AWS Amplify Hosting** | GitHub Actions: `expo export -p web` → Amplify |
+| Base de datos | **Amazon RDS** – PostgreSQL + PostGIS (`omnitravel_db`) | Ya existente |
+| Fotos de evidencia | **Amazon S3** (bucket privado) | El backend las sube con el rol de la tarea de ECS |
+| App Android (APK) | EAS Build (Expo) | `eas build -p android --profile preview` |
 
-La base de datos es AWS RDS (`omnitravel_db`). Ninguna clave va en el código:
-todo se configura como variable de cada servicio.
+El motor de ruteo es el servidor público de Valhalla (`valhalla1.openstreetmap.de`).
+Ninguna clave va en el código. GitHub entra a AWS con **OIDC** (rol temporal);
+como la organización de AWS de la cuenta del equipo bloquea OIDC con una política
+SCP, se usa un usuario IAM de mínimos permisos cuyas claves se guardan como
+secretos de GitHub Actions.
 
-## 1. Backend en Railway
+> **Por qué ECS Express Mode y no App Runner:** AWS App Runner dejó de aceptar
+> clientes nuevos el 30 de abril de 2026 y AWS recomienda ECS Express Mode
+> como reemplazo.
 
-Requisitos: Node 24 en tu computador y la CLI de Railway (si `railway` no
-se reconoce en Windows, usa `npx @railway/cli` en su lugar). Railway construye
-con `backend/Dockerfile`; al arrancar, el backend descarga la CA de RDS si
-falta.
+## 1. Preparar AWS (una sola vez, en CloudShell)
 
-```powershell
-npm install -g @railway/cli
-railway login
-cd backend
-railway link          # elige el proyecto del equipo y el servicio del backend
-```
+Lo hace quien tenga acceso de administrador a la cuenta de AWS.
 
-Variables del servicio (Railway → servicio → **Variables**):
+1. Entra a la consola de AWS y elige, arriba a la derecha, **la región donde está la base de datos RDS**.
+2. Abre **CloudShell** (ícono `>_` en la barra superior).
+3. Descarga y ejecuta el script:
 
-| Variable | Valor |
-|---|---|
-| `DATABASE_URL` | La misma de `backend/.env` |
-| `DB_SSL` | `true` |
-| `DB_SSL_CA` | `certs/global-bundle.pem` (el build la descarga) |
-| `JWT_SECRET` | Texto aleatorio de 32 caracteres o más (no el de desarrollo) |
-| `NODE_ENV` | `production` |
-| `VALHALLA_URL` | `https://valhalla1.openstreetmap.de` |
-| `CORS_ORIGINS` | La URL de la versión web (paso 3), p. ej. `https://omnitravel-web-production.up.railway.app` |
-| `EVIDENCIAS_DIR` | `/data/evidencia` (si agregas el volumen de abajo) |
+   ```bash
+   curl -fsSLO https://raw.githubusercontent.com/estiven322M/omnitravel/main/infra/aws/preparar-aws.sh
+   bash preparar-aws.sh
+   ```
+
+El script crea el repositorio de ECR, el bucket de S3, los roles de IAM
+(ECS y GitHub OIDC) y la aplicación de Amplify. Al final imprime los valores
+para el paso 2. Se puede ejecutar varias veces sin duplicar nada.
+
+**Base de datos:** el script muestra las reglas del puerto 5432 de RDS. Si
+solo permiten ciertas IP, agrega una regla de entrada **PostgreSQL (5432)**
+desde el grupo de seguridad del servicio de ECS (aparece en ECS → Clusters →
+default → omnitravel-backend → Networking después del primer despliegue).
+
+## 2. Configurar GitHub (una sola vez)
+
+Requiere permisos de administrador del repositorio. En **Settings → Secrets
+and variables → Actions**:
+
+| Pestaña | Nombre | Valor |
+|---|---|---|
+| Variables | `AWS_REGION` | La que imprime el script |
+| Variables | `AWS_ACCOUNT_ID` | La que imprime el script |
+| Variables | `EVIDENCIAS_BUCKET` | La que imprime el script |
+| Variables | `AMPLIFY_APP_ID` | La que imprime el script |
+| Variables | `WEB_URL` | La que imprime el script (`https://main.<id>.amplifyapp.com`) |
+| Variables | `API_URL` | Se agrega en el paso 3, con la URL del backend |
+| Secrets | `DATABASE_URL` | La misma de `backend/.env` |
+| Secrets | `JWT_SECRET` | Texto aleatorio de 48 o más caracteres (no el de desarrollo) |
+| Secrets | `MODERADOR_EMAIL`, `MODERADOR_CLAVE` | Cuenta de moderador para las pruebas de Postman |
+| Secrets | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Solo si la organización de AWS bloquea OIDC (como en nuestra cuenta). El script las deja en `~/claves-github.txt` de CloudShell |
 
 Para generar `JWT_SECRET`:
 
@@ -44,23 +66,22 @@ Para generar `JWT_SECRET`:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-**Fotos de evidencia:** el disco de Railway se borra en cada despliegue.
-Agrega un volumen (servicio → **Settings → Volumes → New Volume**, montado
-en `/data`) y usa `EVIDENCIAS_DIR=/data/evidencia`.
+## 3. Desplegar
 
-Desplegar:
+**Actions → «Despliegue (AWS)» → Run workflow.** Después, cada vez que `main`
+pasa la CI se despliega solo.
 
-```powershell
-railway up
-```
+1. El job **Backend** construye la imagen, la sube a ECR y crea o actualiza el
+   servicio `omnitravel-backend` en ECS. En el resumen aparece la URL, con la
+   forma `https://<servicio>.ecs.<región>.on.aws`.
+2. Guarda esa URL como variable **`API_URL`** (paso 2) y vuelve a ejecutar el
+   workflow, para que la web y las pruebas la usen siempre.
+3. El job **Web** publica la versión web en Amplify (`WEB_URL`).
 
-Comprobar: `https://omnitravel-production-4af6.up.railway.app/health` debe
-responder `{"status":"ok"}`, y `.../mapa` debe traer los lugares de la BD.
+## 4. App Android (APK)
 
-## 2. App Android (APK) con EAS
-
-`mobile-app/eas.json` ya apunta los perfiles `preview` y `production` al
-backend de Railway (`EXPO_PUBLIC_API_URL`).
+Pon la URL del backend en `mobile-app/eas.json` (`EXPO_PUBLIC_API_URL` de los
+perfiles `preview` y `production`) y genera la APK:
 
 ```powershell
 npm install -g eas-cli
@@ -69,42 +90,26 @@ cd mobile-app
 eas build -p android --profile preview
 ```
 
-Al terminar (10–20 min), EAS da un enlace y un QR para descargar el `.apk`.
-Ese enlace se comparte: cualquier persona con Android lo instala (debe
-permitir «instalar apps de origen desconocido»). Cada vez que cambie la app
-se repite el build y se comparte el enlace nuevo.
+EAS entrega un enlace y un QR para instalar la `.apk` en cualquier Android.
+En iPhone se usa la versión web.
 
-Para Google Play: `eas build -p android --profile production` genera el
-`.aab` que se sube a Play Console (requiere cuenta de desarrollador).
+## 5. Verificación final
 
-**iPhone:** instalar una app fuera del App Store exige la cuenta de Apple
-Developer (USD 99/año). Mientras tanto, los usuarios de iPhone usan la
-versión web.
+1. `<API_URL>/health` responde `{"status":"ok"}` y `<API_URL>/mapa` trae los lugares.
+2. La web (`WEB_URL`) abre, inicia sesión y muestra el mapa.
+3. Un reporte con foto se guarda: la foto queda en `s3://<bucket>/evidencia/…`.
+4. **Actions → Pruebas funcionales → Run workflow**: los 31 casos de Postman pasan.
+5. Antes de la sustentación, borra los datos de prueba:
 
-## 3. Versión web en Railway
+   ```powershell
+   cd backend
+   npm run limpiar-pruebas                 # muestra qué se borraría
+   npm run limpiar-pruebas -- --confirmar  # borra
+   ```
 
-En el mismo proyecto de Railway: **New → Empty Service** (p. ej.
-`omnitravel-web`). Railway construye con `mobile-app/Dockerfile` (exporta la
-web con Expo y la sirve con `scripts/servir-web.mjs`). Variables:
+## Costos y apagado
 
-| Variable | Valor |
-|---|---|
-| `EXPO_PUBLIC_API_URL` | `https://omnitravel-production-4af6.up.railway.app` |
-
-```powershell
-cd mobile-app
-railway link          # elige el servicio omnitravel-web
-railway up
-```
-
-Luego **Settings → Networking → Generate Domain**. Esa URL es la de la app
-web: ponla en `CORS_ORIGINS` del backend (paso 1) y vuelve a desplegar el
-backend con `railway up` desde `backend/`.
-
-## 4. Verificación final
-
-1. `…/health` del backend responde `ok`.
-2. La web abre, permite crear una cuenta y muestra los lugares.
-3. La APK instalada en un Android inicia sesión y envía un reporte.
-4. El reporte aparece en la BD (`npm run ver-usuarios`, pgAdmin o la
-   extensión de VS Code).
+El servicio de ECS (1 tarea de 0,5 vCPU / 1 GB) y su balanceador cuestan
+entre USD 1 y 1,5 al día; Amplify, ECR y S3 cuestan centavos con este uso.
+Después de la calificación se puede eliminar el servicio en **ECS → Clusters
+→ default → omnitravel-backend → Delete**, y la app en **Amplify**.

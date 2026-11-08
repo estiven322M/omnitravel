@@ -12,6 +12,7 @@ import { MisReportesScreen } from '../screens/MisReportesScreen';
 import { NavegacionScreen } from '../screens/NavegacionScreen';
 import { PoiDetailScreen } from '../screens/PoiDetailScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { RetroalimentacionScreen } from '../screens/RetroalimentacionScreen';
 import { useProfileStore } from '../store/profileStore';
 import { colors } from '../utils/theme';
 import { MainTabs } from './MainTabs';
@@ -75,6 +76,11 @@ export function RootNavigator() {
               name="Navegacion"
               component={NavegacionScreen}
               options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="Retroalimentacion"
+              component={RetroalimentacionScreen}
+              options={{ animation: 'slide_from_bottom' }}
             />
             {moderacion ? (
               <>

@@ -5,7 +5,7 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
 
 | Archivo | Para qué sirve |
 |---|---|
-| `omnitravel_casos_testrail.csv` | Los 128 casos de los dos procesos: 111 unitarios (Jest) y 17 funcionales (Postman) |
+| `omnitravel_casos_testrail.csv` | Los 172 casos de los tres procesos: 141 unitarios (Jest) y 31 funcionales (Postman) |
 
 ## 1. Crear el proyecto
 
@@ -23,6 +23,7 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
      - Pruebas unitarias (Jest) → Backend / App móvil → una sección por archivo
      - Pruebas funcionales (Postman)
    - Proceso 2 - Planificación de rutas accesibles personalizadas (con la misma estructura)
+   - Proceso 3 - Gestión de retroalimentación e incidencias post-viaje (con la misma estructura)
 5. Relaciona las columnas así: `Title`, `Type`, `Priority`, `References`, `Preconditions`, `Steps` y `Expected Result`.
 6. `Automation Type` es opcional. Si quieres conservarla, primero créala como campo personalizado de tipo texto en **Administration → Customizations**.
 

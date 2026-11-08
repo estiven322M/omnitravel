@@ -1,21 +1,23 @@
 # Pruebas funcionales de la API desplegada (Postman + Newman).
 # Se lanza a mano (Actions → Pruebas funcionales → Run workflow) o cada
 # lunes. Crea 4 usuarios de prueba por ejecución, por eso no corre en cada push.
+# Los casos del moderador (CP-F312 a CP-F314) usan los secretos
+# MODERADOR_EMAIL y MODERADOR_CLAVE; sin ellos esos tres casos se omiten.
 name: Pruebas funcionales
 
 on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: URL del backend a probar
-        required: true
-        default: https://omnitravel-production-4af6.up.railway.app
+        description: URL del backend a probar (vacío = variable API_URL del repositorio)
+        required: false
+        default: ''
   schedule:
     - cron: '0 13 * * 1'
 
 jobs:
   newman:
-    name: Colección Postman (17 casos)
+    name: Colección Postman (31 casos, 3 procesos)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -23,9 +25,14 @@ jobs:
         with:
           node-version: 24
       - name: Ejecutar la colección
+        env:
+          MODERADOR_EMAIL: ${{ secrets.MODERADOR_EMAIL }}
+          MODERADOR_CLAVE: ${{ secrets.MODERADOR_CLAVE }}
         run: |
           npx --yes newman@6 run postman/omnitravel.postman_collection.json \
-            --env-var "baseUrl=${{ inputs.base_url || 'https://omnitravel-production-4af6.up.railway.app' }}" \
+            --env-var "baseUrl=${{ inputs.base_url || vars.API_URL }}" \
+            --env-var "email_moderador=$MODERADOR_EMAIL" \
+            --env-var "clave_moderador=$MODERADOR_CLAVE" \
             --reporters cli,junit,json \
             --reporter-junit-export reports/junit-postman.xml \
             --reporter-json-export reports/newman.json

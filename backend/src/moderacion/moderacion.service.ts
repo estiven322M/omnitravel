@@ -139,8 +139,12 @@ export class ModeracionService {
         ? abierta.id_solicitud
         : (
             await m.query(
+              // UNIQUE (incidencia_id): una solicitud ya resuelta se reabre.
               `insert into solicitud_reverificacion (incidencia_id, estado)
-               values ($1, 'pendiente') returning id_solicitud::int`,
+               values ($1, 'pendiente')
+               on conflict (incidencia_id)
+               do update set estado = 'pendiente', fecha_resolucion = null, reporte_generado_id = null
+               returning id_solicitud::int`,
               [incidenciaId],
             )
           )[0].id_solicitud;

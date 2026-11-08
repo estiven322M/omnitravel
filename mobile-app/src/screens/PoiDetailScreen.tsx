@@ -474,6 +474,20 @@ export function PoiDetailScreen() {
               estilo={estilos.boton}
             />
           </View>
+          {!enPanelModeracion ? (
+            <AppButton
+              titulo="Calificar mi visita"
+              variante="fantasma"
+              icono="star-outline"
+              onPress={() =>
+                navigation.navigate('Retroalimentacion', {
+                  poiId: poi.id,
+                  origen: 'visita',
+                })
+              }
+              pistaAccesibilidad="Cuenta tu experiencia o informa si algo no coincidía"
+            />
+          ) : null}
           {reporteConfirmable ? (
             <Text
               style={estilos.progresoConfirmaciones}
@@ -512,9 +526,10 @@ export function PoiDetailScreen() {
                 Aún no hay experiencias registradas para este lugar.
               </Text>
             ) : (
-              poi.experiencias.map((experiencia) => (
+              poi.experiencias.map((experiencia, indice) => (
                 <View
-                  key={experiencia.autor}
+                  // El autor es genérico («Viajero de la comunidad»): no sirve de clave.
+                  key={`${indice}-${experiencia.calificacion}`}
                   style={estilos.tarjetaExperiencia}
                 >
                   <View style={estilos.avatar}>

@@ -1,8 +1,19 @@
-# Entrega continua (CD): despliega el backend y la versión web en Railway
-# cuando main pasa la CI. Requiere el secreto RAILWAY_TOKEN (token del
-# proyecto en Railway → Settings → Tokens). Sin ese secreto el job se omite y
-# el despliegue sigue siendo manual con `railway up`.
-name: Despliegue
+# Entrega continua (CD) en AWS: cuando main pasa la CI (o a mano desde
+# Actions → «Despliegue (AWS)» → Run workflow):
+#   1. Backend: construye la imagen Docker, la sube a Amazon ECR y la despliega
+#      en Amazon ECS (Express Mode, Fargate + balanceador con HTTPS).
+#   2. Web: exporta la app con Expo y la publica en AWS Amplify Hosting.
+#
+# Se autentica en AWS con OIDC (rol omnitravel-github-deploy) o, si la
+# organización de AWS no permite OIDC, con las claves del usuario IAM
+# omnitravel-github-deploy (secretos AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY).
+# Los recursos los crea infra/aws/preparar-aws.sh.
+#
+# Variables del repositorio (Settings → Secrets and variables → Actions → Variables):
+#   AWS_REGION, AWS_ACCOUNT_ID, EVIDENCIAS_BUCKET, AMPLIFY_APP_ID, WEB_URL
+#   API_URL (opcional: URL del backend; si falta se usa la que entrega ECS)
+# Secretos: DATABASE_URL, JWT_SECRET (+ AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY sin OIDC)
+name: Despliegue (AWS)
 
 on:
   workflow_run:
@@ -11,39 +22,161 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  id-token: write # OIDC hacia AWS
+  contents: read
+
+concurrency:
+  group: despliegue-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  # Si la organización de AWS bloquea OIDC, se usan las claves del usuario IAM.
+  HAY_CLAVES: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+  ECR_REPO: omnitravel-backend
+  SERVICIO: omnitravel-backend
+
 jobs:
-  railway:
-    name: Railway (backend y web)
+  backend:
+    name: Backend → Amazon ECS (Express Mode)
     if: >-
+      vars.AWS_ACCOUNT_ID != '' &&
       (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
-    env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    outputs:
+      api_url: ${{ steps.url.outputs.api_url }}
     steps:
-      - name: Verificar el secreto
-        id: secreto
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "Sin RAILWAY_TOKEN: se omite el despliegue automático." >> "$GITHUB_STEP_SUMMARY"
-            echo "hay=no" >> "$GITHUB_OUTPUT"
-          else
-            echo "hay=si" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/checkout@v5
-        if: steps.secreto.outputs.hay == 'si'
-      - name: Desplegar backend
-        if: steps.secreto.outputs.hay == 'si'
+
+      - name: Credenciales de AWS (OIDC)
+        if: env.HAY_CLAVES != 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/omnitravel-github-deploy
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Credenciales de AWS (claves del usuario omnitravel-github-deploy)
+        if: env.HAY_CLAVES == 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Iniciar sesión en Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Construir y subir la imagen
+        id: imagen
         working-directory: backend
-        run: npx --yes @railway/cli up --service omnitravel --detach
-      - name: Desplegar versión web
-        if: steps.secreto.outputs.hay == 'si'
-        working-directory: mobile-app
-        run: npx --yes @railway/cli up --service omnitravel-web --detach
-      - name: Comprobar salud del backend
-        if: steps.secreto.outputs.hay == 'si'
         run: |
-          for i in $(seq 1 20); do
-            if curl -fsS https://omnitravel-production-4af6.up.railway.app/health; then exit 0; fi
-            sleep 15
+          IMAGEN="${{ steps.ecr.outputs.registry }}/$ECR_REPO:${{ github.sha }}"
+          docker build -t "$IMAGEN" .
+          docker push "$IMAGEN"
+          echo "uri=$IMAGEN" >> "$GITHUB_OUTPUT"
+
+      - name: Desplegar en ECS Express Mode
+        id: ecs
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ env.SERVICIO }}
+          image: ${{ steps.imagen.outputs.uri }}
+          execution-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
+          infrastructure-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ecsInfrastructureRoleForExpressServices
+          task-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/omnitravel-backend-task
+          container-port: 3000
+          health-check-path: /health
+          cpu: '512'
+          memory: '1024'
+          min-task-count: 1
+          max-task-count: 2
+          environment-variables: |
+            [
+              {"name": "NODE_ENV", "value": "production"},
+              {"name": "PORT", "value": "3000"},
+              {"name": "DATABASE_URL", "value": "${{ secrets.DATABASE_URL }}"},
+              {"name": "DB_SSL", "value": "true"},
+              {"name": "DB_SSL_CA", "value": "certs/global-bundle.pem"},
+              {"name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}"},
+              {"name": "VALHALLA_URL", "value": "https://valhalla1.openstreetmap.de"},
+              {"name": "CORS_ORIGINS", "value": "${{ vars.WEB_URL }}"},
+              {"name": "EVIDENCIAS_BUCKET", "value": "${{ vars.EVIDENCIAS_BUCKET }}"},
+              {"name": "AWS_REGION", "value": "${{ vars.AWS_REGION }}"}
+            ]
+
+      - name: URL del backend
+        id: url
+        run: |
+          URL="${{ vars.API_URL }}"
+          [ -n "$URL" ] || URL="${{ steps.ecs.outputs.endpoint }}"
+          case "$URL" in http*) ;; *) URL="https://$URL" ;; esac
+          URL="${URL%/}"
+          echo "api_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### Backend desplegado en AWS: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comprobar salud del backend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "${{ steps.url.outputs.api_url }}/health"; then exit 0; fi
+            sleep 20
           done
           echo "El backend no respondió /health" && exit 1
+
+  web:
+    name: Web → AWS Amplify Hosting
+    needs: backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+
+      - name: Exportar la versión web
+        run: |
+          npm ci
+          npx expo export -p web --output-dir dist
+          cd dist && zip -qr ../web.zip .
+        env:
+          EXPO_PUBLIC_API_URL: ${{ needs.backend.outputs.api_url }}
+
+      - name: Credenciales de AWS (OIDC)
+        if: env.HAY_CLAVES != 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/omnitravel-github-deploy
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Credenciales de AWS (claves del usuario omnitravel-github-deploy)
+        if: env.HAY_CLAVES == 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Publicar en Amplify
+        env:
+          APP_ID: ${{ vars.AMPLIFY_APP_ID }}
+        run: |
+          DESPLIEGUE=$(aws amplify create-deployment --app-id "$APP_ID" --branch-name main)
+          JOB=$(echo "$DESPLIEGUE" | jq -r .jobId)
+          curl -fsS -X PUT -H "Content-Type: application/zip" --upload-file web.zip \
+            "$(echo "$DESPLIEGUE" | jq -r .zipUploadUrl)"
+          aws amplify start-deployment --app-id "$APP_ID" --branch-name main --job-id "$JOB" >/dev/null
+          for i in $(seq 1 40); do
+            ESTADO=$(aws amplify get-job --app-id "$APP_ID" --branch-name main --job-id "$JOB" \
+              --query job.summary.status --output text)
+            echo "Amplify: $ESTADO"
+            [ "$ESTADO" = "SUCCEED" ] && break
+            [ "$ESTADO" = "FAILED" ] && exit 1
+            sleep 10
+          done
+          echo "### Web publicada: ${{ vars.WEB_URL }}" >> "$GITHUB_STEP_SUMMARY"

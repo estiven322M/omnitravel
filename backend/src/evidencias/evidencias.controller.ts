@@ -20,7 +20,7 @@ export class EvidenciasController {
 
   // GET /evidencias/archivo/:usuario/:archivo — lectura pública (evidencia comunitaria)
   @Get('archivo/:usuario/:archivo')
-  archivo(
+  async archivo(
     @Param('usuario') usuario: string,
     @Param('archivo') archivo: string,
     @Res() res: Response,
@@ -28,6 +28,16 @@ export class EvidenciasController {
     // Los patrones impiden rutas como "../" fuera de la carpeta de evidencias.
     if (!PATRON_USUARIO.test(usuario) || !PATRON_ARCHIVO.test(archivo)) {
       throw errorDominio(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'La foto no existe.');
+    }
+    if (this.evidenciasService.bucket) {
+      const foto = await this.evidenciasService.leerDeS3(`${usuario}/${archivo}`);
+      if (!foto) {
+        throw errorDominio(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'La foto no existe.');
+      }
+      res.setHeader('Content-Type', foto.tipo);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      foto.cuerpo.pipe(res);
+      return;
     }
     res.sendFile(`${usuario}/${archivo}`, { root: this.evidenciasService.directorio }, (error) => {
       if (error && !res.headersSent) {
