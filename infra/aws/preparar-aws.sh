@@ -105,28 +105,11 @@ aws iam put-role-policy --role-name "$ROL_TAREA" --policy-name evidencias-s3 --p
 }"
 ok "$ROL_EJECUCION, $ROL_INFRA y $ROL_TAREA"
 
-# --- 4. GitHub Actions por OIDC ---------------------------------------------
-info "Acceso de GitHub Actions (OIDC, sin claves)"
-OIDC_ARN="arn:aws:iam::$CUENTA:oidc-provider/token.actions.githubusercontent.com"
-aws iam get-open-id-connect-provider --open-id-connect-provider-arn "$OIDC_ARN" >/dev/null 2>&1 \
-  || aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com \
-       --client-id-list sts.amazonaws.com \
-       --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 >/dev/null
-CONFIANZA="{
-  \"Version\":\"2012-10-17\",
-  \"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Federated\":\"$OIDC_ARN\"},\"Action\":\"sts:AssumeRoleWithWebIdentity\",
-    \"Condition\":{\"StringEquals\":{\"token.actions.githubusercontent.com:aud\":\"sts.amazonaws.com\"},
-                   \"StringLike\":{\"token.actions.githubusercontent.com:sub\":\"repo:$REPO_GITHUB:ref:refs/heads/main\"}}}]
-}"
-if aws iam get-role --role-name "$ROL_GITHUB" >/dev/null 2>&1; then
-  aws iam update-assume-role-policy --role-name "$ROL_GITHUB" --policy-document "$CONFIANZA"
-else
-  aws iam create-role --role-name "$ROL_GITHUB" --assume-role-policy-document "$CONFIANZA" >/dev/null
-fi
-for P in AmazonEC2ContainerRegistryPowerUser AmazonECS_FullAccess AdministratorAccess-Amplify; do
-  aws iam attach-role-policy --role-name "$ROL_GITHUB" --policy-arn "arn:aws:iam::aws:policy/$P"
-done
-aws iam put-role-policy --role-name "$ROL_GITHUB" --policy-name pasar-roles-ecs --policy-document "{
+# --- 4. Acceso de GitHub Actions --------------------------------------------
+# Primero OIDC (sin claves). Si la organización de AWS lo prohíbe (política
+# SCP), se usa un usuario IAM con claves de acceso guardadas como secretos.
+POLITICAS_DESPLIEGUE="AmazonEC2ContainerRegistryPowerUser AmazonECS_FullAccess AdministratorAccess-Amplify"
+POLITICA_PASAR_ROLES="{
   \"Version\":\"2012-10-17\",
   \"Statement\":[
     {\"Effect\":\"Allow\",\"Action\":\"iam:PassRole\",\"Resource\":[
@@ -134,7 +117,51 @@ aws iam put-role-policy --role-name "$ROL_GITHUB" --policy-name pasar-roles-ecs 
     {\"Effect\":\"Allow\",\"Action\":\"iam:CreateServiceLinkedRole\",\"Resource\":\"*\"}
   ]
 }"
-ok "arn:aws:iam::$CUENTA:role/$ROL_GITHUB (solo la rama main de $REPO_GITHUB)"
+MODO_GITHUB=""
+
+info "Acceso de GitHub Actions"
+OIDC_ARN="arn:aws:iam::$CUENTA:oidc-provider/token.actions.githubusercontent.com"
+if aws iam get-open-id-connect-provider --open-id-connect-provider-arn "$OIDC_ARN" >/dev/null 2>&1 \
+   || aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com \
+        --client-id-list sts.amazonaws.com \
+        --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 >/dev/null 2>&1; then
+  CONFIANZA="{
+    \"Version\":\"2012-10-17\",
+    \"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Federated\":\"$OIDC_ARN\"},\"Action\":\"sts:AssumeRoleWithWebIdentity\",
+      \"Condition\":{\"StringEquals\":{\"token.actions.githubusercontent.com:aud\":\"sts.amazonaws.com\"},
+                     \"StringLike\":{\"token.actions.githubusercontent.com:sub\":\"repo:$REPO_GITHUB:ref:refs/heads/main\"}}}]
+  }"
+  if aws iam get-role --role-name "$ROL_GITHUB" >/dev/null 2>&1; then
+    aws iam update-assume-role-policy --role-name "$ROL_GITHUB" --policy-document "$CONFIANZA"
+  else
+    aws iam create-role --role-name "$ROL_GITHUB" --assume-role-policy-document "$CONFIANZA" >/dev/null
+  fi
+  for P in $POLITICAS_DESPLIEGUE; do
+    aws iam attach-role-policy --role-name "$ROL_GITHUB" --policy-arn "arn:aws:iam::aws:policy/$P"
+  done
+  aws iam put-role-policy --role-name "$ROL_GITHUB" --policy-name pasar-roles-ecs --policy-document "$POLITICA_PASAR_ROLES"
+  MODO_GITHUB="oidc"
+  ok "OIDC: arn:aws:iam::$CUENTA:role/$ROL_GITHUB (solo la rama main de $REPO_GITHUB)"
+else
+  echo "  ⚠ La organización de AWS no permite OIDC. Se usa un usuario IAM con claves de acceso."
+  aws iam get-user --user-name "$ROL_GITHUB" >/dev/null 2>&1 \
+    || aws iam create-user --user-name "$ROL_GITHUB" >/dev/null
+  for P in $POLITICAS_DESPLIEGUE; do
+    aws iam attach-user-policy --user-name "$ROL_GITHUB" --policy-arn "arn:aws:iam::aws:policy/$P"
+  done
+  aws iam put-user-policy --user-name "$ROL_GITHUB" --policy-name pasar-roles-ecs --policy-document "$POLITICA_PASAR_ROLES"
+  MODO_GITHUB="claves"
+  ARCHIVO_CLAVES="$HOME/claves-github.txt"
+  if [ "$(aws iam list-access-keys --user-name "$ROL_GITHUB" --query 'length(AccessKeyMetadata)' --output text)" = "0" ]; then
+    CLAVES="$(aws iam create-access-key --user-name "$ROL_GITHUB" --query 'AccessKey.[AccessKeyId,SecretAccessKey]' --output text)"
+    umask 077
+    printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n' "$(echo "$CLAVES" | cut -f1)" "$(echo "$CLAVES" | cut -f2)" > "$ARCHIVO_CLAVES"
+    NOTA_CLAVES="Claves guardadas en $ARCHIVO_CLAVES (no se muestran aquí)."
+  else
+    NOTA_CLAVES="El usuario ya tiene una clave. Si la perdiste: IAM → Usuarios → $ROL_GITHUB → borra la clave y vuelve a ejecutar."
+  fi
+  ok "Usuario IAM $ROL_GITHUB"
+fi
 
 # --- 5. Amplify Hosting ------------------------------------------------------
 info "Amplify Hosting ($AMPLIFY_NOMBRE)"
@@ -165,6 +192,17 @@ cat <<FIN
  Y en la pestaña «Secrets»:
   DATABASE_URL        (la misma de backend/.env)
   JWT_SECRET          (texto aleatorio de 48+ caracteres; NO el de desarrollo)
+FIN
+if [ "$MODO_GITHUB" = "claves" ]; then
+cat <<FIN
+  AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY
+  ${NOTA_CLAVES}
+  Para verlas y copiarlas:  cat ~/claves-github.txt
+  ⚠ No las pegues en chats ni en el repositorio; solo en GitHub → Secrets.
+    Cuando estén en GitHub, borra el archivo:  rm ~/claves-github.txt
+FIN
+fi
+cat <<FIN
 
  Después: Actions → «Despliegue (AWS)» → Run workflow.
 =============================================================================

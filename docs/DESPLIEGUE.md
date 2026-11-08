@@ -11,8 +11,10 @@ Todo el sistema corre en **Amazon Web Services**, desde la rama `main`:
 | App Android (APK) | EAS Build (Expo) | `eas build -p android --profile preview` |
 
 El motor de ruteo es el servidor público de Valhalla (`valhalla1.openstreetmap.de`).
-Ninguna clave va en el código: GitHub entra a AWS con **OIDC** (rol temporal)
-y los secretos se guardan en GitHub Actions.
+Ninguna clave va en el código. GitHub entra a AWS con **OIDC** (rol temporal);
+como la organización de AWS de la cuenta del equipo bloquea OIDC con una política
+SCP, se usa un usuario IAM de mínimos permisos cuyas claves se guardan como
+secretos de GitHub Actions.
 
 > **Por qué ECS Express Mode y no App Runner:** AWS App Runner dejó de aceptar
 > clientes nuevos el 30 de abril de 2026 y AWS recomienda ECS Express Mode
@@ -56,6 +58,7 @@ and variables → Actions**:
 | Secrets | `DATABASE_URL` | La misma de `backend/.env` |
 | Secrets | `JWT_SECRET` | Texto aleatorio de 48 o más caracteres (no el de desarrollo) |
 | Secrets | `MODERADOR_EMAIL`, `MODERADOR_CLAVE` | Cuenta de moderador para las pruebas de Postman |
+| Secrets | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Solo si la organización de AWS bloquea OIDC (como en nuestra cuenta). El script las deja en `~/claves-github.txt` de CloudShell |
 
 Para generar `JWT_SECRET`:
 
