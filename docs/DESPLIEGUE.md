@@ -1,6 +1,11 @@
 # Despliegue de OmniTravel en AWS
 
-Todo el sistema corre en **Amazon Web Services**, desde la rama `main`:
+Todo el sistema corre en **Amazon Web Services** (región `us-east-2`, Ohio), desde la rama `main`:
+
+| | URL |
+|---|---|
+| Versión web | https://main.dlshn89nrlzf4.amplifyapp.com |
+| Backend (API) | https://om-ea9b9c23afe54514b837ef7dfa228a44.ecs.us-east-2.on.aws |
 
 | Pieza | Servicio de AWS | Cómo se publica |
 |---|---|---|
