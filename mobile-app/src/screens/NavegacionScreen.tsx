@@ -733,8 +733,14 @@ export function NavegacionScreen() {
                 titulo="Finalizar ruta"
                 variante="peligro"
                 icono="stop-circle-outline"
-                onPress={() => navigation.goBack()}
-                pistaAccesibilidad="Cierra la navegación paso a paso y vuelve al mapa"
+                onPress={() =>
+                  // Proceso 3: al terminar el trayecto se pide la experiencia.
+                  navigation.replace('Retroalimentacion', {
+                    poiId,
+                    origen: 'ruta',
+                  })
+                }
+                pistaAccesibilidad="Cierra la navegación y te pide calificar el lugar"
               />
             </>
           ) : null}

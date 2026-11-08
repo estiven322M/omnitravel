@@ -24,6 +24,7 @@
     "copiar-supabase": "node --env-file-if-exists=.env scripts/copiar-supabase-a-aws.mjs",
     "restablecer-clave": "node --env-file-if-exists=.env scripts/restablecer-clave.mjs",
     "ver-usuarios": "node --env-file-if-exists=.env scripts/ver-usuarios.mjs",
+    "ver-esquema": "node --env-file-if-exists=.env scripts/ver-esquema.mjs",
     "separar-lugares": "node --env-file-if-exists=.env scripts/separar-lugares.mjs",
     "descargar-ca-rds": "node scripts/descargar-ca-rds.mjs"
   },

@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "560c35a3-28e5-5e87-9c27-acdabfa736d7",
-    "name": "OmniTravel — Pruebas funcionales (Entrega 2)",
-    "description": "Pruebas funcionales de los dos procesos entregados, contra el backend desplegado.\n\nEjecutar en orden con el Collection Runner (Run collection). Cada ejecución crea 4 usuarios de prueba (postman+…@omnitravel.test) y un reporte de actualización sobre un lugar ya publicado, por lo que no agrega lugares nuevos al mapa.\n\n- 0. Preparación: 6 solicitudes\n- Proceso 1 — Validación colaborativa: 11 casos (CP-F101…CP-F111)\n- Proceso 2 — Rutas accesibles: 6 casos (CP-F201…CP-F206)",
+    "name": "OmniTravel — Pruebas funcionales (Entrega final)",
+    "description": "Pruebas funcionales de los tres procesos de OmniTravel, contra el backend desplegado.\n\nEjecutar en orden con el Collection Runner (Run collection). Cada ejecución crea 4 usuarios de prueba (postman+…@omnitravel.test), un reporte de actualización sobre un lugar ya publicado y tres experiencias post-viaje marcadas con «[Postman]».\n\nLos casos del moderador (CP-F312 a CP-F314) necesitan las variables email_moderador y clave_moderador; sin ellas se omiten.\n\n- 0. Preparación: 6 solicitudes\n- Proceso 1 — Validación colaborativa: 11 casos (CP-F101…CP-F111)\n- Proceso 2 — Rutas accesibles: 6 casos (CP-F201…CP-F206)\n- Proceso 3 — Retroalimentación post-viaje: 14 casos (CP-F301…CP-F314)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -1071,6 +1071,679 @@
           }
         }
       ]
+    },
+    {
+      "name": "Proceso 3 — Retroalimentación post-viaje",
+      "item": [
+        {
+          "name": "CP-F301 Registrar experiencia positiva sin discrepancia (RF-03)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Queda registrada y no abre incidencia', () => {",
+                  "  pm.expect(r.id_retroalimentacion).to.be.a('number');",
+                  "  pm.expect(r.escalada).to.eql(false);",
+                  "  pm.expect(r.id_incidencia).to.eql(null);",
+                  "});",
+                  "pm.collectionVariables.set('retroPositivaId', r.id_retroalimentacion);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 5,\n  \"comentario\": \"[Postman] Rampa amplia y baño accesible.\",\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F302 Experiencia repetida en menos de 24 h → 409 (RNF-19)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Código RETROALIMENTACION_DUPLICADA', () => pm.expect(pm.response.json().error).to.eql('RETROALIMENTACION_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 4,\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F303 Calificación fuera de 1–5 → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Código CALIFICACION_INVALIDA', () => pm.expect(pm.response.json().error).to.eql('CALIFICACION_INVALIDA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 6,\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F304 Discrepancia sin descripción → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Código DESCRIPCION_REQUERIDA', () => pm.expect(pm.response.json().error).to.eql('DESCRIPCION_REQUERIDA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 2,\n  \"coincide\": false,\n  \"tipoDiscrepancia\": \"barrera_nueva\",\n  \"descripcionDiscrepancia\": \"mal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F305 Experiencia sobre un lugar inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Código POI_NO_ENCONTRADO', () => pm.expect(pm.response.json().error).to.eql('POI_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": 999999999,\n  \"calificacion\": 3,\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F306 Experiencia sin sesión → 401 (RNF-21)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 3,\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F307 Discrepancia válida abre una incidencia (RF-03, RNF-19)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Abre incidencia de gravedad media', () => {",
+                  "  pm.expect(r.escalada).to.eql(true);",
+                  "  pm.expect(r.id_incidencia).to.be.a('number');",
+                  "  pm.expect(r.gravedad).to.eql('media');",
+                  "});",
+                  "pm.collectionVariables.set('incidenciaId', r.id_incidencia);",
+                  "pm.collectionVariables.set('retroDiscrepanciaId', r.id_retroalimentacion);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 2,\n  \"comentario\": \"[Postman] La entrada no era accesible.\",\n  \"coincide\": false,\n  \"tipoDiscrepancia\": \"barrera_nueva\",\n  \"descripcionDiscrepancia\": \"[Postman] La rampa de la entrada está bloqueada por obras.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F308 Calificación de 1 sin discrepancia abre incidencia de gravedad alta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('Escala con gravedad alta', () => {",
+                  "  pm.expect(r.escalada).to.eql(true);",
+                  "  pm.expect(r.gravedad).to.eql('alta');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c3}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"poiId\": \"{{poiId}}\",\n  \"calificacion\": 1,\n  \"comentario\": \"[Postman] No pude entrar con la silla de ruedas.\",\n  \"coincide\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F309 El viajero ve su experiencia con la incidencia abierta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const fila = pm.response.json().find((x) => x.id_retroalimentacion === Number(pm.collectionVariables.get('retroDiscrepanciaId')));",
+                  "pm.test('La experiencia aparece con su incidencia abierta', () => {",
+                  "  pm.expect(fila).to.be.an('object');",
+                  "  pm.expect(fila.id_incidencia).to.eql(Number(pm.collectionVariables.get('incidenciaId')));",
+                  "  pm.expect(fila.incidencia_estado).to.eql('abierta');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/retroalimentacion/mias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "retroalimentacion",
+                "mias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-F310 La experiencia se refleja en los datos públicos del mapa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const id = Number(pm.collectionVariables.get('retroPositivaId'));",
+                  "pm.test('La retroalimentación positiva está publicada', () => {",
+                  "  pm.expect(pm.response.json().retroalimentacion.some((x) => x.id_retroalimentacion === id)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mapa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mapa"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-F311 Un viajero no puede ver las incidencias de moderación (RNF-23)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403', () => pm.response.to.have.status(403));",
+                  "pm.test('Código de error ACCESO_DENEGADO', () => pm.expect(pm.response.json().error).to.eql('ACCESO_DENEGADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/moderacion/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "moderacion",
+                "incidencias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-F312 Iniciar sesión como moderador",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('email_moderador')) {",
+                  "  console.log('Define email_moderador y clave_moderador para ejecutar CP-F312 a CP-F314.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('email_moderador')) { return; }",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Rol de moderación', () => pm.expect(['moderador', 'administrador']).to.include(r.usuario.rol));",
+                  "pm.collectionVariables.set('token_moderador', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_moderador}}\",\n  \"password\": \"{{clave_moderador}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "CP-F313 El moderador ve la incidencia en M06",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('token_moderador')) {",
+                  "  console.log('Sin credenciales de moderador: se omite este caso.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const id = Number(pm.collectionVariables.get('incidenciaId'));",
+                  "const fila = pm.response.json().find((x) => x.id_incidencia === id);",
+                  "pm.test('La incidencia está abierta y con gravedad media', () => {",
+                  "  pm.expect(fila).to.be.an('object');",
+                  "  pm.expect(fila.estado).to.eql('abierta');",
+                  "  pm.expect(fila.gravedad).to.eql('media');",
+                  "  pm.expect(fila.tipo).to.eql('barrera_nueva');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_moderador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/moderacion/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "moderacion",
+                "incidencias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "CP-F314 El moderador solicita re-verificación a la comunidad (Proceso 3 → Proceso 1)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('token_moderador')) {",
+                  "  console.log('Sin credenciales de moderador: se omite este caso.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('La incidencia pasa a en_proceso con una solicitud', () => {",
+                  "  pm.expect(r.estado).to.eql('en_proceso');",
+                  "  pm.expect(r.solicitud).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_moderador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/moderacion/incidencias/{{incidenciaId}}/solicitar-evidencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "moderacion",
+                "incidencias",
+                "{{incidenciaId}}",
+                "solicitar-evidencia"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "event": [
@@ -1093,6 +1766,14 @@
     {
       "key": "clave",
       "value": "Prueba#2026"
+    },
+    {
+      "key": "email_moderador",
+      "value": ""
+    },
+    {
+      "key": "clave_moderador",
+      "value": ""
     }
   ]
 }
