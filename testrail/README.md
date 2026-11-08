@@ -5,7 +5,7 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
 
 | Archivo | Para qué sirve |
 |---|---|
-| `omnitravel_casos_testrail.csv` | Los 171 casos de los tres procesos: 140 unitarios (Jest) y 31 funcionales (Postman) |
+| `omnitravel_casos_testrail.csv` | Los 172 casos de los tres procesos: 141 unitarios (Jest) y 31 funcionales (Postman) |
 
 ## 1. Crear el proyecto
 
