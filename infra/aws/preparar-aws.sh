@@ -91,6 +91,13 @@ crear_rol() { # nombre servicio-principal
     --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"$2\"},\"Action\":\"sts:AssumeRole\"}]}" >/dev/null
 }
 
+info "Roles vinculados a servicios (la primera vez que la cuenta usa ECS)"
+for SERVICIO_AWS in ecs.amazonaws.com elasticloadbalancing.amazonaws.com ecs.application-autoscaling.amazonaws.com; do
+  aws iam create-service-linked-role --aws-service-name "$SERVICIO_AWS" >/dev/null 2>&1 || true
+done
+aws iam get-role --role-name AWSServiceRoleForECS >/dev/null
+ok "AWSServiceRoleForECS"
+
 info "Roles de ECS Express Mode"
 crear_rol "$ROL_EJECUCION" ecs-tasks.amazonaws.com
 aws iam attach-role-policy --role-name "$ROL_EJECUCION" \
