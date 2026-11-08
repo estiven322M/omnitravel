@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: URL del backend a probar
-        required: true
-        default: https://omnitravel-production-4af6.up.railway.app
+        description: URL del backend a probar (vacío = variable API_URL del repositorio)
+        required: false
+        default: ''
   schedule:
     - cron: '0 13 * * 1'
 
@@ -30,7 +30,7 @@ jobs:
           MODERADOR_CLAVE: ${{ secrets.MODERADOR_CLAVE }}
         run: |
           npx --yes newman@6 run postman/omnitravel.postman_collection.json \
-            --env-var "baseUrl=${{ inputs.base_url || 'https://omnitravel-production-4af6.up.railway.app' }}" \
+            --env-var "baseUrl=${{ inputs.base_url || vars.API_URL }}" \
             --env-var "email_moderador=$MODERADOR_EMAIL" \
             --env-var "clave_moderador=$MODERADOR_CLAVE" \
             --reporters cli,junit,json \
