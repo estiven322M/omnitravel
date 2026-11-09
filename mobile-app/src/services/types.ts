@@ -41,10 +41,14 @@ export type EstadoVerificacion = 'PENDIENTE' | 'EN_REVISION' | 'VERIFICADO';
 
 /** Retroalimentación de un viajero (tabla RETROALIMENTACION). */
 export interface ExperienciaViajero {
+  /** Id de la retroalimentación (opcional: el feed heredado no lo envía). */
+  id?: number;
   autor: string;
   perfil: string;
   calificacion: number;
   comentario: string;
+  /** Fecha de la visita que autorizó la opinión (Proceso 3). */
+  fecha?: string;
 }
 
 /** Punto de interés (tabla POI + INFORMACION_ACCESIBILIDAD). */
@@ -65,6 +69,17 @@ export interface Poi {
   ultimaVerificacion: string;
   valores: ValorAccesibilidad[];
   experiencias: ExperienciaViajero[];
+  /** Fotos reales del lugar (tabla POI_FOTO, Wikimedia Commons). */
+  fotos?: FotoLugar[];
+}
+
+/** Foto real de un lugar con su crédito (autor y licencia). */
+export interface FotoLugar {
+  url: string;
+  leyenda: string;
+  autor: string | null;
+  licencia: string | null;
+  fuenteUrl: string | null;
 }
 
 export interface Coordenada {

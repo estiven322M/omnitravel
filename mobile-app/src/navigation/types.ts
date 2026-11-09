@@ -39,7 +39,13 @@ export type RootStackParamList = {
   /** Mis reportes (U12): historial propio con estado de validación. */
   MisReportes: undefined;
   /** Navegación paso a paso (U07) con el origen ya resuelto. */
-  Navegacion: { poiId: string; origenLat: number; origenLon: number };
-  /** U13 — Retroalimentación post-viaje (Proceso 3). */
-  Retroalimentacion: { poiId: string; origen: 'ruta' | 'visita' };
+  Navegacion: {
+    poiId: string;
+    origenLat: number;
+    origenLon: number;
+    /** «Cambiar ruta» del mapa: puntos que la ruta elegida evita. */
+    evitar?: { latitude: number; longitude: number }[];
+  };
+  /** Proceso 3 — calificación de una visita completada. */
+  Feedback: { visitaId: number; poiId: string; poiNombre: string };
 };

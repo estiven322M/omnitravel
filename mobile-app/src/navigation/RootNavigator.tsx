@@ -8,11 +8,11 @@ import { RevisionReporteScreen } from '../screens/moderacion/RevisionReporteScre
 import { NotificacionesScreen } from '../screens/NotificacionesScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { usaPanelModeracion } from '../services/inicioSesion';
+import { FeedbackScreen } from '../screens/FeedbackScreen';
 import { MisReportesScreen } from '../screens/MisReportesScreen';
 import { NavegacionScreen } from '../screens/NavegacionScreen';
 import { PoiDetailScreen } from '../screens/PoiDetailScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { RetroalimentacionScreen } from '../screens/RetroalimentacionScreen';
 import { useProfileStore } from '../store/profileStore';
 import { colors } from '../utils/theme';
 import { MainTabs } from './MainTabs';
@@ -78,9 +78,9 @@ export function RootNavigator() {
               options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
-              name="Retroalimentacion"
-              component={RetroalimentacionScreen}
-              options={{ animation: 'slide_from_bottom' }}
+              name="Feedback"
+              component={FeedbackScreen}
+              options={{ animation: 'slide_from_right' }}
             />
             {moderacion ? (
               <>

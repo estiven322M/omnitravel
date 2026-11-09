@@ -108,3 +108,38 @@ export function aplicarFiltros(pois: Poi[], filtrosActivos: FiltroId[]): Poi[] {
     definiciones.every((filtro) => poiCumpleFiltro(poi, filtro)),
   );
 }
+
+/** Necesidades declaradas en el perfil (registro U03). */
+type Necesidad = 'movilidad_reducida' | 'silla_de_ruedas' | 'visual';
+
+/**
+ * Filtros que se sugieren según las necesidades del perfil: motrices para
+ * movilidad reducida o silla de ruedas, sensoriales para discapacidad visual.
+ */
+export function filtrosSugeridos(
+  necesidades: readonly Necesidad[],
+): FiltroId[] {
+  const sugeridos = new Set<FiltroId>();
+  if (
+    necesidades.includes('movilidad_reducida') ||
+    necesidades.includes('silla_de_ruedas')
+  ) {
+    sugeridos.add('sin_escalones');
+    sugeridos.add('ancho_puerta_80');
+  }
+  if (necesidades.includes('silla_de_ruedas')) {
+    sugeridos.add('ascensor_amplio');
+  }
+  if (necesidades.includes('visual')) {
+    sugeridos.add('semaforos_sonoros');
+    sugeridos.add('piso_podotactil');
+  }
+  return FILTROS.map((filtro) => filtro.id).filter((id) => sugeridos.has(id));
+}
+
+/** Una ruta solo se calcula con al menos un filtro de accesibilidad aplicado. */
+export function puedeCalcularRuta(
+  filtrosActivos: readonly FiltroId[],
+): boolean {
+  return filtrosActivos.length > 0;
+}

@@ -79,7 +79,15 @@ interface SolicitudValhalla {
      * Valhalla (no puede haber mejores alternativas en rutas multipunto).
      */
     alternates: 1;
+    /**
+     * Puntos de la ruta anterior que la nueva debe evitar («Cambiar ruta»).
+     * Valhalla excluye las vías más cercanas a cada punto.
+     */
+    exclude_locations?: { lat: number; lon: number }[];
 }
+
+/** Máximo de puntos a evitar por solicitud (protege al motor de ruteo). */
+export const MAX_PUNTOS_EVITAR = 8;
 
 /** Valida que una coordenada del body sea [latitud, longitud] finita y en rango. */
 export function validarCoordenada(valor: unknown, campo: string): Coordenada {
@@ -99,11 +107,25 @@ export function validarCoordenada(valor: unknown, campo: string): Coordenada {
     return [lat, lon];
 }
 
+/** Valida la lista opcional de puntos a evitar: [[lat, lon], …] (máx. 8). */
+export function validarPuntosEvitar(valor: unknown): Coordenada[] {
+    if (valor === undefined || valor === null) {
+        return [];
+    }
+    if (!Array.isArray(valor) || valor.length > MAX_PUNTOS_EVITAR) {
+        throw new BadRequestException(
+            `avoid debe ser una lista de hasta ${MAX_PUNTOS_EVITAR} coordenadas [latitud, longitud].`,
+        );
+    }
+    return valor.map((punto, indice) => validarCoordenada(punto, `avoid[${indice}]`));
+}
+
 /** Construye la solicitud de ruteo peatonal para Valhalla. */
 export function construirSolicitudValhalla(
     origen: Coordenada,
     destino: Coordenada,
     restricciones: RestriccionesRuta = {},
+    evitar: Coordenada[] = [],
 ): { solicitud: SolicitudValhalla; advertencias: string[] } {
     const opcionesPedestrian: Record<string, string | number> = {};
     const advertencias: string[] = [];
@@ -142,6 +164,9 @@ export function construirSolicitudValhalla(
             units: 'kilometers',
             language: 'es-ES',
             alternates: 1,
+            ...(evitar.length > 0
+                ? { exclude_locations: evitar.map(([lat, lon]) => ({ lat, lon })) }
+                : {}),
         },
         advertencias,
     };

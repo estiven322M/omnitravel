@@ -172,3 +172,17 @@ export async function solicitarNuevaEvidencia(id: string): Promise<void> {
     { method: 'POST' },
   );
 }
+
+/** Pestaña «Estadísticas» (M07): cifras agregadas del backend. */
+export interface EstadisticasModeracion {
+  reportesPorEstado: Record<string, number>;
+  actividad: { dia: string; recibidos: number; resueltos: number }[];
+  incidenciasPorGravedad: Partial<Record<Gravedad, number>>;
+  lugaresPorEstado: Record<string, number>;
+  experiencias: { total: number; promedio: number };
+  viasResolucion: { automatica: number; manual: number };
+}
+
+export function obtenerEstadisticasModeracion(): Promise<EstadisticasModeracion> {
+  return llamar<EstadisticasModeracion>('/moderacion/estadisticas');
+}

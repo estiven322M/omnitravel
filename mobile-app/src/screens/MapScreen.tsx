@@ -24,10 +24,13 @@ import { Badge } from '../components/Badge';
 import { BrandMark } from '../components/BrandMark';
 import { FilterSheet } from '../components/FilterSheet';
 import { MapaWeb, type PoiEnMapa } from '../components/MapaWeb';
-import { miniaturaDePoi } from '../services/mocks/fotosPoi';
+import { miniaturaDelLugar } from '../services/mocks/fotosPoi';
 import { PoiCard } from '../components/PoiCard';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
-import { calcularRutaAccesible } from '../services/api/routes';
+import {
+  buscarRutaDiferente,
+  calcularRutaAccesible,
+} from '../services/api/routes';
 import { listarBarrerasComunitarias } from '../services/reportes';
 import type {
   Coordenada,
@@ -39,7 +42,11 @@ import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria } from '../utils/categorias';
-import { aplicarFiltros } from '../utils/filters';
+import {
+  aplicarFiltros,
+  filtrosSugeridos,
+  puedeCalcularRuta,
+} from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
 import { formatearDistancia } from '../utils/format';
 import { datosDesactualizados, restriccionesDesdePerfil } from '../utils/ruta';
@@ -103,6 +110,15 @@ export function MapScreen() {
   const [cargandoRuta, setCargandoRuta] = useState(false);
   const [errorRuta, setErrorRuta] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  /**
+   * true cuando se pidió una ruta sin filtros: al aplicarlos se calcula sola.
+   * Requisito del Proceso 2: la ruta se adapta a las necesidades del usuario.
+   */
+  const [rutaPendiente, setRutaPendiente] = useState(false);
+  /** Puntos que evita la ruta mostrada tras «Cambiar ruta» (se pasan a U07). */
+  const [evitar, setEvitar] = useState<Coordenada[]>([]);
+  const [cambiandoRuta, setCambiandoRuta] = useState(false);
+  const [avisoCambio, setAvisoCambio] = useState<string | null>(null);
   const [categoriaActiva, setCategoriaActiva] = useState('Todos');
   const [barreras, setBarreras] = useState<ReporteResumen[]>([]);
 
@@ -230,7 +246,7 @@ export function MapScreen() {
           ? (barreras.find((barrera) => barrera.poiId === poi.id)
               ?.descripcion ?? 'Reportada por la comunidad')
           : undefined,
-        foto: miniaturaDePoi(poi.nombre, poi.categoria),
+        foto: miniaturaDelLugar(poi),
         // Caminata a ~4,8 km/h (80 m/min) desde tu ubicación (U06).
         detalle: ubicacionUsuario
           ? `A ${Math.max(
@@ -405,42 +421,118 @@ export function MapScreen() {
     }
   }, [ubicacionUsuario]);
 
-  const verRuta = useCallback(async () => {
+  /** Calcula y dibuja la ruta con las restricciones indicadas. */
+  const calcularRuta = useCallback(
+    async (restriccionesRuta: typeof restricciones) => {
+      if (!destinoCoordenada) {
+        return;
+      }
+      setCargandoRuta(true);
+      setErrorRuta(null);
+      setResultado(null);
+      setEvitar([]);
+      setAvisoCambio(null);
+
+      try {
+        const ruta = await calcularRutaAccesible(
+          origen,
+          destinoCoordenada,
+          restriccionesRuta,
+        );
+        setResultado(ruta);
+        // En Android el anuncio lo hace la región viva del resultado.
+        if (Platform.OS === 'ios') {
+          AccessibilityInfo.announceForAccessibility(
+            `Ruta calculada: ${ruta.duracionMin} minutos, ${formatearDistancia(ruta.distanciaKm)}.`,
+          );
+        }
+      } catch (error) {
+        const mensaje =
+          error instanceof Error
+            ? error.message
+            : 'No se pudo calcular la ruta. Inténtalo de nuevo.';
+        setErrorRuta(mensaje);
+        if (Platform.OS === 'ios') {
+          AccessibilityInfo.announceForAccessibility(mensaje);
+        }
+      } finally {
+        setCargandoRuta(false);
+      }
+    },
+    [destinoCoordenada, origen],
+  );
+
+  /**
+   * «Ver ruta accesible». Proceso 2: la ruta se adapta a las necesidades del
+   * usuario, así que sin filtros aplicados primero se piden.
+   */
+  const verRuta = useCallback(() => {
     if (!destinoCoordenada) {
       return;
     }
-    setCargandoRuta(true);
-    setErrorRuta(null);
-    setResultado(null);
+    if (!puedeCalcularRuta(filtrosActivos)) {
+      setRutaPendiente(true);
+      setFiltrosAbiertos(true);
+      return;
+    }
+    void calcularRuta(restricciones);
+  }, [calcularRuta, destinoCoordenada, filtrosActivos, restricciones]);
 
+  /** «Cambiar ruta»: busca y dibuja un camino accesible distinto. */
+  const cambiarRuta = async () => {
+    if (!resultado || !destinoCoordenada || cambiandoRuta) {
+      return;
+    }
+    setCambiandoRuta(true);
+    setErrorRuta(null);
+    setAvisoCambio(null);
     try {
-      const ruta = await calcularRutaAccesible(
+      const diferente = await buscarRutaDiferente(
         origen,
         destinoCoordenada,
         restricciones,
+        resultado,
+        evitar,
       );
-      setResultado(ruta);
-      // En Android el anuncio lo hace la región viva del resultado.
+      if (!diferente) {
+        setAvisoCambio(
+          'No hay otro camino accesible distinto para este trayecto: se mantiene la ruta actual.',
+        );
+        return;
+      }
+      setResultado(diferente.ruta);
+      setEvitar(diferente.evitar);
+      setAvisoCambio(
+        `Ruta cambiada: ${diferente.ruta.duracionMin} min, ${formatearDistancia(diferente.ruta.distanciaKm)}.`,
+      );
       if (Platform.OS === 'ios') {
         AccessibilityInfo.announceForAccessibility(
-          `Ruta calculada: ${ruta.duracionMin} minutos, ${formatearDistancia(ruta.distanciaKm)}.`,
+          'Se muestra una ruta accesible diferente.',
         );
       }
     } catch (error) {
-      const mensaje =
+      setErrorRuta(
         error instanceof Error
           ? error.message
-          : 'No se pudo calcular la ruta. Inténtalo de nuevo.';
-      setErrorRuta(mensaje);
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(mensaje);
-      }
+          : 'No se pudo cambiar la ruta. Inténtalo de nuevo.',
+      );
     } finally {
-      setCargandoRuta(false);
+      setCambiandoRuta(false);
     }
-  }, [destinoCoordenada, origen, restricciones]);
+  };
+
+  /** Guarda los filtros y, si había una ruta pendiente, la calcula con ellos. */
+  const aplicarFiltrosYRuta = (filtros: typeof filtrosActivos) => {
+    establecerFiltros(filtros);
+    if (rutaPendiente && puedeCalcularRuta(filtros)) {
+      setRutaPendiente(false);
+      void calcularRuta(restriccionesDesdePerfil(necesidadesPerfil, filtros));
+    }
+  };
 
   const limpiarDestino = () => {
+    setEvitar([]);
+    setAvisoCambio(null);
     setSeleccionado(null);
     setDestinoId(null);
     setResultado(null);
@@ -841,14 +933,47 @@ export function MapScreen() {
             </Text>
           ) : null}
 
+          {!puedeCalcularRuta(filtrosActivos) ? (
+            <Text style={estilos.avisoFiltros}>
+              Para calcular la ruta, primero aplica los filtros de accesibilidad
+              según tus necesidades.
+            </Text>
+          ) : null}
+
           <AppButton
-            titulo="Ver ruta accesible"
-            icono="git-compare-outline"
+            titulo={
+              puedeCalcularRuta(filtrosActivos)
+                ? 'Ver ruta accesible'
+                : 'Aplicar filtros y ver ruta'
+            }
+            icono={
+              puedeCalcularRuta(filtrosActivos)
+                ? 'git-compare-outline'
+                : 'options-outline'
+            }
             onPress={verRuta}
             deshabilitado={!destinoCoordenada}
             cargando={cargandoRuta}
             pistaAccesibilidad="Calcula y dibuja la ruta peatonal más accesible hasta el destino"
           />
+
+          {avisoCambio ? (
+            <Text style={estilos.avisoFiltros} accessibilityLiveRegion="polite">
+              {avisoCambio}
+            </Text>
+          ) : null}
+
+          {resultado && destino ? (
+            <AppButton
+              titulo="Cambiar ruta"
+              variante="contorno"
+              icono="swap-horizontal-outline"
+              onPress={() => void cambiarRuta()}
+              cargando={cambiandoRuta}
+              deshabilitado={cambiandoRuta || cargandoRuta}
+              pistaAccesibilidad="Busca otro camino accesible distinto al que se muestra"
+            />
+          ) : null}
 
           {resultado && destino ? (
             <AppButton
@@ -860,6 +985,7 @@ export function MapScreen() {
                   poiId: destino.id,
                   origenLat: origen.latitude,
                   origenLon: origen.longitude,
+                  evitar,
                 })
               }
               pistaAccesibilidad="Abre la navegación paso a paso con las indicaciones de la ruta"
@@ -871,8 +997,18 @@ export function MapScreen() {
       <FilterSheet
         visible={filtrosAbiertos}
         filtrosActivos={filtrosActivos}
-        onAplicar={establecerFiltros}
-        onCerrar={() => setFiltrosAbiertos(false)}
+        onAplicar={aplicarFiltrosYRuta}
+        onCerrar={() => {
+          setFiltrosAbiertos(false);
+          setRutaPendiente(false);
+        }}
+        aviso={
+          rutaPendiente
+            ? 'Para calcular tu ruta, aplica primero los filtros de accesibilidad. Te sugerimos los de tu perfil.'
+            : null
+        }
+        sugeridos={filtrosSugeridos(necesidadesPerfil)}
+        exigirAlMenosUno={rutaPendiente}
       />
     </View>
   );
@@ -1166,6 +1302,14 @@ const estilos = StyleSheet.create({
   error: {
     fontSize: fontSize.xs,
     color: colors.danger,
+  },
+  avisoFiltros: {
+    fontSize: fontSize.sm,
+    color: colors.primaryDark,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    lineHeight: 20,
   },
   avisoDatos: {
     flexDirection: 'row',

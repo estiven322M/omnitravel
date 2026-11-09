@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
+  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -16,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccessibilityValueRow } from '../components/AccessibilityValueRow';
 import { AppButton } from '../components/AppButton';
@@ -26,14 +27,20 @@ import { ConsensoAlcanzado } from '../components/ConsensoAlcanzado';
 import { EmptyState } from '../components/EmptyState';
 import type { RootStackParamList } from '../navigation/types';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
-import { fotosDePoi, type FotoPoi } from '../services/mocks/fotosPoi';
+import { fotosDelLugar, type FotoPoi } from '../services/mocks/fotosPoi';
+import {
+  experienciasDePoi,
+  finalizarVisita,
+  iniciarVisita,
+} from '../services/api/feedback';
 import {
   confirmarReporte,
   obtenerReporteDePoi,
   ReporteError,
 } from '../services/reportes';
-import type { ReporteComunitario } from '../services/types';
+import type { ExperienciaViajero, ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
+import { Alerta } from '../utils/alerta';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { usaPanelModeracion } from '../services/inicioSesion';
@@ -107,6 +114,13 @@ export function PoiDetailScreen() {
   const [s01Visible, setS01Visible] = useState(false);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
   const [verTodas, setVerTodas] = useState(false);
+  const [experiencias, setExperiencias] = useState<ExperienciaViajero[] | null>(
+    null,
+  );
+  const [resumenExperiencias, setResumenExperiencias] = useState<{
+    total: number;
+    promedio: number;
+  } | null>(null);
 
   // Carga el listado de favoritos para el estado del corazón (una sola vez).
   useEffect(() => {
@@ -138,6 +152,72 @@ export function PoiDetailScreen() {
     };
   }, [poiId, poisCargados]);
 
+  /**
+   * Proceso 3: refresca las experiencias públicas al volver a la ficha
+   * (por ejemplo, después de calificar una visita). El endpoint no expone
+   * correos ni datos del perfil local.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      let vigente = true;
+      experienciasDePoi(poiId)
+        .then((datos) => {
+          if (!vigente) {
+            return;
+          }
+          setExperiencias(
+            datos.experiencias.map((experiencia) => ({
+              id: experiencia.id,
+              autor: experiencia.autor,
+              perfil: experiencia.perfil,
+              calificacion: experiencia.calificacion,
+              comentario: experiencia.comentario,
+              fecha: experiencia.fecha,
+            })),
+          );
+          setResumenExperiencias({
+            total: datos.total,
+            promedio: datos.promedio,
+          });
+        })
+        .catch(() => {
+          // La ficha conserva las experiencias que ya trajo el mapa.
+        });
+      return () => {
+        vigente = false;
+      };
+    }, [poiId]),
+  );
+
+  /**
+   * Proceso 3 — visita presencial sin ruta: registra la visita, la cierra y
+   * abre la calificación (FeedbackScreen), igual que «Finalizar ruta» (U07).
+   */
+  const [registrandoVisita, setRegistrandoVisita] = useState(false);
+  const calificarVisitaPresencial = async () => {
+    const lugar = poiPorId(poiId);
+    if (!lugar || registrandoVisita) {
+      return;
+    }
+    setRegistrandoVisita(true);
+    try {
+      const { visita } = await iniciarVisita(lugar.id);
+      await finalizarVisita(visita.id_visita);
+      navigation.navigate('Feedback', {
+        visitaId: visita.id_visita,
+        poiId: lugar.id,
+        poiNombre: lugar.nombre,
+      });
+    } catch (error) {
+      Alerta.alert(
+        'No pudimos registrar tu visita',
+        (error as Error)?.message ?? 'Revisa tu conexión e inténtalo de nuevo.',
+      );
+    } finally {
+      setRegistrandoVisita(false);
+    }
+  };
+
   const poi = poiPorId(poiId);
 
   if (!poi) {
@@ -155,6 +235,10 @@ export function PoiDetailScreen() {
   }
 
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
+  const listaExperiencias = experiencias ?? poi.experiencias;
+  const totalOpiniones = resumenExperiencias?.total ?? poi.totalExperiencias;
+  const calificacionMostrada =
+    resumenExperiencias?.promedio ?? poi.calificacion;
   const cargandoReporte = reporte === undefined;
   const reporteActivo = reporte ?? null;
   const reporteConfirmable =
@@ -234,7 +318,7 @@ export function PoiDetailScreen() {
     }
   };
 
-  const fotos = fotosDePoi(poi.nombre, poi.categoria);
+  const fotos = fotosDelLugar(poi);
   const confirmados = CATALOGO_CARACTERISTICAS.filter((caracteristica) => {
     const valor = poi.valores.find(
       (v) => v.caracteristicaId === caracteristica.id,
@@ -317,17 +401,15 @@ export function PoiDetailScreen() {
               <View
                 style={estilos.filaCalificacion}
                 accessible
-                accessibilityLabel={`Calificación ${poi.calificacion.toFixed(
+                accessibilityLabel={`Calificación ${calificacionMostrada.toFixed(
                   1,
-                )} de 5, ${poi.totalExperiencias} opiniones`}
+                )} de 5, ${totalOpiniones} opiniones`}
               >
                 <Ionicons name="star" size={18} color="#F5B301" />
                 <Text style={estilos.calificacion}>
-                  {poi.calificacion.toFixed(1)}
+                  {calificacionMostrada.toFixed(1)}
                 </Text>
-                <Text style={estilos.totalOpiniones}>
-                  ({poi.totalExperiencias})
-                </Text>
+                <Text style={estilos.totalOpiniones}>({totalOpiniones})</Text>
               </View>
             </View>
             <Text style={estilos.subtitulo}>
@@ -479,13 +561,10 @@ export function PoiDetailScreen() {
               titulo="Calificar mi visita"
               variante="fantasma"
               icono="star-outline"
-              onPress={() =>
-                navigation.navigate('Retroalimentacion', {
-                  poiId: poi.id,
-                  origen: 'visita',
-                })
-              }
-              pistaAccesibilidad="Cuenta tu experiencia o informa si algo no coincidía"
+              cargando={registrandoVisita}
+              deshabilitado={registrandoVisita}
+              onPress={() => void calificarVisitaPresencial()}
+              pistaAccesibilidad="Registra que visitaste el lugar y abre la calificación"
             />
           ) : null}
           {reporteConfirmable ? (
@@ -515,21 +594,20 @@ export function PoiDetailScreen() {
               <Text style={estilos.tituloSeccion}>
                 Experiencias de otros viajeros
               </Text>
-              {poi.experiencias.length > 0 ? (
+              {listaExperiencias.length > 0 ? (
                 <Text style={estilos.enlace}>
-                  Ver todas ({poi.experiencias.length})
+                  Ver todas ({listaExperiencias.length})
                 </Text>
               ) : null}
             </View>
-            {poi.experiencias.length === 0 ? (
+            {listaExperiencias.length === 0 ? (
               <Text style={estilos.sinExperiencias}>
                 Aún no hay experiencias registradas para este lugar.
               </Text>
             ) : (
-              poi.experiencias.map((experiencia, indice) => (
+              listaExperiencias.map((experiencia, indice) => (
                 <View
-                  // El autor es genérico («Viajero de la comunidad»): no sirve de clave.
-                  key={`${indice}-${experiencia.calificacion}`}
+                  key={experiencia.id ?? `${experiencia.autor}-${indice}`}
                   style={estilos.tarjetaExperiencia}
                 >
                   <View style={estilos.avatar}>
@@ -604,6 +682,13 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
             <Text style={estilos.referenciaTexto}>Foto de referencia</Text>
           </View>
         ) : null}
+        {actual.credito ? (
+          <View style={estilos.credito}>
+            <Text style={estilos.creditoTexto} numberOfLines={1}>
+              Foto: {actual.credito}
+            </Text>
+          </View>
+        ) : null}
       </View>
       {fotos.length > 1 ? (
         <ScrollView
@@ -613,7 +698,7 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
         >
           {fotos.map((foto, i) => (
             <Pressable
-              key={foto.leyenda}
+              key={foto.clave}
               onPress={() => setIndice(i)}
               accessibilityRole="button"
               accessibilityLabel={`Ver foto: ${foto.leyenda}`}
@@ -646,6 +731,17 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
 }
 
 const estilos = StyleSheet.create({
+  credito: {
+    position: 'absolute',
+    right: spacing.sm,
+    bottom: spacing.sm,
+    maxWidth: '75%',
+    backgroundColor: 'rgba(16, 24, 40, 0.6)',
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  creditoTexto: { color: colors.white, fontSize: 10 },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,

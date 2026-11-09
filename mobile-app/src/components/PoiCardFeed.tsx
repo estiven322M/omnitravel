@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { fotoDePoi } from '../services/mocks/fotosPoi';
+import { portadaDelLugar } from '../services/mocks/fotosPoi';
 import type { IconName, Poi } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { formatearDistancia } from '../utils/format';
@@ -75,7 +75,7 @@ export function PoiCardFeed({
   onPress,
   muestraFavorito = true,
 }: Props) {
-  const foto = fotoDePoi(poi.nombre, poi.categoria);
+  const foto = portadaDelLugar(poi);
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poi.id));
   const alternarFavorito = useFavoritosStore((estado) => estado.alternar);

@@ -6,6 +6,7 @@ import {
     construirSolicitudValhalla,
     normalizarRespuestaValhalla,
     validarCoordenada,
+    validarPuntosEvitar,
     type RestriccionesRuta,
     type RutaNormalizada,
 } from './valhalla-payload';
@@ -27,13 +28,16 @@ export class RoutingService {
         origin: unknown,
         destination: unknown,
         restricciones: RestriccionesRuta = {},
+        avoid?: unknown,
     ): Promise<RutaNormalizada> {
         const origen = validarCoordenada(origin, 'origin');
         const destino = validarCoordenada(destination, 'destination');
+        const evitar = validarPuntosEvitar(avoid);
         const { solicitud, advertencias } = construirSolicitudValhalla(
             origen,
             destino,
             restricciones,
+            evitar,
         );
 
         let crudo: unknown;

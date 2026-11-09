@@ -1,4 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
+import type { FotoLugar } from '../types';
 import { MINIATURAS } from './miniaturasPoi';
 
 /**
@@ -25,6 +26,8 @@ export interface FotoPoi {
   leyenda: string;
   /** true: foto de la categoría, no del lugar exacto. */
   referencia: boolean;
+  /** Crédito de la foto real («Autor · Licencia · Wikimedia Commons»). */
+  credito?: string;
 }
 
 const foto = {
@@ -181,4 +184,45 @@ export function miniaturaDePoi(
   categoria: string,
 ): string | undefined {
   return MINIATURAS[fotoDePoi(nombre, categoria).clave];
+}
+
+/** Lugar con lo necesario para elegir sus fotos. */
+interface LugarConFotos {
+  nombre: string;
+  categoria: string;
+  fotos?: FotoLugar[];
+}
+
+/** «Autor · Licencia · Wikimedia Commons» (sin partes vacías). */
+export function creditoDeFoto(foto: FotoLugar): string {
+  return [foto.autor, foto.licencia, 'Wikimedia Commons']
+    .filter((parte): parte is string => Boolean(parte?.trim()))
+    .join(' · ');
+}
+
+/**
+ * Fotos del lugar: primero las reales de la BD (POI_FOTO); si no tiene, las
+ * de referencia de su nombre o categoría.
+ */
+export function fotosDelLugar(lugar: LugarConFotos): FotoPoi[] {
+  if (lugar.fotos && lugar.fotos.length > 0) {
+    return lugar.fotos.map((foto) => ({
+      fuente: { uri: foto.url },
+      clave: foto.url,
+      leyenda: foto.leyenda,
+      referencia: false,
+      credito: creditoDeFoto(foto),
+    }));
+  }
+  return fotosDePoi(lugar.nombre, lugar.categoria);
+}
+
+/** Portada del lugar (tarjetas, mapa, moderación). */
+export function portadaDelLugar(lugar: LugarConFotos): FotoPoi {
+  return fotosDelLugar(lugar)[0];
+}
+
+/** Imagen para el marcador del mapa: URL real o miniatura embebida. */
+export function miniaturaDelLugar(lugar: LugarConFotos): string | undefined {
+  return lugar.fotos?.[0]?.url ?? miniaturaDePoi(lugar.nombre, lugar.categoria);
 }

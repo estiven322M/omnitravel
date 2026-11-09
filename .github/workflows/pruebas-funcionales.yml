@@ -1,7 +1,7 @@
 # Pruebas funcionales de la API desplegada (Postman + Newman).
 # Se lanza a mano (Actions → Pruebas funcionales → Run workflow) o cada
 # lunes. Crea 4 usuarios de prueba por ejecución, por eso no corre en cada push.
-# Los casos del moderador (CP-F312 a CP-F314) usan los secretos
+# Los casos del moderador (CP-F316 a CP-F319) usan los secretos
 # MODERADOR_EMAIL y MODERADOR_CLAVE; sin ellos esos tres casos se omiten.
 name: Pruebas funcionales
 
@@ -17,7 +17,7 @@ on:
 
 jobs:
   newman:
-    name: Colección Postman (31 casos, 3 procesos)
+    name: Colección Postman (36 casos, 3 procesos)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

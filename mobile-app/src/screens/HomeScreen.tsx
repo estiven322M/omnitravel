@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -20,6 +20,10 @@ import { EmptyState } from '../components/EmptyState';
 import { FilterSheet } from '../components/FilterSheet';
 import { PoiCardFeed } from '../components/PoiCardFeed';
 import type { RootStackParamList } from '../navigation/types';
+import {
+  visitasPendientes,
+  type VisitaPendiente,
+} from '../services/api/feedback';
 import type { Coordenada, Poi } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
@@ -78,6 +82,7 @@ export function HomeScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const [pendientes, setPendientes] = useState<VisitaPendiente[]>([]);
 
   // Carga única de POIs del equipo (BD con fallback a demo) al abrir el feed.
   useEffect(() => {
@@ -85,6 +90,32 @@ export function HomeScreen() {
       void cargarPois();
     }
   }, [cargadoPois, cargarPois]);
+
+  /**
+   * Proceso 3: visitas completadas que aún no tienen calificación. Se
+   * consulta cada vez que la pestaña vuelve al frente, para que el aviso
+   * desaparezca en cuanto la persona califica.
+   */
+  const consultarPendientes = useCallback(() => {
+    let vigente = true;
+    visitasPendientes()
+      .then((lista) => {
+        if (vigente) {
+          setPendientes(lista);
+        }
+      })
+      .catch(() => {
+        // Sin sesión o sin conexión el feed sigue funcionando.
+        if (vigente) {
+          setPendientes([]);
+        }
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  useFocusEffect(consultarPendientes);
 
   // Ubicación para ordenar por cercanía; sin permiso el feed sigue completo.
   useEffect(() => {
@@ -169,6 +200,18 @@ export function HomeScreen() {
   };
 
   const abrirNotificaciones = () => navigation.navigate('Notificaciones');
+
+  const abrirCalificacionPendiente = () => {
+    const visita = pendientes[0];
+    if (!visita) {
+      return;
+    }
+    navigation.navigate('Feedback', {
+      visitaId: visita.id_visita,
+      poiId: String(visita.poi_id),
+      poiNombre: visita.poi_nombre,
+    });
+  };
 
   const primerNombre = nombre?.split(' ')[0] || 'viajero';
 
@@ -316,6 +359,38 @@ export function HomeScreen() {
       ) : null}
 
       <AvisoSinConexion />
+
+      {pendientes.length > 0 ? (
+        <Pressable
+          onPress={abrirCalificacionPendiente}
+          accessibilityRole="button"
+          accessibilityLabel={`Tienes ${pendientes.length} ${
+            pendientes.length === 1 ? 'visita' : 'visitas'
+          } por calificar. ${pendientes[0].poi_nombre}. Calificar ahora`}
+          accessibilityHint="Abre la calificación de tu visita"
+          style={({ pressed }) => [
+            estilos.avisoPendientes,
+            pressed ? estilos.avisoPendientesPresionado : null,
+          ]}
+        >
+          <View style={estilos.iconoPendientes}>
+            <Ionicons name="star-outline" size={22} color={colors.primary} />
+          </View>
+          <View style={estilos.textosPendientes}>
+            <Text style={estilos.tituloPendientes}>
+              Tienes {pendientes.length}{' '}
+              {pendientes.length === 1 ? 'visita' : 'visitas'} por calificar
+            </Text>
+            <Text style={estilos.detallePendientes} numberOfLines={1}>
+              {pendientes[0].poi_nombre}
+              {pendientes.length > 1
+                ? ` y ${pendientes.length - 1} más`
+                : ' · Cuéntanos cómo fue'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+        </Pressable>
+      ) : null}
 
       <ScrollView
         horizontal
@@ -588,6 +663,40 @@ const estilos = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.xs,
     color: colors.textPrimary,
+  },
+  avisoPendientes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  avisoPendientesPresionado: {
+    opacity: 0.9,
+  },
+  iconoPendientes: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textosPendientes: {
+    flex: 1,
+    gap: 1,
+  },
+  tituloPendientes: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.navy,
+  },
+  detallePendientes: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
   },
   chips: {
     gap: spacing.sm,

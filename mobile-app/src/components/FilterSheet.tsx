@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   AccessibilityInfo,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +21,12 @@ interface Props {
   filtrosActivos: FiltroId[];
   onAplicar: (filtros: FiltroId[]) => void;
   onCerrar: () => void;
+  /** Mensaje destacado arriba (p. ej. «aplica tus filtros para ver la ruta»). */
+  aviso?: string | null;
+  /** Selección inicial cuando aún no hay filtros (según las necesidades). */
+  sugeridos?: FiltroId[];
+  /** true: no deja aplicar una selección vacía (requisito para calcular ruta). */
+  exigirAlMenosUno?: boolean;
 }
 
 const ICONOS: Record<FiltroId, IconName> = {
@@ -49,6 +56,9 @@ export function FilterSheet({
   filtrosActivos,
   onAplicar,
   onCerrar,
+  aviso,
+  sugeridos = [],
+  exigirAlMenosUno = false,
 }: Props) {
   const [seleccion, setSeleccion] = useState<FiltroId[]>(filtrosActivos);
 
@@ -63,9 +73,11 @@ export function FilterSheet({
   const aplicar = () => {
     onAplicar(seleccion);
     // Retroalimentación auditiva de la acción crítica (RNF-14).
-    AccessibilityInfo.announceForAccessibility(
-      `Filtros aplicados. ${seleccion.length} filtros activos.`,
-    );
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(
+        `Filtros aplicados. ${seleccion.length} filtros activos.`,
+      );
+    }
     onCerrar();
   };
 
@@ -104,7 +116,9 @@ export function FilterSheet({
       animationType="slide"
       onRequestClose={onCerrar}
       // Al abrir, sincroniza la copia local con los filtros guardados.
-      onShow={() => setSeleccion(filtrosActivos)}
+      onShow={() =>
+        setSeleccion(filtrosActivos.length > 0 ? filtrosActivos : sugeridos)
+      }
     >
       <View style={estilos.contenedor}>
         <Pressable
@@ -129,6 +143,17 @@ export function FilterSheet({
               <Ionicons name="close" size={22} color={colors.textPrimary} />
             </Pressable>
           </View>
+
+          {aviso ? (
+            <View style={estilos.aviso} accessibilityLiveRegion="polite">
+              <Ionicons
+                name="information-circle"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={estilos.avisoTexto}>{aviso}</Text>
+            </View>
+          ) : null}
 
           <ScrollView
             style={estilos.lista}
@@ -181,6 +206,7 @@ export function FilterSheet({
               icono="options-outline"
               forma="redondeado"
               onPress={aplicar}
+              deshabilitado={exigirAlMenosUno && seleccion.length === 0}
               estilo={estilos.botonPie}
             />
           </View>
@@ -191,6 +217,22 @@ export function FilterSheet({
 }
 
 const estilos = StyleSheet.create({
+  aviso: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.primarySoft,
+  },
+  avisoTexto: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
   contenedor: {
     flex: 1,
     justifyContent: 'flex-end',

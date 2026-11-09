@@ -103,3 +103,30 @@ describe('ModeracionService', () => {
     expect(inserciones).toHaveLength(0);
   });
 });
+
+describe('ModeracionService — estadísticas (M07)', () => {
+  it('rechaza con 403 a quien no tiene rol de moderación', async () => {
+    const { db } = crearDb([[]]);
+    const error = await capturar(new ModeracionService(db).estadisticas('3'));
+    expect(error.getStatus()).toBe(403);
+  });
+
+  it('agrupa reportes, incidencias y lugares por estado y arma los 7 días', async () => {
+    const { db } = crearDb([
+      ES_MODERADOR,
+      [{ estado: 'publicado', total: 4 }, { estado: 'pendiente_validacion', total: 2 }],
+      [{ dia: '2026-11-08', recibidos: 3, resueltos: 1 }],
+      [{ gravedad: 'alta', total: 1 }],
+      [{ estado: 'publicado', total: 9 }],
+      [{ total: 5, promedio: 4.2 }],
+      [{ automatica: 3, manual: 1 }],
+    ]);
+    const datos = await new ModeracionService(db).estadisticas('1');
+    expect(datos.reportesPorEstado).toEqual({ publicado: 4, pendiente_validacion: 2 });
+    expect(datos.actividad).toEqual([{ dia: '2026-11-08', recibidos: 3, resueltos: 1 }]);
+    expect(datos.incidenciasPorGravedad).toEqual({ alta: 1 });
+    expect(datos.lugaresPorEstado).toEqual({ publicado: 9 });
+    expect(datos.experiencias).toEqual({ total: 5, promedio: 4.2 });
+    expect(datos.viasResolucion).toEqual({ automatica: 3, manual: 1 });
+  });
+});
