@@ -30,6 +30,7 @@
     "ver-lugares": "node --env-file-if-exists=.env scripts/ver-lugares.mjs",
     "aplicar-sql": "node --env-file-if-exists=.env scripts/aplicar-sql.mjs",
     "migrar": "node --env-file-if-exists=.env scripts/migrar.mjs",
+    "eliminar-lugar": "node --env-file-if-exists=.env scripts/eliminar-lugar.mjs",
     "cargar-lugares": "node --env-file-if-exists=.env scripts/cargar-lugares.mjs",
     "complementar-lugares": "node --env-file-if-exists=.env scripts/complementar-lugares.mjs",
     "exportar-esquema": "node --env-file-if-exists=.env scripts/exportar-esquema.mjs",
