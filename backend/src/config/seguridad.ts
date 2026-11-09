@@ -167,3 +167,31 @@ export async function asegurarCaRds(
   mkdirSync(dirname(ruta), { recursive: true });
   writeFileSync(ruta, pem);
 }
+
+/**
+ * Swagger (/api/docs) describe todos los endpoints, así que en producción
+ * solo se publica si el equipo lo pide de forma explícita (SWAGGER_PUBLICO=true).
+ * En desarrollo y pruebas sigue disponible.
+ */
+export function swaggerHabilitado(entorno: NodeJS.ProcessEnv): boolean {
+  if (entorno.NODE_ENV !== 'production') {
+    return true;
+  }
+  return entorno.SWAGGER_PUBLICO?.toLowerCase() === 'true';
+}
+
+/**
+ * Cabeceras de seguridad HTTP (helmet). La API solo devuelve JSON e imágenes,
+ * así que la CSP es la más estricta; `cross-origin` en CORP permite que la
+ * versión web (otro dominio, Amplify) muestre las fotos de evidencia.
+ */
+export const OPCIONES_HELMET = {
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  crossOriginResourcePolicy: { policy: 'cross-origin' as const },
+};

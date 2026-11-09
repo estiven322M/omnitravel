@@ -155,9 +155,19 @@ async function main() {
     );
 
     if (existentes.length > 0) {
+      const { rows: [anterior] } = await cliente.query(
+        `select r.nombre_rol from usuario u left join rol r on r.id_rol = u.rol_id where u.email = $1`,
+        [email],
+      );
       await cliente.query(
         `update usuario set rol_id = $1, estado_cuenta = 'activo' where email = $2`,
         [rolId, email],
+      );
+      // Cambio de rol auditado (auditoría 6.7 ítem 9).
+      await cliente.query(
+        `insert into registro_auditoria (usuario_id, accion, detalle)
+         values ($1, 'cambio_rol', jsonb_build_object('rol_anterior', $2::text, 'rol_nuevo', $3::text, 'origen', 'crear-admin'))`,
+        [existentes[0].id_usuario, anterior?.nombre_rol ?? null, rol],
       );
       console.log(`✔ ${email} ahora es ${rol}. Puede entrar por el Panel de Moderación.`);
       return;
@@ -178,6 +188,12 @@ async function main() {
       `insert into usuario (email, password_hash, rol_id, estado_cuenta)
        values ($1, $2, $3, 'activo')`,
       [email, await bcrypt.hash(clave, 10), rolId],
+    );
+    await cliente.query(
+      `insert into registro_auditoria (usuario_id, accion, detalle)
+       select id_usuario, 'cambio_rol', jsonb_build_object('rol_anterior', null, 'rol_nuevo', $2::text, 'origen', 'crear-admin')
+         from usuario where email = $1`,
+      [email, rol],
     );
     console.log(`✔ Cuenta ${rol} creada para ${email}. Ya puede entrar por el Panel de Moderación.`);
   } finally {

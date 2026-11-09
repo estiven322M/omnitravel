@@ -145,6 +145,7 @@ interface FilaReporteModeracion {
         id_evidencia: number;
         tipo: string | null;
         storage_key: string | null;
+        acceso?: string | null;
       }[]
     | null;
 }
@@ -186,6 +187,7 @@ export function mapearReporteModeracion(
       id: String(evidencia.id_evidencia),
       tipo: evidencia.tipo ?? 'foto',
       storageKey: evidencia.storage_key ?? '',
+      acceso: evidencia.acceso ?? null,
     })),
   };
 }

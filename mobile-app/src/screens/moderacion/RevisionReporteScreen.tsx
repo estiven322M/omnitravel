@@ -292,7 +292,10 @@ export function RevisionReporteScreen() {
             {fotos.length > 0 ? (
               <Image
                 source={{
-                  uri: urlPublicaEvidencia(fotos[fotoActiva]?.storageKey ?? ''),
+                  uri: urlPublicaEvidencia(
+                    fotos[fotoActiva]?.storageKey ?? '',
+                    fotos[fotoActiva]?.acceso,
+                  ),
                 }}
                 style={estilos.evidencia}
                 accessibilityRole="image"
@@ -410,7 +413,9 @@ export function RevisionReporteScreen() {
                 accessibilityLabel={`Ver foto ${indice + 1}`}
               >
                 <Image
-                  source={{ uri: urlPublicaEvidencia(foto.storageKey) }}
+                  source={{
+                    uri: urlPublicaEvidencia(foto.storageKey, foto.acceso),
+                  }}
                   style={[
                     estilos.miniatura,
                     indice === fotoActiva ? estilos.miniaturaActiva : null,

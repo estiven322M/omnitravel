@@ -58,4 +58,15 @@ describe('urlPublicaEvidencia', () => {
       'http://api.test/evidencias/archivo/7/1700000000000-abc.jpg',
     );
   });
+
+  it('agrega el permiso temporal que firma el backend', () => {
+    expect(
+      urlPublicaEvidencia(
+        '7/1700000000000-abc.jpg',
+        'exp=1762621200&firma=x_Y',
+      ),
+    ).toBe(
+      'http://api.test/evidencias/archivo/7/1700000000000-abc.jpg?exp=1762621200&firma=x_Y',
+    );
+  });
 });

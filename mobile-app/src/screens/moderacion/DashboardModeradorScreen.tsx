@@ -276,7 +276,10 @@ export function DashboardModeradorScreen() {
                       {alerta.evidencia ? (
                         <Image
                           source={{
-                            uri: urlPublicaEvidencia(alerta.evidencia),
+                            uri: urlPublicaEvidencia(
+                              alerta.evidencia,
+                              alerta.evidenciaAcceso,
+                            ),
                           }}
                           style={estilos.fotoAlerta}
                           accessibilityIgnoresInvertColors

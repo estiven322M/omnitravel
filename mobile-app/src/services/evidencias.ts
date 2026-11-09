@@ -107,7 +107,15 @@ export async function subirEvidencia(
   }
 }
 
-/** URL pública de una evidencia (lectura comunitaria desde el backend). */
-export function urlPublicaEvidencia(storageKey: string): string {
-  return `${API_URL}/evidencias/archivo/${storageKey}`;
+/**
+ * URL de lectura de una evidencia. El backend solo entrega la foto con el
+ * permiso temporal (`exp=…&firma=…`) que agrega a los reportes que ve un
+ * moderador; sin él responde 403.
+ */
+export function urlPublicaEvidencia(
+  storageKey: string,
+  acceso?: string | null,
+): string {
+  const base = `${API_URL}/evidencias/archivo/${storageKey}`;
+  return acceso ? `${base}?${acceso}` : base;
 }

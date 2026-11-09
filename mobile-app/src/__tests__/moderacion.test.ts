@@ -93,6 +93,7 @@ describe('servicio del panel de moderación', () => {
       direccion: '',
       confirmaciones: 1,
       evidencia: null,
+      evidenciaAcceso: null,
     });
   });
 

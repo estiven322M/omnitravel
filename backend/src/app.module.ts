@@ -16,7 +16,6 @@ import { RoutingModule } from './routing/routing.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseDiagnosticModule } from './database/database-diagnostic.module';
 import { PoisModule } from './pois/pois.module';
-import { ReportsModule } from './reports/reports.module';
 import { UsersModule } from './users/users.module';
 import {
   asegurarCaRds,
@@ -73,7 +72,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     // Módulos de Jhon (main): roles, diagnóstico y consultas de solo lectura.
     DatabaseDiagnosticModule,
     PoisModule,
-    ReportsModule,
     UsersModule,
   ],
   controllers: [AppController],

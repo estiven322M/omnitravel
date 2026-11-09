@@ -9,15 +9,19 @@ import { AuthService } from './auth.service';
 const CONTRASENA = 'Segura123!';
 const CODIGO = 'OMNI-ADMIN-2026';
 
-function crearServicio(opciones: {
-  codigo?: string;
-  existe?: boolean;
-  rol?: { id: string; nombre: string } | null;
-} = {}) {
+function crearServicio(
+  opciones: {
+    codigo?: string;
+    existe?: boolean;
+    rol?: { id: string; nombre: string } | null;
+  } = {},
+) {
   const usuarios = {
     existsBy: jest.fn().mockResolvedValue(opciones.existe ?? false),
     create: jest.fn((datos: unknown) => datos),
     save: jest.fn().mockResolvedValue({ id: '42' }),
+    manager: { query: jest.fn().mockResolvedValue([]) },
+    createQueryBuilder: jest.fn(),
   };
   const roles = {
     findOneBy: jest
@@ -167,5 +171,103 @@ describe('AuthService — registro de viajero y administrador', () => {
 
     expect(error.getStatus()).toBe(500);
     expect(codigo(error)).toBe('INTERNAL_ERROR');
+  });
+});
+
+describe('AuthService — auditoría de eventos de cuenta', () => {
+  const eventos = (usuarios: { manager: { query: jest.Mock } }) =>
+    usuarios.manager.query.mock.calls.map(([, params]: [string, unknown[]]) => [
+      params[0],
+      params[1],
+      JSON.parse(params[2] as string),
+    ]);
+
+  function conUsuario(
+    usuarios: { createQueryBuilder: jest.Mock },
+    usuario: Record<string, unknown> | null,
+  ) {
+    const consulta = {
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(usuario),
+    };
+    usuarios.createQueryBuilder.mockReturnValue(consulta);
+  }
+
+  const bcrypt = jest.requireActual<typeof import('bcryptjs')>('bcryptjs');
+  const hash = bcrypt.hashSync(CONTRASENA, 4);
+
+  it('registra el rol asignado al crear la cuenta', async () => {
+    const { servicio, usuarios } = crearServicio();
+    await servicio.registrar({ email: 'ana@correo.co', password: CONTRASENA });
+    expect(eventos(usuarios)).toEqual([
+      ['42', 'registro_cuenta', { rol: 'viajero' }],
+    ]);
+  });
+
+  it('registra el inicio de sesión exitoso sin guardar el correo', async () => {
+    const { servicio, usuarios } = crearServicio();
+    conUsuario(usuarios, {
+      id: '7',
+      email: 'ana@correo.co',
+      passwordHash: hash,
+      estadoCuenta: 'activo',
+      rolId: '1',
+    });
+    await servicio.iniciarSesion({
+      email: 'ana@correo.co',
+      password: CONTRASENA,
+    });
+    expect(eventos(usuarios)).toEqual([
+      ['7', 'inicio_sesion', { rol: 'viajero' }],
+    ]);
+    expect(JSON.stringify(usuarios.manager.query.mock.calls)).not.toContain(
+      'ana@correo.co',
+    );
+  });
+
+  it('registra el intento fallido de una cuenta existente', async () => {
+    const { servicio, usuarios } = crearServicio();
+    conUsuario(usuarios, {
+      id: '7',
+      email: 'ana@correo.co',
+      passwordHash: hash,
+      estadoCuenta: 'activo',
+      rolId: '1',
+    });
+    const error = await capturar(
+      servicio.iniciarSesion({ email: 'ana@correo.co', password: 'Otra123!' }),
+    );
+    expect(codigo(error)).toBe('INVALID_CREDENTIALS');
+    expect(eventos(usuarios)).toEqual([
+      ['7', 'inicio_sesion_fallido', { motivo: 'contrasena_incorrecta' }],
+    ]);
+  });
+
+  it('no audita correos que no existen (no revela cuentas)', async () => {
+    const { servicio, usuarios } = crearServicio();
+    conUsuario(usuarios, null);
+    await capturar(
+      servicio.iniciarSesion({
+        email: 'nadie@correo.co',
+        password: CONTRASENA,
+      }),
+    );
+    expect(usuarios.manager.query).not.toHaveBeenCalled();
+  });
+
+  it('si la auditoría falla, el inicio de sesión continúa', async () => {
+    const { servicio, usuarios } = crearServicio();
+    usuarios.manager.query.mockRejectedValue(new Error('sin tabla'));
+    conUsuario(usuarios, {
+      id: '7',
+      email: 'ana@correo.co',
+      passwordHash: hash,
+      estadoCuenta: 'activo',
+      rolId: '1',
+    });
+    await expect(
+      servicio.iniciarSesion({ email: 'ana@correo.co', password: CONTRASENA }),
+    ).resolves.toMatchObject({ token: 'jwt' });
   });
 });
