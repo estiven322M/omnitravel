@@ -30,7 +30,7 @@ import { useBusquedaStore } from '../store/busquedaStore';
 import { useProfileStore } from '../store/profileStore';
 import { coincideBusqueda, sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria, iconoDeCategoria } from '../utils/categorias';
-import { aplicarFiltros } from '../utils/filters';
+import { aplicarFiltros, filtrosCumplidos } from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
 import {
   colors,
@@ -48,6 +48,8 @@ interface EntradaFeed {
   poi: Poi;
   /** Distancia en línea recta desde tu ubicación; ausente sin permiso. */
   km?: number;
+  /** Filtros que cumple cuando se muestran coincidencias parciales. */
+  cumple?: number;
 }
 
 /**
@@ -154,27 +156,45 @@ export function HomeScreen() {
 
   const termino = busqueda.trim().toLowerCase();
 
-  /** Lugares visibles: filtros U05 → chip de categoría → texto buscado. */
-  const entradas = useMemo<EntradaFeed[]>(() => {
-    let lista = aplicarFiltros(pois, filtrosActivos);
+  /**
+   * Lugares visibles: chip de categoría → texto buscado → filtros U05.
+   * Si ningún lugar cumple TODOS los filtros, se muestran los que cumplen
+   * más filtros (coincidencia parcial, avisada en pantalla) en lugar de una
+   * lista vacía. Los filtros nunca se cambian por la persona.
+   */
+  const { entradas, parciales } = useMemo(() => {
+    let base = pois;
     if (categoriaActiva) {
-      lista = lista.filter((poi) => poi.categoria === categoriaActiva);
+      base = base.filter((poi) => poi.categoria === categoriaActiva);
     }
     if (termino.length >= MINIMO_BUSQUEDA) {
-      lista = lista.filter((poi) => coincideBusqueda(poi, termino));
+      base = base.filter((poi) => coincideBusqueda(poi, termino));
     }
-    if (!ubicacion) {
-      return lista.map((poi) => ({ poi }));
+    const conDistancia = (poi: Poi): EntradaFeed => ({
+      poi,
+      km: ubicacion
+        ? distanciaKm(ubicacion, {
+            latitude: poi.latitud,
+            longitude: poi.longitud,
+          })
+        : undefined,
+    });
+    const porDistancia = (a: EntradaFeed, b: EntradaFeed) =>
+      (a.km ?? 0) - (b.km ?? 0);
+
+    const completas = aplicarFiltros(base, filtrosActivos)
+      .map(conDistancia)
+      .sort(porDistancia);
+    if (completas.length > 0 || filtrosActivos.length === 0) {
+      return { entradas: completas, parciales: false };
     }
-    return lista
+    const aproximadas = base
       .map((poi) => ({
-        poi,
-        km: distanciaKm(ubicacion, {
-          latitude: poi.latitud,
-          longitude: poi.longitud,
-        }),
+        ...conDistancia(poi),
+        cumple: filtrosCumplidos(poi, filtrosActivos),
       }))
-      .sort((a, b) => a.km - b.km);
+      .sort((a, b) => b.cumple - a.cumple || porDistancia(a, b));
+    return { entradas: aproximadas, parciales: aproximadas.length > 0 };
   }, [pois, filtrosActivos, categoriaActiva, termino, ubicacion]);
 
   /** Sugerencias mientras se escribe (en todo el catálogo). */
@@ -448,6 +468,23 @@ export function HomeScreen() {
           <Ionicons name="map-outline" size={16} color={colors.primary} />
         </Pressable>
       </View>
+      {parciales ? (
+        <View style={estilos.avisoParcial} accessibilityLiveRegion="polite">
+          <Ionicons
+            name="information-circle-outline"
+            size={20}
+            color={colors.warningText}
+          />
+          <Text style={estilos.textoAvisoParcial}>
+            Ningún lugar
+            {categoriaActiva
+              ? ` de ${etiquetaDeCategoria(categoriaActiva).toLowerCase()}`
+              : ''}{' '}
+            cumple todos tus filtros de accesibilidad. Te mostramos los que
+            cumplen más; revisa su detalle antes de ir.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 
@@ -460,13 +497,20 @@ export function HomeScreen() {
         contentContainerStyle={estilos.contenido}
         ListHeaderComponent={encabezado}
         renderItem={({ item }) => (
-          <PoiCardFeed
-            poi={item.poi}
-            distanciaKm={item.km}
-            onPress={() =>
-              navigation.navigate('DetallePoi', { poiId: item.poi.id })
-            }
-          />
+          <View>
+            {item.cumple !== undefined ? (
+              <Text style={estilos.textoCumple}>
+                Cumple {item.cumple} de {filtrosActivos.length} filtros
+              </Text>
+            ) : null}
+            <PoiCardFeed
+              poi={item.poi}
+              distanciaKm={item.km}
+              onPress={() =>
+                navigation.navigate('DetallePoi', { poiId: item.poi.id })
+              }
+            />
+          </View>
         )}
         ListEmptyComponent={
           cargadoPois && !sinConexionPois ? (
@@ -511,6 +555,26 @@ export function HomeScreen() {
 }
 
 const estilos = StyleSheet.create({
+  avisoParcial: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: colors.warningSoft,
+  },
+  textoAvisoParcial: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.warningText,
+  },
+  textoCumple: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.warningText,
+    marginBottom: spacing.xs,
+  },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,

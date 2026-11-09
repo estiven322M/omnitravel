@@ -165,20 +165,6 @@ export const ETIQUETAS_RAPIDAS: EtiquetaRapida[] = [
     booleano: true,
   },
   {
-    id: 'escalones',
-    etiqueta: 'Escalones',
-    caracteristicaId: 'tiene_escaleras',
-    tono: 'peligro',
-    booleano: true,
-  },
-  {
-    id: 'sin_escalones',
-    etiqueta: 'Sin escalones',
-    caracteristicaId: 'tiene_escaleras',
-    tono: 'exito',
-    booleano: false,
-  },
-  {
     id: 'ascensor_danado',
     etiqueta: 'Ascensor dañado',
     caracteristicaId: 'tiene_ascensor',

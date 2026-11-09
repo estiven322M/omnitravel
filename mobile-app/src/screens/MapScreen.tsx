@@ -200,6 +200,9 @@ export function MapScreen() {
     [pois, filtrosActivos],
   );
 
+  /** «⋯ Más» despliega todas las categorías en la misma fila de chips. */
+  const [verTodasCategorias, setVerTodasCategorias] = useState(false);
+
   const categorias = useMemo(
     () =>
       Array.from(new Set(pois.map((poi) => poi.categoria))).sort((a, b) =>
@@ -609,51 +612,57 @@ export function MapScreen() {
           contentContainerStyle={estilos.chips}
           accessibilityLabel="Categorías de lugares"
         >
-          {['Todos', ...categorias.slice(0, CATEGORIAS_VISIBLES)].map(
-            (categoria) => {
-              const activa = categoriaActiva === categoria;
-              return (
-                <Pressable
-                  key={categoria}
-                  onPress={() => setCategoriaActiva(categoria)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Categoría ${
-                    categoria === 'Todos'
-                      ? categoria
-                      : etiquetaDeCategoria(categoria)
-                  }`}
-                  accessibilityState={{ selected: activa }}
+          {[
+            'Todos',
+            ...(verTodasCategorias
+              ? categorias
+              : categorias.slice(0, CATEGORIAS_VISIBLES)),
+          ].map((categoria) => {
+            const activa = categoriaActiva === categoria;
+            return (
+              <Pressable
+                key={categoria}
+                onPress={() => setCategoriaActiva(categoria)}
+                accessibilityRole="button"
+                accessibilityLabel={`Categoría ${
+                  categoria === 'Todos'
+                    ? categoria
+                    : etiquetaDeCategoria(categoria)
+                }`}
+                accessibilityState={{ selected: activa }}
+                style={[
+                  estilos.chip,
+                  activa ? estilos.chipActivo : estilos.chipInactivo,
+                ]}
+              >
+                <Text
                   style={[
-                    estilos.chip,
-                    activa ? estilos.chipActivo : estilos.chipInactivo,
+                    estilos.chipTexto,
+                    activa ? estilos.chipTextoActivo : null,
                   ]}
                 >
-                  <Text
-                    style={[
-                      estilos.chipTexto,
-                      activa ? estilos.chipTextoActivo : null,
-                    ]}
-                  >
-                    {categoria === 'Todos'
-                      ? categoria
-                      : etiquetaDeCategoria(categoria)}
-                  </Text>
-                </Pressable>
-              );
-            },
-          )}
+                  {categoria === 'Todos'
+                    ? categoria
+                    : etiquetaDeCategoria(categoria)}
+                </Text>
+              </Pressable>
+            );
+          })}
           {categorias.length > CATEGORIAS_VISIBLES ? (
             <Pressable
-              onPress={() => {
-                setCategoriaActiva('Todos');
-                setFiltrosAbiertos(true);
-              }}
+              onPress={() => setVerTodasCategorias((actual) => !actual)}
               accessibilityRole="button"
-              accessibilityLabel="⋯ Más"
-              accessibilityHint="Abre el panel con todas las categorías y filtros de accesibilidad"
+              accessibilityLabel={
+                verTodasCategorias
+                  ? 'Ver menos categorías'
+                  : 'Ver más categorías'
+              }
+              accessibilityState={{ expanded: verTodasCategorias }}
               style={[estilos.chip, estilos.chipInactivo]}
             >
-              <Text style={estilos.chipTexto}>⋯ Más</Text>
+              <Text style={estilos.chipTexto}>
+                {verTodasCategorias ? '‹ Menos' : '⋯ Más'}
+              </Text>
             </Pressable>
           ) : null}
         </ScrollView>

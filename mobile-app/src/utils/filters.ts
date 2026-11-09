@@ -21,9 +21,17 @@ export interface DefinicionFiltro {
   grupo: GrupoFiltro;
   etiqueta: string;
   caracteristicaId: string;
-  tipo: 'booleano_true' | 'booleano_false' | 'numerico_min';
+  tipo: TipoCondicion;
   valor?: number;
+  /**
+   * Característica equivalente cuando el lugar no tiene la principal. El
+   * catálogo de la BD no registra «escaleras»: un acceso con rampa
+   * confirmada es un acceso sin escalones.
+   */
+  respaldo?: { caracteristicaId: string; tipo: TipoCondicion };
 }
+
+type TipoCondicion = 'booleano_true' | 'booleano_false' | 'numerico_min';
 
 export const FILTROS: DefinicionFiltro[] = [
   {
@@ -40,6 +48,7 @@ export const FILTROS: DefinicionFiltro[] = [
     etiqueta: 'Sin escalones absolutos',
     caracteristicaId: 'tiene_escaleras',
     tipo: 'booleano_false',
+    respaldo: { caracteristicaId: 'tiene_rampa', tipo: 'booleano_true' },
   },
   {
     id: 'ascensor_amplio',
@@ -72,16 +81,29 @@ export const FILTROS: DefinicionFiltro[] = [
 ];
 
 export function poiCumpleFiltro(poi: Poi, filtro: DefinicionFiltro): boolean {
-  const valor = poi.valores.find(
+  const principal = poi.valores.find(
     (v) => v.caracteristicaId === filtro.caracteristicaId,
   );
-
-  // Si el POI no tiene dato para la característica, no puede garantizar el filtro.
-  if (!valor) {
-    return false;
+  if (principal) {
+    return cumpleCondicion(principal, filtro.tipo, filtro.valor);
   }
+  const respaldo = filtro.respaldo
+    ? poi.valores.find(
+        (v) => v.caracteristicaId === filtro.respaldo?.caracteristicaId,
+      )
+    : undefined;
+  // Si el POI no tiene dato para la característica, no puede garantizar el filtro.
+  return respaldo && filtro.respaldo
+    ? cumpleCondicion(respaldo, filtro.respaldo.tipo)
+    : false;
+}
 
-  switch (filtro.tipo) {
+function cumpleCondicion(
+  valor: Poi['valores'][number],
+  tipo: TipoCondicion,
+  minimo?: number,
+): boolean {
+  switch (tipo) {
     case 'booleano_true':
       return valor.valorBooleano === true;
     case 'booleano_false':
@@ -89,9 +111,19 @@ export function poiCumpleFiltro(poi: Poi, filtro: DefinicionFiltro): boolean {
     case 'numerico_min':
       return (
         valor.valorNumerico !== undefined &&
-        valor.valorNumerico >= (filtro.valor ?? 0)
+        valor.valorNumerico >= (minimo ?? 0)
       );
   }
+}
+
+/** Cuántos de los filtros activos cumple el lugar (coincidencia parcial). */
+export function filtrosCumplidos(
+  poi: Poi,
+  filtrosActivos: readonly FiltroId[],
+): number {
+  return FILTROS.filter(
+    (f) => filtrosActivos.includes(f.id) && poiCumpleFiltro(poi, f),
+  ).length;
 }
 
 export function aplicarFiltros(pois: Poi[], filtrosActivos: FiltroId[]): Poi[] {
