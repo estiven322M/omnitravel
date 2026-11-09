@@ -4,8 +4,8 @@
  * - `consulta`: búsqueda en OpenStreetMap (Nominatim) para las coordenadas.
  * - `respaldo`: coordenadas aproximadas si OSM no encuentra el lugar.
  * - `reutilizarId`: POI que ya existe en la BD y se corrige (no se duplica).
- * - `fotos`: archivos de Wikimedia Commons verificados (licencia libre).
- *   Si no hay suficientes, el script busca fotos geolocalizadas cerca.
+ * - `fotos`: archivos de Wikimedia Commons revisados a mano (licencia libre).
+ *   Los lugares sin fotos muestran la foto de referencia de su categoría.
  * - `valores`: valores iniciales de accesibilidad. Son datos de partida que
  *   la comunidad confirma o corrige con el Proceso 1 (validación colaborativa).
  *
@@ -48,6 +48,10 @@ export const LUGARES = [
         archivo: 'Armenia,_Quindio,_Colombia_-_panoramio_-_Jimmy_Gómez_N_(15).jpg',
         leyenda: 'Plaza de Bolívar',
       },
+      {
+        archivo: 'Catedral_de_la_Inmaculada_Concepción,_Armenia_-_vista_desde_el_parque.jpg',
+        leyenda: 'La plaza y la catedral',
+      },
     ],
     valores: espacioPublico,
   },
@@ -59,8 +63,15 @@ export const LUGARES = [
     consulta: 'Catedral de la Inmaculada Concepción, Armenia, Quindío',
     respaldo: [4.5342, -75.6733],
     fotos: [
-      { archivo: 'Catedral_de_armenia.jpg', leyenda: 'Fachada de la catedral' },
-      { archivo: 'Día_cálido.jpg', leyenda: 'Vista en día soleado' },
+      {
+        archivo: 'Catedral_de_la_Inmaculada_Concepción,_Armenia_-_exterior.jpg',
+        leyenda: 'Exterior',
+      },
+      { archivo: 'Catedral_de_armenia.jpg', leyenda: 'Fachada' },
+      {
+        archivo: 'Catedral_de_la_Inmaculada_Concepción,_Armenia_-_vista_desde_el_parque.jpg',
+        leyenda: 'Vista desde la plaza',
+      },
     ],
     valores: templo,
   },
@@ -134,7 +145,13 @@ export const LUGARES = [
     descripcion: 'Estadio del Deportes Quindío, con capacidad para unas 20.000 personas.',
     consulta: 'Estadio Centenario, Armenia, Quindío',
     respaldo: [4.5153, -75.6984],
-    fotos: [{ archivo: 'Estadio_Centenario_Tribuna_Oriental.jpg', leyenda: 'Tribuna oriental' }],
+    fotos: [
+      { archivo: 'Estadio_Centenario_Tribuna_Oriental.jpg', leyenda: 'Tribuna oriental' },
+      {
+        archivo: 'Entretiempo_Deportes_Quindío_vs._Santa_Fe_-_Torneo_Finalización_2021.jpg',
+        leyenda: 'Interior del estadio',
+      },
+    ],
     valores: { 1: true, 2: false, 3: true, 4: false, 5: false, 6: false, 7: 120 },
   },
   {
@@ -167,7 +184,7 @@ export const LUGARES = [
       'Parque urbano con lagos, cascadas, puentes y senderos entre guaduales; punto de encuentro de recorridos.',
     consulta: 'Parque de la Vida, Armenia, Quindío',
     respaldo: [4.5466, -75.6658],
-    fotos: [],
+    fotos: [{ archivo: 'Parque_de_la_Vida.JPG', leyenda: 'Lagos y senderos' }],
     valores: { 1: true, 2: false, 3: true, 4: false, 5: false, 6: true, 7: 150 },
   },
   {

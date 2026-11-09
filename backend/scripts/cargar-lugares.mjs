@@ -3,9 +3,10 @@
  * Carga los lugares reales de Armenia (scripts/datos/lugares-armenia.mjs):
  *
  * 1. Busca las coordenadas de cada lugar en OpenStreetMap (Nominatim).
- * 2. Obtiene sus fotos de Wikimedia Commons (autor, licencia, 1280 px) y, si
- *    faltan, busca fotos geolocalizadas a menos de 250 m. Descarta las de
- *    menos de 900 px de ancho (borrosas).
+ * 2. Obtiene sus fotos de Wikimedia Commons (autor, licencia, 1280 px),
+ *    revisadas a mano en datos/lugares-armenia.mjs. Descarta las de menos de
+ *    900 px de ancho (borrosas). Con --buscar-cercanas propone además fotos
+ *    geolocalizadas a menos de 250 m (solo para revisar, no siempre son del lugar).
  * 3. En una transacción: elimina los lugares de prueba (ELIMINAR_IDS) con sus
  *    datos de prueba, corrige los que se reutilizan, crea los nuevos, y
  *    guarda valores de accesibilidad y fotos (tabla poi_foto, migración 003).
@@ -150,7 +151,8 @@ async function fotosDe(lugar, coordenadas) {
       console.warn(`  ⚠ ${lugar.nombre}: «${foto.archivo}» no existe o es pequeña; se omite.`);
     }
   }
-  if (elegidas.length < 2) {
+  // Búsqueda automática cercana: solo con --buscar-cercanas (revisar a mano).
+  if (process.argv.includes('--buscar-cercanas') && elegidas.length < 2) {
     const cercanas = await fotosCercanas(coordenadas.lat, coordenadas.lon);
     const infos = await infoCommons(cercanas.slice(0, 15));
     for (const info of infos
