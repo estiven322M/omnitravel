@@ -33,6 +33,28 @@ import {
   TOUCH_TARGET,
 } from '../utils/theme';
 
+type RolRegistro = 'viajero' | 'administrador';
+
+const ROLES_REGISTRO: {
+  id: RolRegistro;
+  etiqueta: string;
+  detalle: string;
+  icono: IconName;
+}[] = [
+  {
+    id: 'viajero',
+    etiqueta: 'Viajero',
+    detalle: 'Explora y comparte lugares accesibles',
+    icono: 'person-outline',
+  },
+  {
+    id: 'administrador',
+    etiqueta: 'Administrador',
+    detalle: 'Requiere código de invitación',
+    icono: 'shield-checkmark-outline',
+  },
+];
+
 const NECESIDADES: {
   id: NecesidadAccesibilidad;
   etiqueta: string;
@@ -55,6 +77,7 @@ interface Errores {
   nombre?: string;
   email?: string;
   contrasena?: string;
+  codigoInvitacion?: string;
 }
 
 export function validarEmail(email: string): boolean {
@@ -90,6 +113,8 @@ export function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [verContrasena, setVerContrasena] = useState(false);
+  const [rol, setRol] = useState<RolRegistro>('viajero');
+  const [codigoInvitacion, setCodigoInvitacion] = useState('');
   const [necesidades, setNecesidades] = useState<NecesidadAccesibilidad[]>([]);
   const [errores, setErrores] = useState<Errores>({});
 
@@ -114,6 +139,10 @@ export function RegisterScreen() {
       nuevosErrores.contrasena =
         'Mínimo 8 caracteres, con letras, números y un símbolo.';
     }
+    if (rol === 'administrador' && codigoInvitacion.trim().length === 0) {
+      nuevosErrores.codigoInvitacion =
+        'Ingresa el código de invitación de administrador.';
+    }
 
     setErrores(nuevosErrores);
 
@@ -133,6 +162,9 @@ export function RegisterScreen() {
         nombre: nombre.trim(),
         email: email.trim(),
         contrasena,
+        rol,
+        codigoInvitacion:
+          rol === 'administrador' ? codigoInvitacion.trim() : undefined,
       });
 
       // El perfil de accesibilidad sigue siendo 100 % local (Ley 1581).
@@ -141,12 +173,15 @@ export function RegisterScreen() {
         resultado.perfil?.id_usuario != null
           ? String(resultado.perfil.id_usuario)
           : undefined;
+      const rolCuenta = resultado.perfil?.rol ?? rol;
       guardarPerfil({
         nombre: nombre.trim(),
         necesidades,
         filtrosActivos: [],
-        rol: 'viajero',
+        rol: rolCuenta,
         idCuenta,
+        // El administrador entra directo al panel de moderación.
+        modo: rolCuenta === 'administrador' ? 'moderacion' : 'viajero',
       });
 
       if (Platform.OS === 'ios') {
@@ -272,6 +307,56 @@ export function RegisterScreen() {
                 </Pressable>
               }
             />
+          </View>
+
+          <View style={estilos.seccionRol}>
+            <Text style={estilos.tituloSeccion}>Tipo de cuenta</Text>
+            <Text style={estilos.subtituloSeccion}>
+              Elige cómo vas a usar OmniTravel
+            </Text>
+            <View style={estilos.opcionesRol}>
+              {ROLES_REGISTRO.map(({ id, etiqueta, detalle, icono }) => {
+                const activo = rol === id;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => setRol(id)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`${etiqueta}. ${detalle}`}
+                    accessibilityState={{ checked: activo }}
+                    style={[
+                      estilos.opcionRol,
+                      activo ? estilos.opcionRolActiva : null,
+                    ]}
+                  >
+                    <Ionicons name={icono} size={26} color={colors.primary} />
+                    <Text
+                      style={[
+                        estilos.opcionRolTitulo,
+                        activo ? estilos.opcionRolTituloActiva : null,
+                      ]}
+                    >
+                      {etiqueta}
+                    </Text>
+                    <Text style={estilos.opcionRolDetalle}>{detalle}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {rol === 'administrador' ? (
+              <CampoTexto
+                etiqueta="Código de invitación"
+                ocultarEtiqueta
+                icono="key-outline"
+                placeholder="Código de invitación"
+                value={codigoInvitacion}
+                onChangeText={setCodigoInvitacion}
+                autoCapitalize="none"
+                autoComplete="off"
+                error={errores.codigoInvitacion}
+                ayuda="Solo el equipo autorizado recibe este código."
+              />
+            ) : null}
           </View>
 
           <View style={estilos.seccionPerfil}>
@@ -446,6 +531,48 @@ const estilos = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.primary,
     fontWeight: fontWeight.semibold,
+  },
+  seccionRol: {
+    gap: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: spacing.md,
+  },
+  opcionesRol: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  opcionRol: {
+    flex: 1,
+    minHeight: 104,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    padding: spacing.sm,
+  },
+  opcionRolActiva: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  opcionRolTitulo: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.navy,
+    textAlign: 'center',
+  },
+  opcionRolTituloActiva: {
+    color: colors.primary,
+  },
+  opcionRolDetalle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 15,
   },
   seccionPerfil: {
     gap: spacing.xs,

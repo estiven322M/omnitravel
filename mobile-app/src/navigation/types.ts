@@ -40,6 +40,6 @@ export type RootStackParamList = {
   MisReportes: undefined;
   /** Navegación paso a paso (U07) con el origen ya resuelto. */
   Navegacion: { poiId: string; origenLat: number; origenLon: number };
-  /** U13 — Retroalimentación post-viaje (Proceso 3). */
-  Retroalimentacion: { poiId: string; origen: 'ruta' | 'visita' };
+  /** Proceso 3 — calificación de una visita completada. */
+  Feedback: { visitaId: number; poiId: string; poiNombre: string };
 };

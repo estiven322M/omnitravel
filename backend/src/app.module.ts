@@ -6,12 +6,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { EvidenciasModule } from './evidencias/evidencias.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { HealthModule } from './health/health.module';
 import { MapaModule } from './mapa/mapa.module';
 import { FavoritosModule } from './favoritos/favoritos.module';
 import { ModeracionModule } from './moderacion/moderacion.module';
 import { ReportesModule } from './reportes/reportes.module';
-import { RetroalimentacionModule } from './retroalimentacion/retroalimentacion.module';
 import { RoutingModule } from './routing/routing.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseDiagnosticModule } from './database/database-diagnostic.module';
@@ -63,12 +63,12 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     DatabaseModule,
     AuthModule,
     EvidenciasModule,
+    FeedbackModule,
     HealthModule,
     MapaModule,
     FavoritosModule,
     ModeracionModule,
     ReportesModule,
-    RetroalimentacionModule,
     RoutingModule,
     // Módulos de Jhon (main): roles, diagnóstico y consultas de solo lectura.
     DatabaseDiagnosticModule,

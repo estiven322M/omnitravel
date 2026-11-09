@@ -25,6 +25,7 @@ import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { MapaWeb } from '../components/MapaWeb';
 import type { RootStackParamList } from '../navigation/types';
+import { finalizarVisita, iniciarVisita } from '../services/api/feedback';
 import { calcularRutaAccesible } from '../services/api/routes';
 import type { PasoRuta, ResultadoRuta } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
@@ -43,6 +44,7 @@ import {
   iconoDeManeuver,
   restriccionesDesdePerfil,
 } from '../utils/ruta';
+import { Alerta } from '../utils/alerta';
 import {
   colors,
   fontSize,
@@ -105,6 +107,11 @@ export function NavegacionScreen() {
   const [guiaVoz, setGuiaVoz] = useState(false);
   /** Metros recorridos sobre la ruta (GPS o paso elegido por la persona). */
   const [recorridoM, setRecorridoM] = useState(0);
+  /** Visita abierta en la BD al entrar a la navegación (Proceso 3). */
+  const [visitaId, setVisitaId] = useState<number | null>(null);
+  const [errorVisita, setErrorVisita] = useState<string | null>(null);
+  const [finalizando, setFinalizando] = useState(false);
+  const visitaSolicitada = useRef(false);
 
   const cargando = resultado === undefined && !error;
   /**
@@ -283,6 +290,36 @@ export function NavegacionScreen() {
     };
   }, [poi, origenLat, origenLon, restricciones, recalculo]);
 
+  // Proceso 3: abrir la visita al entrar a la navegación paso a paso. El
+  // backend reutiliza la visita en curso del mismo lugar y cancela la anterior
+  // si la persona cambió de destino.
+  useEffect(() => {
+    const idPoi = poi?.id;
+    if (!idPoi || visitaSolicitada.current) {
+      return undefined;
+    }
+    visitaSolicitada.current = true;
+    let vigente = true;
+    iniciarVisita(idPoi)
+      .then(({ visita }) => {
+        if (vigente) {
+          setVisitaId(visita.id_visita);
+          setErrorVisita(null);
+        }
+      })
+      .catch((fallo) => {
+        if (vigente) {
+          setErrorVisita(
+            (fallo as Error)?.message ??
+              'No pudimos registrar el inicio de la visita.',
+          );
+        }
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [poi?.id]);
+
   // Guía por voz: narra la maniobra vigente cuando está activa (es-ES).
   useEffect(() => {
     if (!guiaVoz || !pasoActual?.instruccion) {
@@ -303,6 +340,42 @@ export function NavegacionScreen() {
       return !activa;
     });
   }, []);
+
+  /**
+   * «Finalizar ruta» (U07): cierra la visita en la BD y abre la calificación
+   * post-viaje (Proceso 3). Sin visita registrada se avisa y no se inventa
+   * una calificación sin respaldo.
+   */
+  const finalizarRuta = async () => {
+    if (finalizando) {
+      return;
+    }
+    if (visitaId == null) {
+      Alerta.alert(
+        'Visita no registrada',
+        errorVisita ??
+          'No pudimos registrar el inicio de esta visita. Revisa tu conexión e inténtalo de nuevo.',
+        [{ text: 'Volver', onPress: () => navigation.goBack() }],
+      );
+      return;
+    }
+    setFinalizando(true);
+    try {
+      await finalizarVisita(visitaId);
+      navigation.replace('Feedback', {
+        visitaId,
+        poiId,
+        poiNombre: poi?.nombre ?? '',
+      });
+    } catch (fallo) {
+      Alerta.alert(
+        'No se pudo finalizar la visita',
+        (fallo as Error)?.message ?? 'Revisa tu conexión e inténtalo de nuevo.',
+      );
+    } finally {
+      setFinalizando(false);
+    }
+  };
 
   if (!poi) {
     return (
@@ -729,18 +802,22 @@ export function NavegacionScreen() {
                 </View>
               ) : null}
 
+              {errorVisita ? (
+                <Text
+                  style={estilos.avisoVisita}
+                  accessibilityLiveRegion="polite"
+                >
+                  {errorVisita}
+                </Text>
+              ) : null}
+
               <AppButton
                 titulo="Finalizar ruta"
                 variante="peligro"
                 icono="stop-circle-outline"
-                onPress={() =>
-                  // Proceso 3: al terminar el trayecto se pide la experiencia.
-                  navigation.replace('Retroalimentacion', {
-                    poiId,
-                    origen: 'ruta',
-                  })
-                }
-                pistaAccesibilidad="Cierra la navegación y te pide calificar el lugar"
+                onPress={() => void finalizarRuta()}
+                cargando={finalizando}
+                pistaAccesibilidad="Cierra la navegación y abre la calificación de tu visita"
               />
             </>
           ) : null}
@@ -978,6 +1055,12 @@ const estilos = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.xs,
     color: colors.textPrimary,
+  },
+  avisoVisita: {
+    fontSize: fontSize.xs,
+    color: colors.warning,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   bloqueExito: {
     flexDirection: 'row',

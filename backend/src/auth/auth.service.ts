@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcryptjs';
@@ -9,12 +10,26 @@ import { Rol } from '../usuarios/rol.entity';
 import { Usuario } from '../usuarios/usuario.entity';
 
 const ROL_POR_DEFECTO = 'viajero';
+const ROL_ADMINISTRADOR = 'administrador';
+const ROLES_DE_REGISTRO = new Set([ROL_POR_DEFECTO, ROL_ADMINISTRADOR]);
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Cuentas copiadas de Supabase: la app guardaba SHA-256 hex sin sal.
 const HASH_SHA256_LEGADO = /^[a-f0-9]{64}$/;
 // Hash bcrypt de relleno: si el correo no existe se compara igual, para que el
 // tiempo de respuesta no revele qué correos están registrados.
 const HASH_DE_RELLENO = bcrypt.hashSync('relleno-no-es-una-cuenta', 10);
+
+/** Compara dos textos en tiempo constante (código de invitación). */
+function igualdadSegura(a: string, b: string): boolean {
+  const izquierda = Buffer.from(a);
+  const derecha = Buffer.from(b);
+  if (izquierda.length !== derecha.length) {
+    // Se compara algo consigo mismo para no filtrar la longitud por tiempo.
+    timingSafeEqual(derecha, derecha);
+    return false;
+  }
+  return timingSafeEqual(izquierda, derecha);
+}
 
 /** Política de contraseñas (registro, cambio y comando crear-admin). */
 function exigirContrasenaSegura(password: string): void {
@@ -40,6 +55,9 @@ export interface CambioContrasena {
 export interface Credenciales {
   email?: unknown;
   password?: unknown;
+  /** 'viajero' (por defecto) o 'administrador' con código de invitación. */
+  rol?: unknown;
+  codigoInvitacion?: unknown;
 }
 
 @Injectable()
@@ -50,6 +68,7 @@ export class AuthService {
     @InjectRepository(Rol)
     private readonly roles: Repository<Rol>,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   async registrar(datos: Credenciales) {
@@ -58,6 +77,7 @@ export class AuthService {
     // La app valida lo mismo; se repite aquí porque el servidor no puede
     // confiar en el cliente.
     exigirContrasenaSegura(password);
+    const nombreRol = this.rolDeRegistro(datos);
 
     if (await this.usuarios.existsBy({ email })) {
       throw errorDominio(
@@ -67,12 +87,12 @@ export class AuthService {
       );
     }
 
-    const rol = await this.roles.findOneBy({ nombre: ROL_POR_DEFECTO });
+    const rol = await this.roles.findOneBy({ nombre: nombreRol });
     if (!rol) {
       throw errorDominio(
         HttpStatus.INTERNAL_SERVER_ERROR,
         'INTERNAL_ERROR',
-        `No existe el rol "${ROL_POR_DEFECTO}" en la base de datos.`,
+        `No existe el rol "${nombreRol}" en la base de datos.`,
       );
     }
 
@@ -169,6 +189,46 @@ export class AuthService {
       return true;
     }
     return bcrypt.compare(password, usuario.passwordHash);
+  }
+
+  /**
+   * Rol solicitado en el registro. Solo se permite viajero (por defecto) o
+   * administrador con el código de invitación configurado en el servidor;
+   * nunca se acepta un rol privilegiado enviado libremente por el cliente.
+   */
+  private rolDeRegistro(datos: Credenciales): string {
+    const solicitado = datos?.rol;
+    if (solicitado === undefined || solicitado === null || solicitado === '') {
+      return ROL_POR_DEFECTO;
+    }
+    if (typeof solicitado !== 'string' || !ROLES_DE_REGISTRO.has(solicitado)) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'ROL_INVALIDO',
+        'Solo puedes registrarte como viajero o administrador.',
+      );
+    }
+    if (solicitado === ROL_POR_DEFECTO) {
+      return ROL_POR_DEFECTO;
+    }
+
+    const esperado = this.config.get<string>('ADMIN_INVITE_CODE')?.trim();
+    if (!esperado) {
+      throw errorDominio(
+        HttpStatus.FORBIDDEN,
+        'REGISTRO_ADMIN_NO_DISPONIBLE',
+        'El registro de administrador no está habilitado.',
+      );
+    }
+    const codigo = datos?.codigoInvitacion;
+    if (typeof codigo !== 'string' || !igualdadSegura(codigo.trim(), esperado)) {
+      throw errorDominio(
+        HttpStatus.FORBIDDEN,
+        'CODIGO_INVITACION_INVALIDO',
+        'El código de invitación no es válido.',
+      );
+    }
+    return ROL_ADMINISTRADOR;
   }
 
   private validar(datos: Credenciales) {
