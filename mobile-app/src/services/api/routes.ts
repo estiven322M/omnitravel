@@ -2,6 +2,11 @@ import {
   advertenciasDeEscaleras,
   normalizarRespuestaRuta,
 } from '../../utils/ruta';
+import {
+  combinarPuntos,
+  puntosParaEvitar,
+  rutasSonDistintas,
+} from '../../utils/cambioRuta';
 import type { Coordenada, ResultadoRuta, RestriccionesRuta } from '../types';
 import { ApiError, apiFetch } from './client';
 
@@ -33,6 +38,8 @@ interface SolicitudValhalla {
    * exacto de la decisión documentada en el backend.
    */
   alternates: 1;
+  /** «Cambiar ruta»: puntos de la ruta anterior a evitar. */
+  exclude_locations?: { lat: number; lon: number }[];
 }
 
 /** Espejo fiel de `construirSolicitudValhalla` del backend. */
@@ -40,6 +47,7 @@ function construirSolicitudValhalla(
   origen: Coordenada,
   destino: Coordenada,
   restricciones: RestriccionesRuta,
+  evitar: Coordenada[] = [],
 ): { solicitud: SolicitudValhalla; advertenciasMotor: string[] } {
   const opciones: Record<string, string | number> = {};
   const advertenciasMotor: string[] = [];
@@ -78,6 +86,14 @@ function construirSolicitudValhalla(
       units: 'kilometers',
       language: 'es-ES',
       alternates: 1,
+      ...(evitar.length > 0
+        ? {
+            exclude_locations: evitar.map((punto) => ({
+              lat: punto.latitude,
+              lon: punto.longitude,
+            })),
+          }
+        : {}),
     },
     advertenciasMotor,
   };
@@ -121,11 +137,13 @@ async function rutaConValhallaPublico(
   origen: Coordenada,
   destino: Coordenada,
   restricciones: RestriccionesRuta,
+  evitar: Coordenada[] = [],
 ): Promise<ResultadoRuta> {
   const { solicitud, advertenciasMotor } = construirSolicitudValhalla(
     origen,
     destino,
     restricciones,
+    evitar,
   );
 
   const controlador = new AbortController();
@@ -175,6 +193,7 @@ export async function calcularRutaAccesible(
   origen: Coordenada,
   destino: Coordenada,
   restricciones?: RestriccionesRuta,
+  evitar: Coordenada[] = [],
 ): Promise<ResultadoRuta> {
   const restriccionesEfectivas: RestriccionesRuta = restricciones ?? {};
 
@@ -189,6 +208,11 @@ export async function calcularRutaAccesible(
           origin: [origen.latitude, origen.longitude],
           destination: [destino.latitude, destino.longitude],
           restrictions: restriccionesEfectivas,
+          ...(evitar.length > 0
+            ? {
+                avoid: evitar.map((punto) => [punto.latitude, punto.longitude]),
+              }
+            : {}),
         }),
       },
       TIMEOUT_BACKEND_MS,
@@ -212,6 +236,7 @@ export async function calcularRutaAccesible(
       origen,
       destino,
       restriccionesEfectivas,
+      evitar,
     );
   } catch (error) {
     const mensaje = (error as Error)?.message;
@@ -223,4 +248,59 @@ export async function calcularRutaAccesible(
       'No se pudo calcular la ruta. Verifica tu conexión a internet e inténtalo de nuevo.',
     );
   }
+}
+
+/** Ruta distinta encontrada por «Cambiar ruta» y los puntos que evita. */
+export interface RutaDiferente {
+  ruta: ResultadoRuta;
+  evitar: Coordenada[];
+}
+
+/**
+ * «Cambiar ruta»: busca un camino accesible distinto del que se muestra.
+ * Prueba evitando varios puntos intermedios de la ruta actual, luego solo el
+ * punto medio y, por último, la alternativa que propuso el motor. Devuelve
+ * null si no existe otro camino accesible para ese trayecto.
+ */
+export async function buscarRutaDiferente(
+  origen: Coordenada,
+  destino: Coordenada,
+  restricciones: RestriccionesRuta,
+  actual: ResultadoRuta,
+  evitarPrevios: Coordenada[] = [],
+): Promise<RutaDiferente | null> {
+  const coordenadas = actual.coordenadas ?? [];
+  const intentos = [
+    puntosParaEvitar(coordenadas, [0.3, 0.5, 0.7]),
+    puntosParaEvitar(coordenadas, [0.5]),
+  ].filter((puntos) => puntos.length > 0);
+
+  for (const puntos of intentos) {
+    const evitar = combinarPuntos(evitarPrevios, puntos);
+    try {
+      const ruta = await calcularRutaAccesible(
+        origen,
+        destino,
+        restricciones,
+        evitar,
+      );
+      if (rutasSonDistintas(coordenadas, ruta.coordenadas ?? [])) {
+        return { ruta, evitar };
+      }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        throw error;
+      }
+      // Sin camino evitando esos puntos: se prueba con menos.
+    }
+  }
+
+  const alternativa = actual.alternativa;
+  if (
+    alternativa &&
+    rutasSonDistintas(coordenadas, alternativa.coordenadas ?? [])
+  ) {
+    return { ruta: alternativa, evitar: evitarPrevios };
+  }
+  return null;
 }

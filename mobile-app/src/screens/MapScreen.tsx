@@ -27,7 +27,10 @@ import { MapaWeb, type PoiEnMapa } from '../components/MapaWeb';
 import { miniaturaDePoi } from '../services/mocks/fotosPoi';
 import { PoiCard } from '../components/PoiCard';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
-import { calcularRutaAccesible } from '../services/api/routes';
+import {
+  buscarRutaDiferente,
+  calcularRutaAccesible,
+} from '../services/api/routes';
 import { listarBarrerasComunitarias } from '../services/reportes';
 import type {
   Coordenada,
@@ -112,6 +115,10 @@ export function MapScreen() {
    * Requisito del Proceso 2: la ruta se adapta a las necesidades del usuario.
    */
   const [rutaPendiente, setRutaPendiente] = useState(false);
+  /** Puntos que evita la ruta mostrada tras «Cambiar ruta» (se pasan a U07). */
+  const [evitar, setEvitar] = useState<Coordenada[]>([]);
+  const [cambiandoRuta, setCambiandoRuta] = useState(false);
+  const [avisoCambio, setAvisoCambio] = useState<string | null>(null);
   const [categoriaActiva, setCategoriaActiva] = useState('Todos');
   const [barreras, setBarreras] = useState<ReporteResumen[]>([]);
 
@@ -423,6 +430,8 @@ export function MapScreen() {
       setCargandoRuta(true);
       setErrorRuta(null);
       setResultado(null);
+      setEvitar([]);
+      setAvisoCambio(null);
 
       try {
         const ruta = await calcularRutaAccesible(
@@ -469,6 +478,49 @@ export function MapScreen() {
     void calcularRuta(restricciones);
   }, [calcularRuta, destinoCoordenada, filtrosActivos, restricciones]);
 
+  /** «Cambiar ruta»: busca y dibuja un camino accesible distinto. */
+  const cambiarRuta = async () => {
+    if (!resultado || !destinoCoordenada || cambiandoRuta) {
+      return;
+    }
+    setCambiandoRuta(true);
+    setErrorRuta(null);
+    setAvisoCambio(null);
+    try {
+      const diferente = await buscarRutaDiferente(
+        origen,
+        destinoCoordenada,
+        restricciones,
+        resultado,
+        evitar,
+      );
+      if (!diferente) {
+        setAvisoCambio(
+          'No hay otro camino accesible distinto para este trayecto: se mantiene la ruta actual.',
+        );
+        return;
+      }
+      setResultado(diferente.ruta);
+      setEvitar(diferente.evitar);
+      setAvisoCambio(
+        `Ruta cambiada: ${diferente.ruta.duracionMin} min, ${formatearDistancia(diferente.ruta.distanciaKm)}.`,
+      );
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(
+          'Se muestra una ruta accesible diferente.',
+        );
+      }
+    } catch (error) {
+      setErrorRuta(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo cambiar la ruta. Inténtalo de nuevo.',
+      );
+    } finally {
+      setCambiandoRuta(false);
+    }
+  };
+
   /** Guarda los filtros y, si había una ruta pendiente, la calcula con ellos. */
   const aplicarFiltrosYRuta = (filtros: typeof filtrosActivos) => {
     establecerFiltros(filtros);
@@ -479,6 +531,8 @@ export function MapScreen() {
   };
 
   const limpiarDestino = () => {
+    setEvitar([]);
+    setAvisoCambio(null);
     setSeleccionado(null);
     setDestinoId(null);
     setResultado(null);
@@ -903,6 +957,24 @@ export function MapScreen() {
             pistaAccesibilidad="Calcula y dibuja la ruta peatonal más accesible hasta el destino"
           />
 
+          {avisoCambio ? (
+            <Text style={estilos.avisoFiltros} accessibilityLiveRegion="polite">
+              {avisoCambio}
+            </Text>
+          ) : null}
+
+          {resultado && destino ? (
+            <AppButton
+              titulo="Cambiar ruta"
+              variante="contorno"
+              icono="swap-horizontal-outline"
+              onPress={() => void cambiarRuta()}
+              cargando={cambiandoRuta}
+              deshabilitado={cambiandoRuta || cargandoRuta}
+              pistaAccesibilidad="Busca otro camino accesible distinto al que se muestra"
+            />
+          ) : null}
+
           {resultado && destino ? (
             <AppButton
               titulo="Iniciar navegación"
@@ -913,6 +985,7 @@ export function MapScreen() {
                   poiId: destino.id,
                   origenLat: origen.latitude,
                   origenLon: origen.longitude,
+                  evitar,
                 })
               }
               pistaAccesibilidad="Abre la navegación paso a paso con las indicaciones de la ruta"

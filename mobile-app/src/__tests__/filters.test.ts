@@ -76,9 +76,8 @@ describe('aplicarFiltros', () => {
 });
 
 describe('filtros obligatorios para calcular una ruta (Proceso 2)', () => {
-  const { filtrosSugeridos, puedeCalcularRuta } = jest.requireActual<
-    typeof import('../utils/filters')
-  >('../utils/filters');
+  const { filtrosSugeridos, puedeCalcularRuta } =
+    jest.requireActual<typeof import('../utils/filters')>('../utils/filters');
 
   it('sin filtros aplicados no se puede calcular la ruta', () => {
     expect(puedeCalcularRuta([])).toBe(false);

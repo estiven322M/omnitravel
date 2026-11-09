@@ -10,6 +10,8 @@ interface SolicitudRuta {
     destination: [number, number];
     /** Restricciones de accesibilidad derivadas del perfil de la persona. */
     restrictions?: RestriccionesRuta;
+    /** «Cambiar ruta»: puntos [latitud, longitud] de la ruta anterior a evitar. */
+    avoid?: [number, number][];
 }
 
 /** Ruteo accesible: exige sesión (la app ya maneja el vencimiento del JWT). */
@@ -24,6 +26,7 @@ export class RoutingController {
             body?.origin,
             body?.destination,
             body?.restrictions ?? {},
+            body?.avoid,
         );
     }
 }

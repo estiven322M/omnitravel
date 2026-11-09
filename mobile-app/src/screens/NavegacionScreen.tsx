@@ -26,7 +26,10 @@ import { EmptyState } from '../components/EmptyState';
 import { MapaWeb } from '../components/MapaWeb';
 import type { RootStackParamList } from '../navigation/types';
 import { finalizarVisita, iniciarVisita } from '../services/api/feedback';
-import { calcularRutaAccesible } from '../services/api/routes';
+import {
+  buscarRutaDiferente,
+  calcularRutaAccesible,
+} from '../services/api/routes';
 import type { PasoRuta, ResultadoRuta } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
@@ -78,6 +81,12 @@ export function NavegacionScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { poiId, origenLat, origenLon } = route.params;
+  /**
+   * Puntos que evita la ruta: llegan del «Cambiar ruta» del mapa (U06) y se
+   * actualizan con el de esta pantalla. Ref: no dispara un nuevo cálculo.
+   */
+  const evitarRef = useRef(route.params.evitar ?? []);
+  const [cambiandoRuta, setCambiandoRuta] = useState(false);
 
   const poiPorId = usePoisStore((estado) => estado.poiPorId);
   const poi = poiPorId(poiId);
@@ -255,6 +264,7 @@ export function NavegacionScreen() {
       { latitude: origenLat, longitude: origenLon },
       { latitude: poi.latitud, longitude: poi.longitud },
       restricciones,
+      evitarRef.current,
     )
       .then((ruta) => {
         if (!vigente) {
@@ -425,6 +435,50 @@ export function NavegacionScreen() {
     setError(null);
     setResultado(undefined);
     setRecalculo((numero) => numero + 1);
+  };
+
+  /** «Cambiar ruta» (U07): guía por un camino accesible distinto. */
+  const cambiarRuta = async () => {
+    if (!poi || !rutaMostrada || cambiandoRuta) {
+      return;
+    }
+    setCambiandoRuta(true);
+    setAvisoRecalculo(null);
+    try {
+      const diferente = await buscarRutaDiferente(
+        { latitude: origenLat, longitude: origenLon },
+        { latitude: poi.latitud, longitude: poi.longitud },
+        restricciones,
+        rutaMostrada,
+        evitarRef.current,
+      );
+      if (!diferente) {
+        setAvisoRecalculo(
+          'No hay otro camino accesible distinto para este trayecto: se mantiene la ruta actual.',
+        );
+        return;
+      }
+      evitarRef.current = diferente.evitar;
+      setResultado(diferente.ruta);
+      setUsarAlternativa(false);
+      setRecorridoM(0);
+      setAvisoRecalculo(
+        `Ruta cambiada: ${diferente.ruta.duracionMin} min, ${formatearDistancia(diferente.ruta.distanciaKm)}.`,
+      );
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(
+          'Se muestra una ruta accesible diferente.',
+        );
+      }
+    } catch (fallo) {
+      setAvisoRecalculo(
+        fallo instanceof Error
+          ? fallo.message
+          : 'No se pudo cambiar la ruta. Inténtalo de nuevo.',
+      );
+    } finally {
+      setCambiandoRuta(false);
+    }
   };
 
   const avanzarPaso = () => {
@@ -810,6 +864,16 @@ export function NavegacionScreen() {
                   {errorVisita}
                 </Text>
               ) : null}
+
+              <AppButton
+                titulo="Cambiar ruta"
+                variante="contorno"
+                icono="swap-horizontal-outline"
+                onPress={() => void cambiarRuta()}
+                cargando={cambiandoRuta}
+                deshabilitado={cambiandoRuta}
+                pistaAccesibilidad="Busca otro camino accesible distinto al que se muestra"
+              />
 
               <AppButton
                 titulo="Finalizar ruta"

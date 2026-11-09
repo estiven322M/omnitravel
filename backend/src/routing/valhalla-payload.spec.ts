@@ -2,6 +2,7 @@ import {
     construirSolicitudValhalla,
     normalizarRespuestaValhalla,
     validarCoordenada,
+    validarPuntosEvitar,
 } from './valhalla-payload';
 
 describe('validarCoordenada', () => {
@@ -215,5 +216,31 @@ describe('normalizarRespuestaValhalla', () => {
             'peatonal',
         );
         expect(ruta.alternativa).toBeUndefined();
+    });
+});
+
+describe('«Cambiar ruta»: puntos a evitar (exclude_locations)', () => {
+    const origen: [number, number] = [4.5339, -75.6811];
+    const destino: [number, number] = [4.537, -75.672];
+
+    it('sin puntos a evitar no envía exclude_locations', () => {
+        const { solicitud } = construirSolicitudValhalla(origen, destino, {});
+        expect(solicitud.exclude_locations).toBeUndefined();
+    });
+
+    it('envía los puntos de la ruta anterior como exclude_locations', () => {
+        const { solicitud } = construirSolicitudValhalla(origen, destino, {}, [
+            [4.535, -75.677],
+        ]);
+        expect(solicitud.exclude_locations).toEqual([{ lat: 4.535, lon: -75.677 }]);
+        expect(solicitud.alternates).toBe(1);
+    });
+
+    it('valida la lista: vacía o nula es válida, más de 8 puntos o fuera de rango no', () => {
+        expect(validarPuntosEvitar(undefined)).toEqual([]);
+        expect(validarPuntosEvitar([[4.5, -75.6]])).toEqual([[4.5, -75.6]]);
+        expect(() => validarPuntosEvitar(Array(9).fill([4.5, -75.6]))).toThrow();
+        expect(() => validarPuntosEvitar([[95, -75.6]])).toThrow();
+        expect(() => validarPuntosEvitar('x')).toThrow();
     });
 });
