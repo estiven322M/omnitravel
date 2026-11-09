@@ -12,22 +12,23 @@ Esta matriz vincula los requisitos funcionales propuestos (documento 02) con las
 | F1–F4 | Retroalimentación | U08, Feedback | `feedback` (visitas, experiencias, incidencias), `moderacion` (re-verificación) | Solo post-viaje (RNF-19), discrepancia genera re-verificación trazable (RNF-19) |
 | A1–A8 | Moderación/admin | M01–M07 | `moderacion` (tablero, incidencias, estadísticas), `reportes` (decisiones), `registro_auditoria`, RBAC | Solo MODERADOR/ADMIN (RNF-23), decisión sobre-escribe consenso (RNF-20), sin segunda decisión (409), auditoría inmutable (RNF-30), estado visible ≤ 2 s (RNF-03) |
 
-## Estado actual del proyecto (actualizado 8 nov 2026, versión final)
+## Estado actual del proyecto (actualizado 9 nov 2026, versión final)
 
 | Elemento | Estado | Evidencia |
 |---|---|---|
 | Autenticación y roles (U01–U03, M01) | ✅ Implementado: JWT de 24 h, bcrypt, límite de intentos, rol verificado en el servidor y auditoría de inicios de sesión y cambios de rol | `backend/src/auth`, pruebas `auth.service.spec.ts`, CP-I04/CP-I05 |
 | Mapa con lugares reales (U04–U08) | ✅ `GET /mapa` desde AWS RDS (39 lugares reales de Armenia en 5 categorías); la app ya no usa mocks de lugares | `backend/src/mapa`, CP-I10 |
-| Proceso 1 — reportes y consenso (U09–U10, M03–M05) | ✅ Consenso de 3 confirmaciones, anti-autoconfirmación, evidencia en S3 con enlace firmado y vía del moderador | `backend/src/reportes`, CP-U01…, CP-F101–CP-F109, CP-I06–CP-I13 |
+| Proceso 1 — reportes y consenso (U09–U10, M03–M05) | ✅ Consenso de 3 confirmaciones, anti-autoconfirmación, evidencia en S3 con enlace firmado y vía del moderador | `backend/src/reportes`, CP-U01…, CP-F101–CP-F111, CP-I06–CP-I13 |
+| Denuncias de reportes (C4, A5) | ✅ Denuncia por información falsa, spam o contenido inapropiado (una por persona, no al propio reporte); el reporte sale del consenso (`en_revision`) y el moderador la atiende con su decisión; queda en `registro_auditoria` | `backend/sql/005-denuncia.sql`, CP-U20–CP-U25, CP-F112–CP-F115, CP-I22 |
 | Proceso 2 — rutas accesibles (U06–U07) | ✅ `POST /routes` con `costing: 'pedestrian'` y perfil `wheelchair` (no `auto`), filtros obligatorios, «Cambiar ruta» con `exclude_locations`, tiempo límite y reintentos | `backend/src/routing`, CP-F201–CP-F206, CP-I14–CP-I16 |
-| Proceso 3 — visitas y retroalimentación (U08, M06) | ✅ Visita → experiencia → incidencia → re-verificación → publicación | `backend/src/feedback`, `moderacion`, CP-F301–CP-F319, CP-I17–CP-I20 |
+| Barreras críticas en la ruta (RT1, RT3, S02) | ✅ El backend excluye del cálculo las barreras críticas vigentes cercanas al trayecto (si no hay camino, avisa); en la navegación, campana roja + vibración + voz al acercarse a menos de 60 m y «Recalcular evitando la barrera» | `routing.service.ts`, `utils/barrerasRuta.ts`, CP-I21, `routing.service.spec.ts`, `barrerasRuta.test.ts` |
+| Proceso 3 — visitas y retroalimentación (U08, M06) | ✅ Visita → experiencia → incidencia → re-verificación → publicación; calificar solo con visita completada; confirmación multisensorial (pantalla, lector de pantalla y vibración) | `backend/src/feedback`, `moderacion`, CP-F301–CP-F319, CP-I17–CP-I20 |
 | Moderación (M02–M07) | ✅ Tablero, reportes, incidencias y estadísticas | `backend/src/moderacion` |
 | Notificaciones (U11) | ✅ Derivadas de los datos del usuario (estado de sus reportes, barreras cercanas); sin push | `mobile-app/src/screens/NotificacionesScreen.tsx` |
-| Denuncias de reportes (C4) | ❌ Fuera del alcance de la entrega final | — |
 | Despliegue | ✅ AWS: ECS Express (API), Amplify (web), RDS (BD), S3 (fotos); CI/CD en GitHub Actions | `docs/DESPLIEGUE.md` |
 
 Pruebas automatizadas: unitarias (Jest backend y app), integración (API +
-PostGIS real, 20 casos), funcionales (Postman/Newman, 36 casos) y
+PostGIS real, 22 casos), funcionales (Postman/Newman, 40 casos) y
 accesibilidad (axe-core WCAG 2.1 AA, 11 pantallas). Todas corren en GitHub
 Actions; los casos están cargados en TestRail (`testrail/`).
 

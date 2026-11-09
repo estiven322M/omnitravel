@@ -198,6 +198,8 @@ export interface ReporteModeracion {
     /** Permiso temporal de lectura que firma el backend (`exp=…&firma=…`). */
     acceso: string | null;
   }[];
+  /** C4: denuncias pendientes de la comunidad (falso, spam…). */
+  denuncias: DenunciaReporte[];
 }
 
 /** Acción ejecutiva del moderador sobre un reporte (M05). */
@@ -221,4 +223,14 @@ export interface ReporteResumen {
   esCritico: boolean;
   fechaCreacion: string;
   confirmaciones: number;
+}
+
+/** C4: motivos para denunciar un reporte (CHECK de la tabla `denuncia`). */
+export type MotivoDenuncia =
+  'informacion_falsa' | 'spam' | 'contenido_inapropiado' | 'otro';
+
+export interface DenunciaReporte {
+  motivo: MotivoDenuncia;
+  descripcion: string | null;
+  fecha: string;
 }

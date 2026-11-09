@@ -157,6 +157,78 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
     });
   });
 
+  describe('denuncias de la comunidad (C4, A5)', () => {
+    const reporteDe = (creador: string, estado = 'publicado') => [
+      { usuario_creador_id: creador, estado },
+    ];
+
+    it('CP-U20 exige un motivo válido (400 MOTIVO_DENUNCIA_INVALIDO)', async () => {
+      const { db, query } = crearDb([]);
+      const error = await capturar(
+        new ReportesService(db).denunciar('6', '11', { motivo: 'me cae mal' }),
+      );
+      expect(error.getStatus()).toBe(400);
+      expect(codigo(error)).toBe('MOTIVO_DENUNCIA_INVALIDO');
+      expect(query).not.toHaveBeenCalled();
+    });
+
+    it('CP-U21 no se puede denunciar el propio reporte (422 AUTODENUNCIA)', async () => {
+      const { db } = crearDb([reporteDe('6')]);
+      const error = await capturar(
+        new ReportesService(db).denunciar('6', '11', { motivo: 'spam' }),
+      );
+      expect(error.getStatus()).toBe(422);
+      expect(codigo(error)).toBe('AUTODENUNCIA');
+    });
+
+    it('CP-U22 una persona denuncia un reporte una sola vez (409)', async () => {
+      const { db } = crearDb([reporteDe('5'), [{ '?column?': 1 }]]);
+      const error = await capturar(
+        new ReportesService(db).denunciar('6', '11', { motivo: 'spam' }),
+      );
+      expect(error.getStatus()).toBe(409);
+      expect(codigo(error)).toBe('DENUNCIA_DUPLICADA');
+    });
+
+    it('CP-U23 la denuncia envía el reporte a moderación y queda auditada', async () => {
+      const { db, query } = crearDb([
+        reporteDe('5'),
+        [],
+        [{ id_denuncia: 3 }],
+        [],
+        [],
+        [{ total: 1 }],
+      ]);
+      const resultado = await new ReportesService(db).denunciar('6', '11', {
+        motivo: 'informacion_falsa',
+        descripcion: '  La rampa no existe  ',
+      });
+
+      expect(resultado).toEqual({ denuncia: 3, estado: 'en_revision', denunciasPendientes: 1 });
+      expect(query.mock.calls[2][1]).toEqual(['11', '6', 'informacion_falsa', 'La rampa no existe']);
+      expect(String(query.mock.calls[3][0])).toContain("set estado = 'en_revision'");
+      expect(String(query.mock.calls[4][0])).toContain("'denuncia_reporte'");
+    });
+
+    it('CP-U24 un reporte denunciado no se publica por consenso (409 REPORTE_EN_REVISION)', async () => {
+      const { db } = crearDb([[{ usuario_creador_id: '5', estado: 'en_revision' }]]);
+      const error = await capturar(new ReportesService(db).confirmar('7', '11'));
+      expect(error.getStatus()).toBe(409);
+      expect(codigo(error)).toBe('REPORTE_EN_REVISION');
+    });
+
+    it('CP-U25 la decisión del moderador atiende las denuncias pendientes', async () => {
+      const { db, query } = crearDb([ES_MODERADOR, [{ '?column?': 1 }], [], []]);
+      await new ReportesService(db).decidir('2', '11', 'rechazado', 'Información falsa');
+
+      const atendidas = query.mock.calls.find(([sql]) =>
+        String(sql).includes('update denuncia'),
+      );
+      expect(String(atendidas?.[0])).toContain("set estado = 'atendida'");
+      expect(atendidas?.[1]).toEqual(['11']);
+    });
+  });
+
   describe('moderación (RNF-23)', () => {
     it('CP-U13 solo un moderador puede decidir (403)', async () => {
       const { db } = crearDb([[]]);

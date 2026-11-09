@@ -5,7 +5,7 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
 
 | Archivo | Para qué sirve |
 |---|---|
-| `omnitravel_casos_testrail.csv` | Los 366 casos: 299 unitarios (Jest: 138 backend y 161 app), 20 de integración (API + PostGIS real), 36 funcionales (Postman) y 11 de accesibilidad (axe-core, WCAG 2.1 AA), organizados por proceso más las pruebas transversales de seguridad y sesión |
+| `omnitravel_casos_testrail.csv` | Los 395 casos: 322 unitarios (Jest: 149 backend y 173 app), 22 de integración (API + PostGIS real), 40 funcionales (Postman) y 11 de accesibilidad (axe-core, WCAG 2.1 AA), organizados por proceso más las pruebas transversales de seguridad y sesión |
 
 ## 1. Crear el proyecto
 

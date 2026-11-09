@@ -26,7 +26,11 @@ import { EmptyState } from '../../components/EmptyState';
 import { MapaWeb } from '../../components/MapaWeb';
 import type { RootStackParamList } from '../../navigation/types';
 import { urlPublicaEvidencia } from '../../services/evidencias';
-import { decidirReporte, ReporteError } from '../../services/reportes';
+import {
+  decidirReporte,
+  etiquetaMotivoDenuncia,
+  ReporteError,
+} from '../../services/reportes';
 import type { IconName } from '../../services/types';
 import { useModeracionStore } from '../../store/moderacionStore';
 import { useProfileStore } from '../../store/profileStore';
@@ -256,12 +260,46 @@ export function RevisionReporteScreen() {
           </View>
           <View style={estilos.columnaEstado}>
             <View style={estilos.estado}>
-              <Ionicons name="time-outline" size={14} color="#B45309" />
-              <Text style={estilos.estadoTexto}>Pendiente</Text>
+              <Ionicons
+                name={reporte.denuncias.length > 0 ? 'flag' : 'time-outline'}
+                size={14}
+                color="#B45309"
+              />
+              <Text style={estilos.estadoTexto}>
+                {reporte.denuncias.length > 0 ? 'Denunciado' : 'Pendiente'}
+              </Text>
             </View>
             <Text style={estilos.idReporte}>ID: #{reporte.id}</Text>
           </View>
         </View>
+
+        {reporte.denuncias.length > 0 ? (
+          <View style={estilos.tarjetaDenuncias}>
+            <View style={estilos.filaDenuncia}>
+              <Ionicons name="flag" size={18} color={colors.danger} />
+              <Text style={estilos.tituloDenuncias} accessibilityRole="header">
+                {reporte.denuncias.length === 1
+                  ? '1 denuncia de la comunidad'
+                  : `${reporte.denuncias.length} denuncias de la comunidad`}
+              </Text>
+            </View>
+            {reporte.denuncias.map((denuncia, indice) => (
+              <Text
+                key={`${denuncia.fecha}-${indice}`}
+                style={estilos.textoDenuncia}
+              >
+                • {etiquetaMotivoDenuncia(denuncia.motivo)}
+                {denuncia.descripcion
+                  ? `: «${denuncia.descripcion}»`
+                  : ''} · {fechaHoraCorta(denuncia.fecha)}
+              </Text>
+            ))}
+            <Text style={estilos.textoDenuncia}>
+              Aprobar lo publica; rechazarlo lo retira. Tu decisión atiende
+              todas las denuncias.
+            </Text>
+          </View>
+        ) : null}
 
         <View style={estilos.tarjeta}>
           <View style={estilos.filaResumen}>
@@ -652,6 +690,19 @@ export function RevisionReporteScreen() {
 }
 
 const estilos = StyleSheet.create({
+  tarjetaDenuncias: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: '#FDECEC',
+  },
+  filaDenuncia: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  tituloDenuncias: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.danger,
+  },
+  textoDenuncia: { fontSize: fontSize.sm, color: colors.textPrimary },
   pantalla: { flex: 1, backgroundColor: colors.background },
   cabecera: { paddingHorizontal: spacing.lg },
   contenido: {

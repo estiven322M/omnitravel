@@ -109,6 +109,31 @@ describe('mapearReporteModeracion', () => {
     expect(reporte.evidencia[0].storageKey).toBe('uid/foto.jpg');
   });
 
+  it('incluye las denuncias pendientes de la comunidad (C4)', () => {
+    const reporte = mapearReporteModeracion({
+      ...fila,
+      denuncias: [
+        {
+          motivo: 'informacion_falsa',
+          descripcion: 'No hay rampa',
+          fecha: '2026-11-09T15:00:00.000Z',
+        },
+      ],
+    });
+    expect(reporte.denuncias).toEqual([
+      {
+        motivo: 'informacion_falsa',
+        descripcion: 'No hay rampa',
+        fecha: '2026-11-09T15:00:00.000Z',
+      },
+    ]);
+    expect(mapearReporteModeracion(fila).denuncias).toEqual([]);
+    expect(
+      mapearErrorReporte('DENUNCIA_DUPLICADA: Ya denunciaste este reporte.')
+        .codigo,
+    ).toBe('DENUNCIA_DUPLICADA');
+  });
+
   it('tolera valores y evidencia nulos (reporte sin propuestas ni foto)', () => {
     const reporte = mapearReporteModeracion({
       ...fila,
