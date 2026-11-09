@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { EvidenciasModule } from './evidencias/evidencias.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { HealthModule } from './health/health.module';
 import { MapaModule } from './mapa/mapa.module';
 import { FavoritosModule } from './favoritos/favoritos.module';
@@ -62,6 +63,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     DatabaseModule,
     AuthModule,
     EvidenciasModule,
+    FeedbackModule,
     HealthModule,
     MapaModule,
     FavoritosModule,

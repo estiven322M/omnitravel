@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
+  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -16,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccessibilityValueRow } from '../components/AccessibilityValueRow';
 import { AppButton } from '../components/AppButton';
@@ -27,12 +28,13 @@ import { EmptyState } from '../components/EmptyState';
 import type { RootStackParamList } from '../navigation/types';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
 import { fotosDePoi, type FotoPoi } from '../services/mocks/fotosPoi';
+import { experienciasDePoi } from '../services/api/feedback';
 import {
   confirmarReporte,
   obtenerReporteDePoi,
   ReporteError,
 } from '../services/reportes';
-import type { ReporteComunitario } from '../services/types';
+import type { ExperienciaViajero, ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
@@ -107,6 +109,13 @@ export function PoiDetailScreen() {
   const [s01Visible, setS01Visible] = useState(false);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
   const [verTodas, setVerTodas] = useState(false);
+  const [experiencias, setExperiencias] = useState<ExperienciaViajero[] | null>(
+    null,
+  );
+  const [resumenExperiencias, setResumenExperiencias] = useState<{
+    total: number;
+    promedio: number;
+  } | null>(null);
 
   // Carga el listado de favoritos para el estado del corazón (una sola vez).
   useEffect(() => {
@@ -138,6 +147,43 @@ export function PoiDetailScreen() {
     };
   }, [poiId, poisCargados]);
 
+  /**
+   * Proceso 3: refresca las experiencias públicas al volver a la ficha
+   * (por ejemplo, después de calificar una visita). El endpoint no expone
+   * correos ni datos del perfil local.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      let vigente = true;
+      experienciasDePoi(poiId)
+        .then((datos) => {
+          if (!vigente) {
+            return;
+          }
+          setExperiencias(
+            datos.experiencias.map((experiencia) => ({
+              id: experiencia.id,
+              autor: experiencia.autor,
+              perfil: experiencia.perfil,
+              calificacion: experiencia.calificacion,
+              comentario: experiencia.comentario,
+              fecha: experiencia.fecha,
+            })),
+          );
+          setResumenExperiencias({
+            total: datos.total,
+            promedio: datos.promedio,
+          });
+        })
+        .catch(() => {
+          // La ficha conserva las experiencias que ya trajo el mapa.
+        });
+      return () => {
+        vigente = false;
+      };
+    }, [poiId]),
+  );
+
   const poi = poiPorId(poiId);
 
   if (!poi) {
@@ -155,6 +201,10 @@ export function PoiDetailScreen() {
   }
 
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
+  const listaExperiencias = experiencias ?? poi.experiencias;
+  const totalOpiniones = resumenExperiencias?.total ?? poi.totalExperiencias;
+  const calificacionMostrada =
+    resumenExperiencias?.promedio ?? poi.calificacion;
   const cargandoReporte = reporte === undefined;
   const reporteActivo = reporte ?? null;
   const reporteConfirmable =
@@ -317,17 +367,15 @@ export function PoiDetailScreen() {
               <View
                 style={estilos.filaCalificacion}
                 accessible
-                accessibilityLabel={`Calificación ${poi.calificacion.toFixed(
+                accessibilityLabel={`Calificación ${calificacionMostrada.toFixed(
                   1,
-                )} de 5, ${poi.totalExperiencias} opiniones`}
+                )} de 5, ${totalOpiniones} opiniones`}
               >
                 <Ionicons name="star" size={18} color="#F5B301" />
                 <Text style={estilos.calificacion}>
-                  {poi.calificacion.toFixed(1)}
+                  {calificacionMostrada.toFixed(1)}
                 </Text>
-                <Text style={estilos.totalOpiniones}>
-                  ({poi.totalExperiencias})
-                </Text>
+                <Text style={estilos.totalOpiniones}>({totalOpiniones})</Text>
               </View>
             </View>
             <Text style={estilos.subtitulo}>
@@ -501,20 +549,20 @@ export function PoiDetailScreen() {
               <Text style={estilos.tituloSeccion}>
                 Experiencias de otros viajeros
               </Text>
-              {poi.experiencias.length > 0 ? (
+              {listaExperiencias.length > 0 ? (
                 <Text style={estilos.enlace}>
-                  Ver todas ({poi.experiencias.length})
+                  Ver todas ({listaExperiencias.length})
                 </Text>
               ) : null}
             </View>
-            {poi.experiencias.length === 0 ? (
+            {listaExperiencias.length === 0 ? (
               <Text style={estilos.sinExperiencias}>
                 Aún no hay experiencias registradas para este lugar.
               </Text>
             ) : (
-              poi.experiencias.map((experiencia) => (
+              listaExperiencias.map((experiencia, indice) => (
                 <View
-                  key={experiencia.autor}
+                  key={experiencia.id ?? `${experiencia.autor}-${indice}`}
                   style={estilos.tarjetaExperiencia}
                 >
                   <View style={estilos.avatar}>

@@ -8,6 +8,7 @@ import { RevisionReporteScreen } from '../screens/moderacion/RevisionReporteScre
 import { NotificacionesScreen } from '../screens/NotificacionesScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { usaPanelModeracion } from '../services/inicioSesion';
+import { FeedbackScreen } from '../screens/FeedbackScreen';
 import { MisReportesScreen } from '../screens/MisReportesScreen';
 import { NavegacionScreen } from '../screens/NavegacionScreen';
 import { PoiDetailScreen } from '../screens/PoiDetailScreen';
@@ -74,6 +75,11 @@ export function RootNavigator() {
             <Stack.Screen
               name="Navegacion"
               component={NavegacionScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="Feedback"
+              component={FeedbackScreen}
               options={{ animation: 'slide_from_right' }}
             />
             {moderacion ? (

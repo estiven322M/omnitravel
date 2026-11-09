@@ -20,11 +20,17 @@ export interface UsuarioOmniTravel {
   rol: RolUsuario;
 }
 
-/** Datos de registro de una cuenta viajero desde la app móvil (U03). */
+/** Datos de registro desde la app móvil (U03). */
 export interface DatosRegistro {
   nombre: string;
   email: string;
   contrasena: string;
+  /**
+   * 'viajero' (por defecto) o 'administrador'. El administrador exige el
+   * código de invitación configurado en el servidor.
+   */
+  rol?: 'viajero' | 'administrador';
+  codigoInvitacion?: string;
 }
 
 export interface ResultadoRegistro {
@@ -77,6 +83,7 @@ async function autenticar(
   ruta: '/auth/register' | '/auth/login',
   email: string,
   contrasena: string,
+  extra?: Record<string, unknown>,
 ): Promise<UsuarioOmniTravel> {
   let respuesta: RespuestaSesion;
   try {
@@ -85,6 +92,7 @@ async function autenticar(
       body: JSON.stringify({
         email: email.trim().toLowerCase(),
         password: contrasena,
+        ...extra,
       }),
     });
   } catch (error) {
@@ -98,14 +106,22 @@ async function autenticar(
   return usuario;
 }
 
-/** Crea la cuenta (rol viajero) y deja la sesión iniciada. */
+/** Crea la cuenta (viajero o administrador) y deja la sesión iniciada. */
 export async function registrarCuenta(
   datos: DatosRegistro,
 ): Promise<ResultadoRegistro> {
+  const extra =
+    datos.rol === 'administrador'
+      ? {
+          rol: 'administrador',
+          codigoInvitacion: datos.codigoInvitacion ?? '',
+        }
+      : undefined;
   const perfil = await autenticar(
     '/auth/register',
     datos.email,
     datos.contrasena,
+    extra,
   );
   return { email: perfil.email, perfil };
 }

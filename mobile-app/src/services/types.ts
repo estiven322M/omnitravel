@@ -41,10 +41,14 @@ export type EstadoVerificacion = 'PENDIENTE' | 'EN_REVISION' | 'VERIFICADO';
 
 /** Retroalimentación de un viajero (tabla RETROALIMENTACION). */
 export interface ExperienciaViajero {
+  /** Id de la retroalimentación (opcional: el feed heredado no lo envía). */
+  id?: number;
   autor: string;
   perfil: string;
   calificacion: number;
   comentario: string;
+  /** Fecha de la visita que autorizó la opinión (Proceso 3). */
+  fecha?: string;
 }
 
 /** Punto de interés (tabla POI + INFORMACION_ACCESIBILIDAD). */
