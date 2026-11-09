@@ -98,7 +98,12 @@ export function ReportesPendientesScreen() {
 
   const cargar = useCallback(async () => {
     try {
-      setReportes(await listarReportesModeracion('pendiente_validacion'));
+      // Pendientes de consenso + denunciados por la comunidad (C4, vía B).
+      const [pendientes, denunciados] = await Promise.all([
+        listarReportesModeracion('pendiente_validacion'),
+        listarReportesModeracion('en_revision'),
+      ]);
+      setReportes([...denunciados, ...pendientes]);
       setError(null);
     } catch (causa) {
       setError((causa as Error).message);
@@ -294,10 +299,21 @@ export function ReportesPendientesScreen() {
                 </View>
               </View>
               <View style={estilos.acciones}>
-                <View style={estilos.estado}>
-                  <Ionicons name="time" size={13} color="#B45309" />
-                  <Text style={estilos.estadoTexto}>Pendiente</Text>
-                </View>
+                {item.denuncias.length > 0 ? (
+                  <View style={[estilos.estado, estilos.estadoDenunciado]}>
+                    <Ionicons name="flag" size={13} color={colors.danger} />
+                    <Text
+                      style={[estilos.estadoTexto, estilos.textoDenunciado]}
+                    >
+                      Denunciado ({item.denuncias.length})
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={estilos.estado}>
+                    <Ionicons name="time" size={13} color="#B45309" />
+                    <Text style={estilos.estadoTexto}>Pendiente</Text>
+                  </View>
+                )}
                 <Pressable
                   onPress={() => abrir(item)}
                   style={estilos.revisar}
@@ -316,6 +332,8 @@ export function ReportesPendientesScreen() {
 }
 
 const estilos = StyleSheet.create({
+  estadoDenunciado: { backgroundColor: '#FDECEC' },
+  textoDenunciado: { color: colors.danger },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,

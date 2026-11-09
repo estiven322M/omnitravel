@@ -61,6 +61,17 @@ export class ReportesController {
     return this.reportesService.confirmar(usuario.id, String(id));
   }
 
+  // POST /reportes/:id/denuncias  { motivo, descripcion? } — denunciar (C4)
+  @Post('reportes/:id/denuncias')
+  @UseGuards(JwtAuthGuard)
+  denunciar(
+    @UsuarioActual() usuario: UsuarioToken,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { motivo?: unknown; descripcion?: unknown },
+  ) {
+    return this.reportesService.denunciar(usuario.id, String(id), body);
+  }
+
   // GET /pois/:id/reporte-activo — público (ficha U08)
   @Get('pois/:id/reporte-activo')
   reporteActivo(@Param('id', ParseIntPipe) id: number) {

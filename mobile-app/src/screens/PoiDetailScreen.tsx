@@ -23,6 +23,7 @@ import { AccessibilityValueRow } from '../components/AccessibilityValueRow';
 import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
 import { Card } from '../components/Card';
+import { DenunciarReporte } from '../components/DenunciarReporte';
 import { ConsensoAlcanzado } from '../components/ConsensoAlcanzado';
 import { EmptyState } from '../components/EmptyState';
 import type { RootStackParamList } from '../navigation/types';
@@ -111,6 +112,7 @@ export function PoiDetailScreen() {
     null,
   );
   const [s01Visible, setS01Visible] = useState(false);
+  const [denunciaVisible, setDenunciaVisible] = useState(false);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);
   const [verTodas, setVerTodas] = useState(false);
   const [experiencias, setExperiencias] = useState<ExperienciaViajero[] | null>(
@@ -593,7 +595,30 @@ export function PoiDetailScreen() {
               {reporte?.confirmaciones ?? 0} de 3 confirmaciones para publicar
             </Text>
           ) : null}
-          {!reporteConfirmable && !verificado && !cargandoReporte ? (
+          {reporteActivo?.estado === 'en_revision' ? (
+            <Text
+              style={estilos.progresoConfirmaciones}
+              accessibilityLiveRegion="polite"
+            >
+              Este reporte fue denunciado: moderación lo está revisando.
+            </Text>
+          ) : null}
+          {reporteActivo &&
+          !enPanelModeracion &&
+          reporteActivo.estado !== 'en_revision' &&
+          reporteActivo.estado !== 'rechazado' ? (
+            <AppButton
+              titulo="Denunciar este reporte"
+              variante="fantasma"
+              icono="flag-outline"
+              onPress={() => setDenunciaVisible(true)}
+              pistaAccesibilidad="Avisa a moderación si el reporte es falso o spam"
+            />
+          ) : null}
+          {!reporteConfirmable &&
+          !verificado &&
+          !cargandoReporte &&
+          reporteActivo?.estado !== 'en_revision' ? (
             <Text style={estilos.sinReporte}>
               Aún no hay un reporte activo de la comunidad para este lugar.
             </Text>
@@ -663,6 +688,24 @@ export function PoiDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {reporteActivo ? (
+        <DenunciarReporte
+          visible={denunciaVisible}
+          reporteId={reporteActivo.id}
+          poiNombre={poi.nombre}
+          onCerrar={() => setDenunciaVisible(false)}
+          onDenunciado={() => {
+            setDenunciaVisible(false);
+            setReporte((anterior) =>
+              anterior ? { ...anterior, estado: 'en_revision' } : anterior,
+            );
+            setMensajeConfirmacion(
+              'Gracias. Tu denuncia llegó a moderación y el reporte quedó en revisión.',
+            );
+          }}
+        />
+      ) : null}
 
       <ConsensoAlcanzado
         visible={s01Visible}

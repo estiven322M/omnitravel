@@ -29,7 +29,7 @@ export class ModeracionService {
       await Promise.all([
         this.db.query(
           `select
-           (select count(*)::int from reporte where estado = 'pendiente_validacion') as pendientes,
+           (select count(*)::int from reporte where estado in ('pendiente_validacion', 'en_revision')) as pendientes,
            (select count(*)::int from incidencia where estado in ('abierta', 'en_proceso')) as discrepancias,
            (select count(*)::int from reporte
              where estado = 'publicado'

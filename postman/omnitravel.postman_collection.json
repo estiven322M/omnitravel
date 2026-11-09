@@ -771,6 +771,179 @@
               ]
             }
           }
+        },
+        {
+          "name": "CP-F112 Denuncia sin motivo válido → 400 (C4)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));",
+                  "pm.test('Código MOTIVO_DENUNCIA_INVALIDO', () => pm.expect(pm.response.json().error).to.eql('MOTIVO_DENUNCIA_INVALIDO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/denuncias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "denuncias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"motivo\": \"no me gusta\"}"
+            }
+          }
+        },
+        {
+          "name": "CP-F113 El autor no puede denunciar su propio reporte (C4)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422', () => pm.response.to.have.status(422));",
+                  "pm.test('Código AUTODENUNCIA', () => pm.expect(pm.response.json().error).to.eql('AUTODENUNCIA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autor}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/denuncias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "denuncias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"motivo\": \"spam\"}"
+            }
+          }
+        },
+        {
+          "name": "CP-F114 Denunciar un reporte lo envía a moderación (C4, A5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('El reporte queda en revisión', () => pm.expect(pm.response.json().estado).to.eql('en_revision'));",
+                  "pm.test('Responde en menos de 3 s', () => pm.expect(pm.response.responseTime).to.be.below(3000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/denuncias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "denuncias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"motivo\": \"informacion_falsa\", \"descripcion\": \"Prueba funcional Postman\"}"
+            }
+          }
+        },
+        {
+          "name": "CP-F115 Denunciar dos veces el mismo reporte → 409 (C4)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('Código DENUNCIA_DUPLICADA', () => pm.expect(pm.response.json().error).to.eql('DENUNCIA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_c1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/{{reporteId}}/denuncias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "{{reporteId}}",
+                "denuncias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"motivo\": \"spam\"}"
+            }
+          }
         }
       ]
     },

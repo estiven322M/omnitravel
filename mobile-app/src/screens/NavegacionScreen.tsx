@@ -16,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  Vibration,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,7 +31,20 @@ import {
   buscarRutaDiferente,
   calcularRutaAccesible,
 } from '../services/api/routes';
-import type { PasoRuta, ResultadoRuta } from '../services/types';
+import { listarBarrerasComunitarias } from '../services/reportes';
+import type {
+  PasoRuta,
+  ReporteResumen,
+  ResultadoRuta,
+} from '../services/types';
+import {
+  barreraCercana,
+  barrerasEnRuta,
+  textoBarreraCercana,
+  textoBarreraEnRuta,
+  ubicarBarreras,
+  type BarreraUbicada,
+} from '../utils/barrerasRuta';
 import { usePoisStore } from '../store/poisStore';
 import { useBusquedaStore } from '../store/busquedaStore';
 import { useProfileStore } from '../store/profileStore';
@@ -129,6 +143,12 @@ export function NavegacionScreen() {
   const [fueraDeRuta, setFueraDeRuta] = useState(false);
   const [alertasLeidas, setAlertasLeidas] = useState<string[]>([]);
   const [panelAlertas, setPanelAlertas] = useState(false);
+  /** RT3 / S02: barreras críticas de la comunidad y la que está cerca. */
+  const [reportesBarrera, setReportesBarrera] = useState<ReporteResumen[]>([]);
+  const [cercana, setCercana] = useState<BarreraUbicada | null>(null);
+  const barrerasRef = useRef<BarreraUbicada[]>([]);
+  /** Barreras ya avisadas: no se vuelve a abrir el aviso por la misma. */
+  const barrerasAvisadas = useRef(new Set<string>());
   const establecerBusqueda = useBusquedaStore((estado) => estado.establecer);
   const visitaSolicitada = useRef(false);
 
@@ -142,12 +162,33 @@ export function NavegacionScreen() {
       ? resultado.alternativa
       : resultado;
   const pasos = useMemo(() => rutaMostrada?.pasos ?? [], [rutaMostrada]);
+  const barreras = useMemo(
+    () => ubicarBarreras(reportesBarrera, poiPorId, poiId),
+    [reportesBarrera, poiPorId, poiId],
+  );
+  useEffect(() => {
+    barrerasRef.current = barreras;
+  }, [barreras]);
+  const barrerasDelTrayecto = useMemo(
+    () => barrerasEnRuta(rutaMostrada?.coordenadas ?? [], barreras),
+    [rutaMostrada, barreras],
+  );
+  const alertasBarrera = useMemo(
+    () => [
+      ...(cercana ? [textoBarreraCercana(cercana)] : []),
+      ...barrerasDelTrayecto
+        .filter((barrera) => barrera.id !== cercana?.id)
+        .map(textoBarreraEnRuta),
+    ],
+    [cercana, barrerasDelTrayecto],
+  );
   const alertas = useMemo(
     () => [
       ...(fueraDeRuta ? [ALERTA_DESVIO] : []),
+      ...alertasBarrera,
       ...(rutaMostrada?.advertencias ?? []),
     ],
-    [fueraDeRuta, rutaMostrada],
+    [fueraDeRuta, alertasBarrera, rutaMostrada],
   );
   const alertasNuevas = alertas.filter((a) => !alertasLeidas.includes(a));
   const cerrarAlertas = () => {
@@ -251,6 +292,19 @@ export function NavegacionScreen() {
           }
           // Más de 60 m fuera del trayecto: alerta de desvío (campana roja).
           setFueraDeRuta(desvioM > 60);
+          // S02: barrera crítica a menos de 60 m de la posición real.
+          const proxima = barreraCercana(
+            {
+              latitude: posicion.coords.latitude,
+              longitude: posicion.coords.longitude,
+            },
+            barrerasRef.current,
+          );
+          setCercana((previa) =>
+            previa?.id === proxima?.barrera.id
+              ? previa
+              : (proxima?.barrera ?? null),
+          );
         },
       );
       if (!activo) {
@@ -262,6 +316,45 @@ export function NavegacionScreen() {
       suscripcion?.remove();
     };
   }, [conGeometria, coordenadasRuta, acumuladas]);
+
+  // Barreras críticas vigentes (las mismas que pinta el mapa U06).
+  useEffect(() => {
+    let vigente = true;
+    listarBarrerasComunitarias()
+      .then((lista) => {
+        if (vigente) {
+          setReportesBarrera(lista);
+        }
+      })
+      .catch(() => {
+        // Sin barreras legibles la navegación sigue; el backend ya las evita.
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  // S02: al acercarse a una barrera crítica se abre el aviso en pantalla,
+  // vibra el teléfono y, con la guía por voz activa, se narra.
+  useEffect(() => {
+    if (!cercana || barrerasAvisadas.current.has(cercana.id)) {
+      return;
+    }
+    barrerasAvisadas.current.add(cercana.id);
+    const texto = textoBarreraCercana(cercana);
+    setAlertasLeidas((leidas) => leidas.filter((a) => a !== texto));
+    setPanelAlertas(true);
+    Vibration.vibrate([0, 400, 200, 400]);
+    if (guiaVoz) {
+      Speech.stop();
+      Speech.speak(texto, { language: 'es-ES' });
+    }
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(texto);
+    }
+    // Solo al detectar una barrera nueva, no al cambiar la guía por voz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cercana]);
 
   // Las tarjetas de pasos se desplazan solas hasta la indicación vigente.
   const listaPasosRef = useRef<ScrollView | null>(null);
@@ -440,6 +533,20 @@ export function NavegacionScreen() {
   const hayEscaleras = pasos.some((paso) =>
     /escal\w+|stairs/i.test(paso.instruccion),
   );
+
+  /** S02: recalcula la ruta completa evitando las barreras avisadas. */
+  const recalcularEvitandoBarreras = () => {
+    const puntos = [...(cercana ? [cercana] : []), ...barrerasDelTrayecto].map(
+      (barrera) => barrera.punto,
+    );
+    evitarRef.current = [...evitarRef.current, ...puntos].slice(-8);
+    setPanelAlertas(false);
+    setAlertasLeidas(alertas);
+    setAvisoRecalculo('Ruta recalculada para evitar la barrera reportada.');
+    setError(null);
+    setResultado(undefined);
+    setRecalculo((numero) => numero + 1);
+  };
 
   const recalcular = (aviso?: string) => {
     if (resultado?.alternativa) {
@@ -683,11 +790,13 @@ export function NavegacionScreen() {
               <View key={alerta} style={estilos.filaAlerta}>
                 <Ionicons
                   name={
-                    alerta === ALERTA_DESVIO ? 'warning' : 'information-circle'
+                    alerta === ALERTA_DESVIO || alertasBarrera.includes(alerta)
+                      ? 'warning'
+                      : 'information-circle'
                   }
                   size={18}
                   color={
-                    alerta === ALERTA_DESVIO
+                    alerta === ALERTA_DESVIO || alertasBarrera.includes(alerta)
                       ? colors.danger
                       : colors.warningText
                   }
@@ -695,6 +804,14 @@ export function NavegacionScreen() {
                 <Text style={estilos.textoAlerta}>{alerta}</Text>
               </View>
             ))}
+            {alertasBarrera.length > 0 ? (
+              <AppButton
+                titulo="Recalcular evitando la barrera"
+                onPress={recalcularEvitandoBarreras}
+                icono="git-branch-outline"
+                variante="contorno"
+              />
+            ) : null}
             <AppButton
               titulo="Entendido, seguir navegando"
               onPress={cerrarAlertas}

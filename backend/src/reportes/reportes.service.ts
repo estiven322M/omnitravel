@@ -20,6 +20,16 @@ import { firmarEvidencia, secretoEvidencias } from '../evidencias/firma-evidenci
 
 const CONFIRMACIONES_PARA_PUBLICAR = 3;
 
+/** C4: motivos aceptados para denunciar un reporte (CHECK de la tabla `denuncia`). */
+export const MOTIVOS_DENUNCIA = [
+  'informacion_falsa',
+  'spam',
+  'contenido_inapropiado',
+  'otro',
+] as const;
+export type MotivoDenuncia = (typeof MOTIVOS_DENUNCIA)[number];
+const MAX_DESCRIPCION_DENUNCIA = 500;
+
 /** Columnas de la consulta de solo lectura (`GET /reportes`, `GET /reportes/:id`). */
 const SELECT_CONSULTA = `select id_reporte::text, poi_id::text, usuario_creador_id::text, tipo,
          descripcion, estado, via_resolucion, fecha_creacion, fecha_resolucion
@@ -196,6 +206,14 @@ export class ReportesService {
         );
       }
 
+      if (reporte.estado === 'en_revision') {
+        throw errorDominio(
+          HttpStatus.CONFLICT,
+          'REPORTE_EN_REVISION',
+          'Este reporte fue denunciado y lo está revisando moderación.',
+        );
+      }
+
       const duplicada = await m.query(
         'select 1 from confirmacion where reporte_id = $1 and usuario_id = $2',
         [reporteId, usuarioId],
@@ -222,6 +240,98 @@ export class ReportesService {
         return { confirmaciones: total, publicado: true };
       }
       return { confirmaciones: total, publicado: reporte.estado === 'publicado' };
+    });
+  }
+
+  /**
+   * C4 / A5: denunciar un reporte por información falsa, spam o contenido
+   * inapropiado. La denuncia saca el reporte del consenso automático y lo
+   * envía a moderación (vía B, 'en_revision'); queda en la auditoría.
+   */
+  async denunciar(
+    usuarioId: string,
+    reporteId: string,
+    datos?: { motivo?: unknown; descripcion?: unknown },
+  ) {
+    const motivo = datos?.motivo;
+    if (typeof motivo !== 'string' || !MOTIVOS_DENUNCIA.includes(motivo as MotivoDenuncia)) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'MOTIVO_DENUNCIA_INVALIDO',
+        'Elige el motivo de la denuncia.',
+      );
+    }
+    if (datos?.descripcion != null && typeof datos.descripcion !== 'string') {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'DESCRIPCION_INVALIDA',
+        'La descripción debe ser texto.',
+      );
+    }
+    const descripcion = (datos?.descripcion as string | undefined)?.trim() || null;
+    if (descripcion && descripcion.length > MAX_DESCRIPCION_DENUNCIA) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'DESCRIPCION_INVALIDA',
+        `La descripción admite hasta ${MAX_DESCRIPCION_DENUNCIA} caracteres.`,
+      );
+    }
+
+    return this.db.transaction(async (m) => {
+      const [reporte] = await m.query(
+        `select usuario_creador_id, estado from reporte where id_reporte = $1 for update`,
+        [reporteId],
+      );
+      if (!reporte) {
+        throw errorDominio(HttpStatus.NOT_FOUND, 'REPORTE_NO_ENCONTRADO', 'El reporte no existe.');
+      }
+      if (String(reporte.usuario_creador_id) === String(usuarioId)) {
+        throw errorDominio(
+          HttpStatus.UNPROCESSABLE_ENTITY,
+          'AUTODENUNCIA',
+          'No puedes denunciar tu propio reporte.',
+        );
+      }
+      if (reporte.estado === 'rechazado') {
+        throw errorDominio(
+          HttpStatus.CONFLICT,
+          'REPORTE_RECHAZADO',
+          'Este reporte ya fue rechazado por moderación.',
+        );
+      }
+      const previa = await m.query(
+        'select 1 from denuncia where reporte_id = $1 and usuario_id = $2',
+        [reporteId, usuarioId],
+      );
+      if (previa.length > 0) {
+        throw errorDominio(
+          HttpStatus.CONFLICT,
+          'DENUNCIA_DUPLICADA',
+          'Ya denunciaste este reporte.',
+        );
+      }
+
+      const [{ id_denuncia: idDenuncia }] = await m.query(
+        `insert into denuncia (reporte_id, usuario_id, motivo, descripcion)
+         values ($1, $2, $3, $4)
+         returning id_denuncia::int`,
+        [reporteId, usuarioId, motivo, descripcion],
+      );
+      await m.query(
+        `update reporte set estado = 'en_revision'
+          where id_reporte = $1 and estado <> 'en_revision'`,
+        [reporteId],
+      );
+      await m.query(
+        `insert into registro_auditoria (usuario_id, accion, detalle)
+         values ($1, 'denuncia_reporte', $2::jsonb)`,
+        [usuarioId, JSON.stringify({ reporte: Number(reporteId), denuncia: idDenuncia, motivo })],
+      );
+      const [{ total }] = await m.query(
+        `select count(*)::int as total from denuncia where reporte_id = $1 and estado = 'pendiente'`,
+        [reporteId],
+      );
+      return { denuncia: idDenuncia, estado: 'en_revision', denunciasPendientes: total };
     });
   }
 
@@ -321,6 +431,14 @@ export class ReportesService {
           'es_critico', r.es_critico,
           'autor', u.email,
           'confirmaciones', (select count(*) from confirmacion c where c.reporte_id = r.id_reporte),
+          'denuncias', coalesce((
+            select jsonb_agg(jsonb_build_object(
+              'motivo', d.motivo,
+              'descripcion', d.descripcion,
+              'fecha', d.fecha_creacion) order by d.fecha_creacion)
+            from denuncia d
+            where d.reporte_id = r.id_reporte and d.estado = 'pendiente'
+          ), '[]'::jsonb),
           'poi', jsonb_build_object(
             'id_poi', p.id_poi,
             'nombre', p.nombre,
@@ -405,6 +523,13 @@ export class ReportesService {
           [reporteId],
         );
       }
+
+      // A5: la decisión atiende las denuncias pendientes del reporte.
+      await m.query(
+        `update denuncia set estado = 'atendida', fecha_resolucion = now()
+          where reporte_id = $1 and estado = 'pendiente'`,
+        [reporteId],
+      );
 
       await m.query(
         `insert into moderacion (reporte_id, moderador_id, accion, motivo) values ($1, $2, $3, $4)`,

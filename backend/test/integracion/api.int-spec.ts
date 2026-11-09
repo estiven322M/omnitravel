@@ -309,6 +309,66 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
     });
   });
 
+  describe('Proceso 1 — denuncias de la comunidad (C4, A5)', () => {
+    it('CP-I22 la denuncia saca el reporte del consenso y el moderador la atiende', async () => {
+      const [{ id }] = await consultar<{ id: number }>(
+        URL_BD,
+        `insert into reporte (poi_id, usuario_creador_id, tipo, estado, descripcion)
+         select $1, id_usuario, 'actualizacion', 'pendiente_validacion', 'Hay ascensor'
+           from usuario where email = 'autora@integracion.test'
+         returning id_reporte::int as id`,
+        [lugarId],
+      );
+
+      await request(http)
+        .post(`/reportes/${id}/denuncias`)
+        .set(conToken('autora'))
+        .send({ motivo: 'spam' })
+        .expect(422);
+      const denuncia = await request(http)
+        .post(`/reportes/${id}/denuncias`)
+        .set(conToken('c1'))
+        .send({ motivo: 'informacion_falsa', descripcion: 'No hay ascensor' })
+        .expect(201);
+      expect(denuncia.body).toMatchObject({ estado: 'en_revision', denunciasPendientes: 1 });
+      await request(http)
+        .post(`/reportes/${id}/denuncias`)
+        .set(conToken('c1'))
+        .send({ motivo: 'spam' })
+        .expect(409);
+
+      // Denunciado: ya no se publica por consenso.
+      const confirmacion = await request(http)
+        .post(`/reportes/${id}/confirmaciones`)
+        .set(conToken('c2'))
+        .expect(409);
+      expect(confirmacion.body.error).toBe('REPORTE_EN_REVISION');
+
+      const lista = await request(http)
+        .get('/moderacion/reportes?estado=en_revision')
+        .set(conToken('moderador'))
+        .expect(200);
+      const enRevision = (
+        lista.body as { id_reporte: number; denuncias: { motivo: string }[] }[]
+      ).find((r) => r.id_reporte === id);
+      expect(enRevision?.denuncias).toEqual([
+        expect.objectContaining({ motivo: 'informacion_falsa' }),
+      ]);
+
+      await request(http)
+        .post(`/moderacion/reportes/${id}/decision`)
+        .set(conToken('moderador'))
+        .send({ accion: 'rechazado', motivo: 'Información falsa confirmada' })
+        .expect(201);
+      const [fila] = await consultar<{ estado: string }>(
+        URL_BD,
+        'select estado from denuncia where reporte_id = $1',
+        [id],
+      );
+      expect(fila.estado).toBe('atendida');
+    });
+  });
+
   describe('Proceso 2 — rutas accesibles con Valhalla', () => {
     const cuerpo = {
       origin: [4.5339, -75.6811],
@@ -354,6 +414,47 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
         .send(cuerpo)
         .expect(503);
       expect(res.body.error).toBe('RUTEO_NO_DISPONIBLE');
+    });
+
+    it('CP-I21 evita las barreras críticas reportadas cerca del trayecto (RT1, RNF-26)', async () => {
+      const [barrera] = await consultar<{ id: number }>(
+        URL_BD,
+        `insert into poi (nombre, descripcion, tipo, direccion, ubicacion, estado)
+         values ('Andén con hueco', 'Barrera de integración', 'atraccion', 'Armenia',
+                 ST_SetSRID(ST_MakePoint(-75.6765, 4.5355), 4326), 'publicado')
+         returning id_poi::int as id`,
+      );
+      await consultar(
+        URL_BD,
+        `insert into reporte (poi_id, usuario_creador_id, tipo, estado, descripcion, es_critico)
+         select $1, id_usuario, 'barrera', 'pendiente_validacion', 'Hueco profundo en el andén', true
+           from usuario where email = $2`,
+        [barrera.id, MODERADOR.email],
+      );
+
+      valhalla.responder(200);
+      const res = await request(http)
+        .post('/routes')
+        .set(conToken('ana'))
+        .send(cuerpo)
+        .expect(201);
+      expect(valhalla.solicitudes[0].exclude_locations).toEqual(
+        expect.arrayContaining([{ lat: 4.5355, lon: -75.6765 }]),
+      );
+      expect(res.body.advertencias.join(' ')).toContain('barrera');
+
+      // Sin camino que la evite: se calcula sin ella y se avisa.
+      valhalla.responder(400, 200);
+      const sinCamino = await request(http)
+        .post('/routes')
+        .set(conToken('ana'))
+        .send(cuerpo)
+        .expect(201);
+      expect(valhalla.solicitudes).toHaveLength(2);
+      expect(valhalla.solicitudes[1].exclude_locations).toBeUndefined();
+      expect(sinCamino.body.advertencias.join(' ')).toContain(
+        'te avisaremos al acercarte',
+      );
     });
   });
 

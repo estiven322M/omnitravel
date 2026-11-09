@@ -15,6 +15,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  Vibration,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -64,6 +65,9 @@ const TIPOS_INCIDENCIA: {
   { id: 'cerrado', etiqueta: 'Lugar cerrado', icono: 'lock-closed-outline' },
   { id: 'otro', etiqueta: 'Otro', icono: 'ellipsis-horizontal' },
 ];
+
+/** Patrón háptico de «calificación guardada» (dos pulsos cortos). */
+const VIBRACION_CONFIRMACION = [0, 120, 80, 120];
 
 /**
  * Proceso 3 — retroalimentación post-viaje.
@@ -133,6 +137,8 @@ export function FeedbackScreen() {
 
       setRevisionAbierta(resultado.incidencia != null);
       setEnviada(true);
+      // RNF-12: confirmación multisensorial (visual + lector + vibración).
+      Vibration.vibrate(VIBRACION_CONFIRMACION);
       // El lugar pudo pasar a «en revisión»: refresca el mapa y el detalle.
       void cargarPois();
       if (Platform.OS === 'ios') {

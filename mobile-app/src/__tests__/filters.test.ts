@@ -103,3 +103,28 @@ describe('filtros obligatorios para calcular una ruta (Proceso 2)', () => {
     expect(filtrosSugeridos([])).toEqual([]);
   });
 });
+
+describe('filtros con datos reales de la BD', () => {
+  const conRampa = crearPoi('r', [
+    { caracteristicaId: 'tiene_rampa', valorBooleano: true },
+    { caracteristicaId: 'tiene_semaforo_sonoro', valorBooleano: false },
+  ]);
+  const sinRampa = crearPoi('s', [
+    { caracteristicaId: 'tiene_rampa', valorBooleano: false },
+  ]);
+
+  it('"sin escalones" acepta la rampa confirmada cuando no hay dato de escaleras', () => {
+    expect(
+      aplicarFiltros([conRampa, sinRampa], ['sin_escalones']).map((p) => p.id),
+    ).toEqual(['r']);
+  });
+
+  it('cuenta los filtros que cumple un lugar (coincidencia parcial)', () => {
+    const { filtrosCumplidos } =
+      jest.requireActual<typeof import('../utils/filters')>('../utils/filters');
+    expect(
+      filtrosCumplidos(conRampa, ['sin_escalones', 'semaforos_sonoros']),
+    ).toBe(1);
+    expect(filtrosCumplidos(sinRampa, ['sin_escalones'])).toBe(0);
+  });
+});

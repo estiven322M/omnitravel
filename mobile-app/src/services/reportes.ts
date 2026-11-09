@@ -1,6 +1,7 @@
 import { apiFetch } from './api/client';
 import type {
   AccionModeracion,
+  MotivoDenuncia,
   ReporteComunitario,
   ReporteModeracion,
   ReporteResumen,
@@ -33,6 +34,10 @@ export type CodigoErrorReporte =
   | 'MOTIVO_REQUERIDO'
   | 'ACCION_INVALIDA'
   | 'DATOS_INCOMPLETOS'
+  | 'AUTODENUNCIA'
+  | 'DENUNCIA_DUPLICADA'
+  | 'MOTIVO_DENUNCIA_INVALIDO'
+  | 'REPORTE_EN_REVISION'
   | 'DESCONOCIDO';
 
 /** Mensajes en español para cada código (los que no llegan de la BD). */
@@ -47,6 +52,11 @@ const MENSAJES_POR_CODIGO: Record<CodigoErrorReporte, string> = {
   MOTIVO_REQUERIDO: 'Escribe el motivo del rechazo.',
   ACCION_INVALIDA: 'La acción de moderación no es válida.',
   DATOS_INCOMPLETOS: 'Completa el nombre y la ubicación del lugar.',
+  AUTODENUNCIA: 'No puedes denunciar tu propio reporte.',
+  DENUNCIA_DUPLICADA: 'Ya denunciaste este reporte.',
+  MOTIVO_DENUNCIA_INVALIDO: 'Elige el motivo de la denuncia.',
+  REPORTE_EN_REVISION:
+    'Este reporte fue denunciado y lo está revisando moderación.',
   DESCONOCIDO: 'No pudimos completar la operación. Inténtalo de nuevo.',
 };
 
@@ -150,6 +160,8 @@ interface FilaReporteModeracion {
         acceso?: string | null;
       }[]
     | null;
+  denuncias?:
+    { motivo: string; descripcion: string | null; fecha: string }[] | null;
 }
 
 /** Traduce la fila anidada del backend al contrato del front (M03–M05). */
@@ -192,6 +204,11 @@ export function mapearReporteModeracion(
       tipo: evidencia.tipo ?? 'foto',
       storageKey: evidencia.storage_key ?? '',
       acceso: evidencia.acceso ?? null,
+    })),
+    denuncias: (fila.denuncias ?? []).map((denuncia) => ({
+      motivo: denuncia.motivo as MotivoDenuncia,
+      descripcion: denuncia.descripcion,
+      fecha: denuncia.fecha,
     })),
   };
 }
@@ -289,6 +306,40 @@ export async function confirmarReporte(
     confirmaciones: resultado?.confirmaciones ?? 0,
     publicado: resultado?.publicado === true,
   };
+}
+
+/** Etiquetas de los motivos de denuncia (C4). */
+export const MOTIVOS_DENUNCIA: { id: MotivoDenuncia; etiqueta: string }[] = [
+  { id: 'informacion_falsa', etiqueta: 'Información falsa' },
+  { id: 'spam', etiqueta: 'Spam o publicidad' },
+  { id: 'contenido_inapropiado', etiqueta: 'Contenido inapropiado' },
+  { id: 'otro', etiqueta: 'Otro motivo' },
+];
+
+export function etiquetaMotivoDenuncia(motivo: string): string {
+  return MOTIVOS_DENUNCIA.find((m) => m.id === motivo)?.etiqueta ?? motivo;
+}
+
+/**
+ * C4: denuncia un reporte por falsedad o spam. El backend lo saca del
+ * consenso automático y lo envía a moderación ('en_revision').
+ */
+export async function denunciarReporte(
+  reporteId: string,
+  motivo: MotivoDenuncia,
+  descripcion?: string,
+): Promise<{ estado: string }> {
+  const resultado = await llamarBackend<{ estado: string } | null>(
+    `/reportes/${Number(reporteId)}/denuncias`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        motivo,
+        descripcion: descripcion?.trim() || undefined,
+      }),
+    },
+  );
+  return { estado: resultado?.estado ?? 'en_revision' };
 }
 
 /**
