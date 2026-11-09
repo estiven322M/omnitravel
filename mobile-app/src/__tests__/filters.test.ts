@@ -74,3 +74,33 @@ describe('aplicarFiltros', () => {
     expect(resultado).toHaveLength(0);
   });
 });
+
+describe('filtros obligatorios para calcular una ruta (Proceso 2)', () => {
+  const { filtrosSugeridos, puedeCalcularRuta } = jest.requireActual<
+    typeof import('../utils/filters')
+  >('../utils/filters');
+
+  it('sin filtros aplicados no se puede calcular la ruta', () => {
+    expect(puedeCalcularRuta([])).toBe(false);
+    expect(puedeCalcularRuta(['sin_escalones'])).toBe(true);
+  });
+
+  it('sugiere filtros motrices para silla de ruedas', () => {
+    expect(filtrosSugeridos(['silla_de_ruedas'])).toEqual([
+      'ancho_puerta_80',
+      'sin_escalones',
+      'ascensor_amplio',
+    ]);
+  });
+
+  it('sugiere filtros sensoriales para discapacidad visual', () => {
+    expect(filtrosSugeridos(['visual'])).toEqual([
+      'semaforos_sonoros',
+      'piso_podotactil',
+    ]);
+  });
+
+  it('sin necesidades declaradas no sugiere nada', () => {
+    expect(filtrosSugeridos([])).toEqual([]);
+  });
+});

@@ -39,7 +39,11 @@ import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria } from '../utils/categorias';
-import { aplicarFiltros } from '../utils/filters';
+import {
+  aplicarFiltros,
+  filtrosSugeridos,
+  puedeCalcularRuta,
+} from '../utils/filters';
 import { distanciaKm } from '../utils/geo';
 import { formatearDistancia } from '../utils/format';
 import { datosDesactualizados, restriccionesDesdePerfil } from '../utils/ruta';
@@ -103,6 +107,11 @@ export function MapScreen() {
   const [cargandoRuta, setCargandoRuta] = useState(false);
   const [errorRuta, setErrorRuta] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  /**
+   * true cuando se pidió una ruta sin filtros: al aplicarlos se calcula sola.
+   * Requisito del Proceso 2: la ruta se adapta a las necesidades del usuario.
+   */
+  const [rutaPendiente, setRutaPendiente] = useState(false);
   const [categoriaActiva, setCategoriaActiva] = useState('Todos');
   const [barreras, setBarreras] = useState<ReporteResumen[]>([]);
 
@@ -405,40 +414,69 @@ export function MapScreen() {
     }
   }, [ubicacionUsuario]);
 
-  const verRuta = useCallback(async () => {
+  /** Calcula y dibuja la ruta con las restricciones indicadas. */
+  const calcularRuta = useCallback(
+    async (restriccionesRuta: typeof restricciones) => {
+      if (!destinoCoordenada) {
+        return;
+      }
+      setCargandoRuta(true);
+      setErrorRuta(null);
+      setResultado(null);
+
+      try {
+        const ruta = await calcularRutaAccesible(
+          origen,
+          destinoCoordenada,
+          restriccionesRuta,
+        );
+        setResultado(ruta);
+        // En Android el anuncio lo hace la región viva del resultado.
+        if (Platform.OS === 'ios') {
+          AccessibilityInfo.announceForAccessibility(
+            `Ruta calculada: ${ruta.duracionMin} minutos, ${formatearDistancia(ruta.distanciaKm)}.`,
+          );
+        }
+      } catch (error) {
+        const mensaje =
+          error instanceof Error
+            ? error.message
+            : 'No se pudo calcular la ruta. Inténtalo de nuevo.';
+        setErrorRuta(mensaje);
+        if (Platform.OS === 'ios') {
+          AccessibilityInfo.announceForAccessibility(mensaje);
+        }
+      } finally {
+        setCargandoRuta(false);
+      }
+    },
+    [destinoCoordenada, origen],
+  );
+
+  /**
+   * «Ver ruta accesible». Proceso 2: la ruta se adapta a las necesidades del
+   * usuario, así que sin filtros aplicados primero se piden.
+   */
+  const verRuta = useCallback(() => {
     if (!destinoCoordenada) {
       return;
     }
-    setCargandoRuta(true);
-    setErrorRuta(null);
-    setResultado(null);
-
-    try {
-      const ruta = await calcularRutaAccesible(
-        origen,
-        destinoCoordenada,
-        restricciones,
-      );
-      setResultado(ruta);
-      // En Android el anuncio lo hace la región viva del resultado.
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(
-          `Ruta calculada: ${ruta.duracionMin} minutos, ${formatearDistancia(ruta.distanciaKm)}.`,
-        );
-      }
-    } catch (error) {
-      const mensaje =
-        error instanceof Error
-          ? error.message
-          : 'No se pudo calcular la ruta. Inténtalo de nuevo.';
-      setErrorRuta(mensaje);
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(mensaje);
-      }
-    } finally {
-      setCargandoRuta(false);
+    if (!puedeCalcularRuta(filtrosActivos)) {
+      setRutaPendiente(true);
+      setFiltrosAbiertos(true);
+      return;
     }
-  }, [destinoCoordenada, origen, restricciones]);
+    void calcularRuta(restricciones);
+  }, [calcularRuta, destinoCoordenada, filtrosActivos, restricciones]);
+
+  /** Guarda los filtros y, si había una ruta pendiente, la calcula con ellos. */
+  const aplicarFiltrosYRuta = (filtros: typeof filtrosActivos) => {
+    establecerFiltros(filtros);
+    if (rutaPendiente && puedeCalcularRuta(filtros)) {
+      setRutaPendiente(false);
+      void calcularRuta(restriccionesDesdePerfil(necesidadesPerfil, filtros));
+    }
+  };
 
   const limpiarDestino = () => {
     setSeleccionado(null);
@@ -841,9 +879,24 @@ export function MapScreen() {
             </Text>
           ) : null}
 
+          {!puedeCalcularRuta(filtrosActivos) ? (
+            <Text style={estilos.avisoFiltros}>
+              Para calcular la ruta, primero aplica los filtros de accesibilidad
+              según tus necesidades.
+            </Text>
+          ) : null}
+
           <AppButton
-            titulo="Ver ruta accesible"
-            icono="git-compare-outline"
+            titulo={
+              puedeCalcularRuta(filtrosActivos)
+                ? 'Ver ruta accesible'
+                : 'Aplicar filtros y ver ruta'
+            }
+            icono={
+              puedeCalcularRuta(filtrosActivos)
+                ? 'git-compare-outline'
+                : 'options-outline'
+            }
             onPress={verRuta}
             deshabilitado={!destinoCoordenada}
             cargando={cargandoRuta}
@@ -871,8 +924,18 @@ export function MapScreen() {
       <FilterSheet
         visible={filtrosAbiertos}
         filtrosActivos={filtrosActivos}
-        onAplicar={establecerFiltros}
-        onCerrar={() => setFiltrosAbiertos(false)}
+        onAplicar={aplicarFiltrosYRuta}
+        onCerrar={() => {
+          setFiltrosAbiertos(false);
+          setRutaPendiente(false);
+        }}
+        aviso={
+          rutaPendiente
+            ? 'Para calcular tu ruta, aplica primero los filtros de accesibilidad. Te sugerimos los de tu perfil.'
+            : null
+        }
+        sugeridos={filtrosSugeridos(necesidadesPerfil)}
+        exigirAlMenosUno={rutaPendiente}
       />
     </View>
   );
@@ -1166,6 +1229,14 @@ const estilos = StyleSheet.create({
   error: {
     fontSize: fontSize.xs,
     color: colors.danger,
+  },
+  avisoFiltros: {
+    fontSize: fontSize.sm,
+    color: colors.primaryDark,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    lineHeight: 20,
   },
   avisoDatos: {
     flexDirection: 'row',
