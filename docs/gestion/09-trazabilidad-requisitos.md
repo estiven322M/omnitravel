@@ -4,13 +4,13 @@ Esta matriz vincula los requisitos funcionales propuestos (documento 02) con las
 
 | IDs | Dominio | Pantallas (mockup) | Componentes principales | Pruebas mínimas |
 |---|---|---|---|---|
-| U1–U4 | Usuarios y perfiles | U01–U03, U12 | `auth` (backend NestJS, JWT propio), guardas JWT, `profileStore` local cifrado | Registro con política aceptada, login válido/inválido, sesión ≤ 24 h y cifrada (RNF-08), campos sensibles fuera del backend (RNF-07) |
+| U1–U4 | Usuarios y perfiles | U01–U03, U12 | `auth` (backend NestJS, JWT propio), guardas JWT, `profileStore` local cifrado | Registro con política aceptada, login válido/inválido, sesión ≤ 24 h y cifrada (RNF-25), campos sensibles fuera del backend (RNF-22) |
 | U5–U6 | Notificaciones y gamificación | U11, U12 | Notificaciones derivadas de reportes y barreras; «Mis reportes» con el estado de cada aporte | Pruebas de la app (`moderacion.test.ts`, `reportes.test.ts`) |
 | P1–P5 | POI y mapa | U04–U08 | `mapa` (GET /mapa con GeoJSON de PostGIS), catálogo de características, mapa Leaflet + OpenStreetMap | Bounding box válido, GeoJSON correcto, filtros combinados, formas idénticas a los mocks (`Poi`, `ValorAccesibilidad`) |
-| C1–C6 | Crowdsourcing | U09–U10, S01 | `reportes` (reportes, confirmaciones), `evidencias` (S3 con enlace firmado) | Consenso de 3 publicado exactamente una vez (RNF-18/23), anti-autoconfirmación (RNF-28), MIME/tamaño (RNF-29), reintentos de evidencia (RNF-19), EN_REVISION tras re-verificación (RNF-20) |
-| RT1–RT5 | Rutas accesibles | U06–U07, S02 | `routing` (Valhalla peatonal + silla de ruedas, reintentos), `polyline.ts`, `cambioRuta.ts` | Exclusión de barreras críticas (RNF-21/26), warnings > 60 días (RNF-27), fallo con mensaje claro (RNF-17), ≤ 3 s en 95% (RNF-01) |
-| F1–F4 | Retroalimentación | U08, Feedback | `feedback` (visitas, experiencias, incidencias), `moderacion` (re-verificación) | Solo post-viaje (RNF-24), discrepancia genera re-verificación trazable (RNF-25) |
-| A1–A8 | Moderación/admin | M01–M07 | `moderacion` (tablero, incidencias, estadísticas), `reportes` (decisiones), `registro_auditoria`, RBAC | Solo MODERADOR/ADMIN (RNF-09), decisión sobre-escribe consenso (RNF-22), sin segunda decisión (409), auditoría inmutable (RNF-30), estado visible ≤ 2 s (RNF-05) |
+| C1–C6 | Crowdsourcing | U09–U10, S01 | `reportes` (reportes, confirmaciones), `evidencias` (S3 con enlace firmado) | Consenso de 3 publicado exactamente una vez (RNF-22/07), anti-autoconfirmación (RNF-29), MIME/tamaño (RNF-28), reintentos de evidencia (RNF-09), EN_REVISION tras re-verificación (RNF-05) |
+| RT1–RT5 | Rutas accesibles | U06–U07, S02 | `routing` (Valhalla peatonal + silla de ruedas, reintentos), `polyline.ts`, `cambioRuta.ts` | Exclusión de barreras críticas (RNF-26/26), warnings > 60 días (RNF-27), fallo con mensaje claro (RNF-09), ≤ 3 s en 95% (RNF-01) |
+| F1–F4 | Retroalimentación | U08, Feedback | `feedback` (visitas, experiencias, incidencias), `moderacion` (re-verificación) | Solo post-viaje (RNF-19), discrepancia genera re-verificación trazable (RNF-19) |
+| A1–A8 | Moderación/admin | M01–M07 | `moderacion` (tablero, incidencias, estadísticas), `reportes` (decisiones), `registro_auditoria`, RBAC | Solo MODERADOR/ADMIN (RNF-23), decisión sobre-escribe consenso (RNF-20), sin segunda decisión (409), auditoría inmutable (RNF-30), estado visible ≤ 2 s (RNF-03) |
 
 ## Estado actual del proyecto (actualizado 8 nov 2026, versión final)
 

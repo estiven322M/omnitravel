@@ -123,7 +123,7 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
     });
   });
 
-  describe('Autenticación + auditoría (RNF-06, 6.7 ítem 9)', () => {
+  describe('Autenticación + auditoría (RNF-21, 6.7 ítem 9)', () => {
     it('CP-I04 registro, inicio de sesión y fallo quedan en registro_auditoria', async () => {
       const { usuario } = await registrar('beto');
       await request(http)
@@ -189,7 +189,7 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
       reporteId = Number(res.body.id_reporte);
     });
 
-    it('CP-I07 la autora no puede confirmar su propio reporte (RNF-28)', async () => {
+    it('CP-I07 la autora no puede confirmar su propio reporte (RNF-29)', async () => {
       const res = await request(http)
         .post(`/reportes/${reporteId}/confirmaciones`)
         .set(conToken('autora'))
@@ -301,7 +301,7 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
       );
     });
 
-    it('CP-I13 un viajero no accede a la consola de moderación (RNF-09)', async () => {
+    it('CP-I13 un viajero no accede a la consola de moderación (RNF-23)', async () => {
       await request(http)
         .get('/moderacion/reportes')
         .set(conToken('ana'))

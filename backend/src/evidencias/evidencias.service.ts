@@ -7,7 +7,7 @@ import { HttpStatus, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { errorDominio } from '../common/errores';
 
-const TAMANO_MAXIMO = 5 * 1024 * 1024; // 5 MB (RNF-29)
+const TAMANO_MAXIMO = 5 * 1024 * 1024; // 5 MB (RNF-28)
 
 /** MIME permitido → extensión y firma de bytes esperada al inicio del archivo. */
 const TIPOS: Record<string, { extension: string; firma: (b: Buffer) => boolean }> = {

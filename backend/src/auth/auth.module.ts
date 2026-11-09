@@ -20,7 +20,7 @@ import { LIMITE_AUTH } from './limite-intentos.guard';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        // RNF-08: sesión con expiración ≤ 24 h.
+        // RNF-25: sesión con expiración ≤ 24 h.
         signOptions: { expiresIn: '24h' },
       }),
     }),

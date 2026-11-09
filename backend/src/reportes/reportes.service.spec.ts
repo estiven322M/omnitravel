@@ -3,7 +3,7 @@ import type { DataSource } from 'typeorm';
 import { coordenadaValida, estadoParaBd, ReportesService } from './reportes.service';
 
 /**
- * Proceso 1 — validación colaborativa (RF-02, RNF-18, RNF-23, RNF-28).
+ * Proceso 1 — validación colaborativa (RF-02, RNF-07, RNF-07, RNF-29).
  * Pruebas unitarias del servicio con una BD simulada: `query` responde en el
  * orden en que el servicio consulta, y la transacción reutiliza el mismo mock.
  */
@@ -96,7 +96,7 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
     });
   });
 
-  describe('confirmar reporte — consenso de 3 (RNF-18, RNF-23, RNF-28)', () => {
+  describe('confirmar reporte — consenso de 3 (RNF-07, RNF-07, RNF-29)', () => {
     const pendienteDe = (creador: string) => [{ usuario_creador_id: creador, estado: 'pendiente_validacion' }];
 
     it('CP-U07 impide la autoconfirmación (422 AUTOCONFIRMACION)', async () => {
@@ -157,7 +157,7 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
     });
   });
 
-  describe('moderación (RNF-09)', () => {
+  describe('moderación (RNF-23)', () => {
     it('CP-U13 solo un moderador puede decidir (403)', async () => {
       const { db } = crearDb([[]]);
       const error = await capturar(new ReportesService(db).decidir('5', '11', 'aprobado'));

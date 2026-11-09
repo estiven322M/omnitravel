@@ -18,7 +18,7 @@ Guion corto para cerrar el paso documental antes de mover la carpeta `gestion/` 
 - [ ] Contrato de notificaciones push (U5/U11) — sin él, no se implementa `notifications`.
 - [x] BD propia para OmniTravel: PostgreSQL + PostGIS en AWS RDS (`omnitravel_db`); Supabase retirado.
 - [ ] Perfil de ruteo de Valhalla (migrar `costing: 'auto'` → peatonal accesible + lógica de barreras).
-- [ ] Límite de tamaño y tipos de evidencia para S3 (RNF-29).
+- [ ] Límite de tamaño y tipos de evidencia para S3 (RNF-28).
 - [ ] Consulta del mapa pública o autenticada.
 
 ## 4. Repositorio

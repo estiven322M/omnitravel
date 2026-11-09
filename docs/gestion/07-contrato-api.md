@@ -15,7 +15,7 @@ Servidor local declarado: `http://localhost:3000/api/v1` (puerto NestJS por defe
 - HTTP: `200` lectura/actualización; `201` creación; `204` sin cuerpo; `400` solicitud/validación; `401` no autenticado; `403` no autorizado; `404` no encontrado; `409` duplicado/conflicto de estado; `422` regla de negocio; `500` `INTERNAL_ERROR` con mensaje genérico en español que nunca expone trazas ni SQL.
 - Estructura de error: `Error { timestamp, status, code, message, details[], path }`; `code` estable y en inglés, `message` en español.
 - Rango de advertencias de ruta: `warnings[]` en la respuesta de `/routes` (datos desactualizados > 60 días, verificación pendiente) para RNF-27.
-- Perfil del usuario para rutas: solo parámetros de restricción anónimos en el request (`avoidStairs`, `requireElevator`, `preferSoundTrafficLights`); el backend jamás recibe diagnóstico o tipo de discapacidad con nombre (RNF-07).
+- Perfil del usuario para rutas: solo parámetros de restricción anónimos en el request (`avoidStairs`, `requireElevator`, `preferSoundTrafficLights`); el backend jamás recibe diagnóstico o tipo de discapacidad con nombre (RNF-22).
 
 ## Inventario de operaciones (propuesta)
 
@@ -61,5 +61,5 @@ Servidor local declarado: `http://localhost:3000/api/v1` (puerto NestJS por defe
 ## Observaciones del contrato
 - El `openapi.yaml` acá incluido es un borrador con `x-status: BORRADOR`; no generar código cliente definitivo hasta su aprobación.
 - La app ya define la forma de `Poi`, `ValorAccesibilidad` y `ResultadoRuta`; exponer los endpoints reales con esa misma forma para reemplazar los mocks sin romper el front.
-- El endpoint `/routes` debe migrar de `costing: 'auto'` a peatonal accesible; el contrato devuelve además `warnings` para RNF-27 y `BARRIER_BLOCKED` cuando no existe ruta sin barreras críticas (RNF-21/RNF-26).
+- El endpoint `/routes` debe migrar de `costing: 'auto'` a peatonal accesible; el contrato devuelve además `warnings` para RNF-27 y `BARRIER_BLOCKED` cuando no existe ruta sin barreras críticas (RNF-26/RNF-26).
 - No renumerar IDs si la matriz oficial de requisitos del curso introduce otros; documentar el mapeo.

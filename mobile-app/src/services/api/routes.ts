@@ -102,7 +102,7 @@ function construirSolicitudValhalla(
 /**
  * Cierra el contrato del front sobre TODAS las rutas (principal y
  * alternativa): advertencias del motor, del backend y las derivadas de
- * escaleras detectadas en la narración (RNF-14).
+ * escaleras detectadas en la narración (RNF-12).
  */
 function cerrarAdvertencias(
   ruta: ResultadoRuta,

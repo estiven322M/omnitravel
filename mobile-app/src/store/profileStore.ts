@@ -10,7 +10,7 @@ import type { FiltroId } from '../utils/filters';
  * Privacidad por diseño (ADR-09, Ley 1581): las preferencias de accesibilidad
  * viven EXCLUSIVAMENTE en el almacenamiento cifrado del dispositivo
  * (Keychain en iOS / Keystore en Android vía expo-secure-store) y nunca se
- * envían al backend (RNF-07 / RNF-08).
+ * envían al backend (RNF-22 / RNF-25).
  */
 
 export type NecesidadAccesibilidad =

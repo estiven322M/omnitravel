@@ -1,7 +1,7 @@
 # 06. Seguridad y autorización
 
 ## Autenticación
-El objetivo (C4/RNF-06) es autenticar a todos los usuarios mediante JWT gestionado de forma centralizada en el backend. **Estado actual (2026-10-18)**: implementado. La app autentica contra el backend (`POST /auth/register`, `POST /auth/login`; `mobile-app/src/services/api/auth.ts`), que guarda las cuentas en la tabla `usuario` de la BD en AWS RDS y emite un JWT propio (expiración 24 h). La app guarda el token cifrado en el dispositivo (expo-secure-store) para cumplir RNF-08.
+El objetivo (C4/RNF-21) es autenticar a todos los usuarios mediante JWT gestionado de forma centralizada en el backend. **Estado actual (2026-10-18)**: implementado. La app autentica contra el backend (`POST /auth/register`, `POST /auth/login`; `mobile-app/src/services/api/auth.ts`), que guarda las cuentas en la tabla `usuario` de la BD en AWS RDS y emite un JWT propio (expiración 24 h). La app guarda el token cifrado en el dispositivo (expo-secure-store) para cumplir RNF-25.
 
 Decisión tomada (ADR-09): cuentas propias en el backend NestJS; Supabase ya no se usa. Reglas:
 
@@ -24,13 +24,13 @@ La autorización requiere comprobar rol **y** pertenencia/alcance del recurso.
 | `MODERADOR` / `ADMIN` | Módulo Administrador/Moderador completo (M01–M07): reportes, denuncias, incidencias, reglas de consenso y auditoría. |
 
 - Los listados deben filtrar por pertenencia en el backend; el filtrado en la app es solo UX.
-- La decisión del moderador es ejecutiva y sobreescribe el consenso comunitario, pero solo dentro de su rol (RNF-09).
+- La decisión del moderador es ejecutiva y sobreescribe el consenso comunitario, pero solo dentro de su rol (RNF-23).
 - Para recursos ajenos: `403 ACCESS_DENIED`.
 
 ## Datos personales y datos sensibles (Ley 1581 de 2012)
-- RNF-07: los datos detallados de discapacidad (tipo/grado, diagnósticos) viven **solo** en el almacenamiento local seguro del dispositivo; el backend no los registra ni persiste. Para el ruteo se envían parámetros de restricción anónimos y temporales.
+- RNF-22: los datos detallados de discapacidad (tipo/grado, diagnósticos) viven **solo** en el almacenamiento local seguro del dispositivo; el backend no los registra ni persiste. Para el ruteo se envían parámetros de restricción anónimos y temporales.
 - En comentarios y perfil de las experiencias evitar exponer condiciones de salud no autorizadas; moderación de contenido sensible.
-- Evidencia fotográfica: evitar rostros y placas de terceros; validar MIME/tamaño (RNF-29) antes de aceptar el archivo; cifrado AES-256 para campos clasificados como sensibles.
+- Evidencia fotográfica: evitar rostros y placas de terceros; validar MIME/tamaño (RNF-28) antes de aceptar el archivo; cifrado AES-256 para campos clasificados como sensibles.
 - Logs sin PII ni tokens; retención documentada de evidencias y auditoría (RNF-30) acorde a la política de privacidad.
 - La revisión técnica no reemplaza la validación legal de cumplimiento (Ley 1581 de 2012: aviso de privacidad en U03, habeas data y consentimientos).
 
@@ -45,10 +45,10 @@ La autorización requiere comprobar rol **y** pertenencia/alcance del recurso.
 - Sin acceso directo de la app a la BD: el esquema en AWS RDS solo es accesible desde el backend (security group de RDS restringido).
 
 ## Pruebas obligatorias
-- Token ausente, inválido y expirado en todos los endpoints protegidos (RNF-06/RNF-08).
+- Token ausente, inválido y expirado en todos los endpoints protegidos (RNF-21/RNF-25).
 - Usuario con rol incorrecto: `403`.
 - Manipulación de ids de reportes/POI ajenos: `403` y sin fugas de información.
-- Autoconfirmación del creador del reporte y confirmación duplicada: rechazadas (RNF-28).
-- Moderador accediendo a funciones fuera de su rol: imposible (RNF-09).
-- Archivo no permitido (MIME/tamaño): rechazo (RNF-29).
+- Autoconfirmación del creador del reporte y confirmación duplicada: rechazadas (RNF-29).
+- Moderador accediendo a funciones fuera de su rol: imposible (RNF-23).
+- Archivo no permitido (MIME/tamaño): rechazo (RNF-28).
 - Sin exposición de hash, token o datos de menores en respuestas/log.

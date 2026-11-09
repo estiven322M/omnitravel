@@ -133,7 +133,7 @@ El Proceso 1 **no tiene hoy ninguna vía de escritura** (ni backend ni RLS). En 
 ### Bloque 1 — Servicios de datos del Proceso 1 (front) · Día 1 mañana
 
 - [x] `services/reportes.ts`: `crearReporte()` (fila `reporte` + valores por característica), `confirmarReporte()` (RPC), `listarReportesParaModerar()`, `decidirReporte()` (RPC), `denunciarReporte()` solo si sobra tiempo (C4 no bloquea la demo).
-- [x] `services/evidencias.ts`: captura con `expo-image-picker` (cámara/galería) + compresión + subida al bucket `evidencia` con degradación elegante (si la subida falla, el reporte se crea marcado "sin evidencia" y se muestra el aviso — RNF-17).
+- [x] `services/evidencias.ts`: captura con `expo-image-picker` (cámara/galería) + compresión + subida al bucket `evidencia` con degradación elegante (si la subida falla, el reporte se crea marcado "sin evidencia" y se muestra el aviso — RNF-09).
 - [x] Extender el flujo de sesión para exponer el **rol** (`rol_id` ya viene en la fila `usuario` del login) y derivar el módulo (viajero/colaborador → app; moderador → consola).
 - [x] Pruebas unitarias de los mapeadores y validaciones nuevas. (`reportes.test.ts`, `reporteValidacion.test.ts`, `evidencias.test.ts`, `ruta.test.ts`; 65 pruebas en 9 suites.)
 
@@ -151,9 +151,9 @@ El Proceso 1 **no tiene hoy ninguna vía de escritura** (ni backend ni RLS). En 
 
 ### Bloque 3 — Confirmaciones + S01 (front) · Día 1 tarde/noche
 
-- [x] Botón "Confirmar accesibilidad" en U08 (deshabilitado para el autor y para ya-confirmadores, con mensaje claro — RNF-28).
-- [x] Componente modal **S01** (Consenso Alcanzado) accesible y anunciado (RNF-14).
-- [x] Al confirmar: llamada a la RPC; al llegar a 3 → el POI pasa a publicado y la UI lo refleja sin recargar (RNF-05/RNF-23).
+- [x] Botón "Confirmar accesibilidad" en U08 (deshabilitado para el autor y para ya-confirmadores, con mensaje claro — RNF-29).
+- [x] Componente modal **S01** (Consenso Alcanzado) accesible y anunciado (RNF-12).
+- [x] Al confirmar: llamada a la RPC; al llegar a 3 → el POI pasa a publicado y la UI lo refleja sin recargar (RNF-03/RNF-07).
 - [ ] Pruebas: estado del botón por rol/duplicado, S01 visible al consenso.
 
 **Verificación:** demo de 3 confirmaciones con 3 cuentas distintas → POI publicado + S01; intento de autoconfirmación rechazado con mensaje claro.
@@ -163,7 +163,7 @@ El Proceso 1 **no tiene hoy ninguna vía de escritura** (ni backend ni RLS). En 
 - [x] Detección de rol al iniciar sesión → entrada a "Consola de moderación".
 - [x] **M03:** lista de reportes pendientes (reutilizar `Card`/`Badge`/`EmptyState`), con motivo de prioridad (barrera crítica / GPS inconsistente).
 - [x] **M04:** detalle del reporte con evidencia fotográfica, coordenadas y valores declarados.
-- [x] **M05:** modal de decisión — rechazo con **motivo obligatorio**; aprobación directa (acción ejecutiva, RNF-22); auditoría mínima registrada.
+- [x] **M05:** modal de decisión — rechazo con **motivo obligatorio**; aprobación directa (acción ejecutiva, RNF-20); auditoría mínima registrada.
 - [ ] Si el timebox se agota: recortar M04 a una vista simple de datos y documentar; **no** sacrificar M03/M05.
 
 **Verificación:** moderador rechaza un reporte con motivo → estado actualizado en BD + visible en la app; aprobación publica el POI.
@@ -178,7 +178,7 @@ El Proceso 1 **no tiene hoy ninguna vía de escritura** (ni backend ni RLS). En 
 - [x] Advertencia visible cuando la ruta use datos no verificados o de más de 60 días (`warnings[]`, RNF-27).
 - [x] **U07:** pantalla de navegación paso a paso con `maneuvers` (instrucción, distancia, ícono direccional) + botón "Finalizar".
 - [x] **S02:** modal de alerta de peligro en ruta + acción "Recalcular" (disparo demo: barrera crítica reportada sobre el trayecto o botón de simulación etiquetado para la demo).
-- [x] Manejo de fallo del motor: mensaje claro y alternativa (ya existe base en U06, extender a U07 — RNF-17).
+- [x] Manejo de fallo del motor: mensaje claro y alternativa (ya existe base en U06, extender a U07 — RNF-09).
 
 **Verificación:** ruta con restricciones + pasos visibles + S02 con recálculo + advertencia de datos antiguos, todo en dispositivo.
 

@@ -409,7 +409,7 @@ export function ContributeScreen() {
     setErrorEnvio(null);
     try {
       // La evidencia se sube primero; si falla, el reporte viaja sin foto
-      // (degradación con gracia, RNF-19).
+      // (degradación con gracia, RNF-09).
       let storageKey: string | null = null;
       let avisoFoto: string | undefined;
       if (foto) {

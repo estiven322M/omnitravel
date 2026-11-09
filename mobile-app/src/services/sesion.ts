@@ -13,7 +13,7 @@ import {
 /**
  * Ciclo de vida de la sesión en el dispositivo.
  *
- * El JWT dura ≤ 24 h (RNF-08). Cuando vence, la app no puede quedarse
+ * El JWT dura ≤ 24 h (RNF-25). Cuando vence, la app no puede quedarse
  * "con sesión" a medias: se borra el token, se vacían los datos de la cuenta
  * y la navegación vuelve sola al login (RootNavigator depende del perfil).
  */
@@ -29,7 +29,7 @@ let avisando = false;
 
 /**
  * Sesión vencida: cierra la sesión una sola vez aunque varias peticiones
- * fallen a la vez, y explica a la persona qué pasó (RNF-17).
+ * fallen a la vez, y explica a la persona qué pasó (RNF-09).
  */
 export async function cerrarSesionPorVencimiento(): Promise<void> {
   if (avisando || !useProfileStore.getState().perfil) {

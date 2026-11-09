@@ -10,7 +10,7 @@ import {
  *
  * Carga perezosa al abrir el tab o el detalle; `alternar` es optimista
  * (icono instantáneo) con rollback si la BD rechaza la operación, para que
- * el corazón nunca mienta (RNF-14: errores visibles y objetivo).
+ * el corazón nunca mienta (RNF-12: errores visibles y objetivo).
  */
 interface EstadoFavoritos {
   /** true cuando la primera lectura terminó (con datos o error). */

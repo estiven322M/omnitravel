@@ -6,7 +6,7 @@ import { API_URL, apiFetch } from './api/client';
  *
  * Flujo: image-picker captura con `base64: true` (compatible con Expo Go y
  * con el APK de EAS) → se envía a `POST /evidencias` del backend, que valida
- * peso (5 MB) y tipo de imagen (RNF-29) y la guarda en la carpeta del
+ * peso (5 MB) y tipo de imagen (RNF-28) y la guarda en la carpeta del
  * usuario autenticado (`<id_usuario>/…`). Por ahora el backend la guarda en
  * su disco; al desplegar en AWS pasará a un bucket S3 sin cambiar este
  * contrato. Si la subida falla, el reporte se envía igual sin foto.

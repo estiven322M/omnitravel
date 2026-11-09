@@ -8,7 +8,7 @@ import { ApiError, apiFetch, CLAVE_TOKEN } from './client';
  * PostgreSQL en AWS RDS con contraseñas bcrypt.
  *
  * El JWT devuelto se guarda cifrado en el dispositivo (expo-secure-store,
- * RNF-08) y `apiFetch` lo adjunta en cada petición. Solo viajan email y
+ * RNF-25) y `apiFetch` lo adjunta en cada petición. Solo viajan email y
  * contraseña: el perfil de accesibilidad nunca sale del teléfono (Ley 1581).
  */
 

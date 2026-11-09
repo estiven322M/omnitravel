@@ -3,7 +3,7 @@ import type { DataSource, EntityManager } from 'typeorm';
 import { errorDominio } from './errores';
 
 /**
- * RNF-09: el rol se consulta en la BD en cada operación de moderación; no se
+ * RNF-23: el rol se consulta en la BD en cada operación de moderación; no se
  * confía en el token ni en el cliente.
  */
 export async function exigirModerador(

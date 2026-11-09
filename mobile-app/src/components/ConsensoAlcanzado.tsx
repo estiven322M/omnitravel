@@ -38,7 +38,7 @@ function Rayos() {
  * S01 — Modal «¡Validación alcanzada!».
  *
  * Se muestra al registrar la tercera confirmación comunitaria o cuando un
- * moderador aprueba el reporte: el punto pasó a publicado (RNF-18/23).
+ * moderador aprueba el reporte: el punto pasó a publicado (RNF-22/07).
  * `accessibilityViewIsModal` mantiene el foco del lector dentro (RNF-12).
  */
 export function ConsensoAlcanzado({

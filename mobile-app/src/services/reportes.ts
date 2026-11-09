@@ -17,7 +17,7 @@ import type {
  *   POST /reportes · POST /reportes/:id/confirmaciones ·
  *   GET /pois/:id/reporte-activo · GET /moderacion/reportes ·
  *   POST /moderacion/reportes/:id/decision
- * El consenso de 3 confirmaciones es atómico (RNF-18/23/28) y la
+ * El consenso de 3 confirmaciones es atómico (RNF-22/07/28) y la
  * anti-autoconfirmación y el rol de moderación se validan en el servidor.
  */
 
@@ -328,7 +328,7 @@ export async function listarReportesModeracion(
 
 /**
  * Decisión ejecutiva del moderador (Vía B): aprobar publica el punto;
- * rechazar exige motivo y queda auditado (RNF-22/30).
+ * rechazar exige motivo y queda auditado (RNF-05/30).
  */
 export async function decidirReporte(
   reporteId: string,

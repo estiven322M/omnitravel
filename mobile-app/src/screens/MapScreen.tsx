@@ -74,7 +74,7 @@ type EstadoPermiso = 'pendiente' | 'concedido' | 'denegado';
  * - Barreras reportadas por la comunidad (reportes críticos de `reporte`)
  *   como marcadores naranja con aviso.
  * - Trazado real de la ruta accesible con Valhalla (Proceso 2) que se dibuja
- *   y encuadra en el mapa, con errores visibles y anunciados (RNF-14/RNF-17).
+ *   y encuadra en el mapa, con errores visibles y anunciados (RNF-12/RNF-09).
  * - POIs desde el backend (`GET /mapa`) con degradación a datos de
  *   demostración si el backend no responde.
  */

@@ -99,7 +99,7 @@ export function validarContrasena(contrasena: string): boolean {
  * La cuenta se crea en el backend (`POST /auth/register`, contraseña con
  * bcrypt en la tabla `usuario`) y la sesión queda iniciada con su JWT.
  * El perfil de accesibilidad se guarda cifrado en el dispositivo y NUNCA se
- * envía al servidor (Ley 1581, RNF-07). Configuración en una sola pantalla
+ * envía al servidor (Ley 1581, RNF-22). Configuración en una sola pantalla
  * (RNF-13).
  */
 export function RegisterScreen() {

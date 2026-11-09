@@ -15,7 +15,7 @@ const SQL_GRAVEDAD = `case when r.calificacion <= 1 then 'alta'
 
 /**
  * Panel de moderación (M02, M06, M07) y Proceso 3 (incidencias post-viaje).
- * Todas las operaciones verifican el rol en la BD (RNF-09).
+ * Todas las operaciones verifican el rol en la BD (RNF-23).
  */
 @Injectable()
 export class ModeracionService {
