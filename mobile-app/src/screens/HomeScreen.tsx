@@ -26,6 +26,7 @@ import {
 } from '../services/api/feedback';
 import type { Coordenada, Poi } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
+import { useBusquedaStore } from '../store/busquedaStore';
 import { useProfileStore } from '../store/profileStore';
 import { coincideBusqueda, sugerenciasDeBusqueda } from '../utils/busqueda';
 import { etiquetaDeCategoria, iconoDeCategoria } from '../utils/categorias';
@@ -79,7 +80,8 @@ export function HomeScreen() {
   const cargarPois = usePoisStore((estado) => estado.cargar);
 
   const [ubicacion, setUbicacion] = useState<Coordenada | null>(null);
-  const [busqueda, setBusqueda] = useState('');
+  const busqueda = useBusquedaStore((estado) => estado.texto);
+  const setBusqueda = useBusquedaStore((estado) => estado.establecer);
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [pendientes, setPendientes] = useState<VisitaPendiente[]>([]);
@@ -185,8 +187,9 @@ export function HomeScreen() {
   const hayFiltrosActivos =
     filtrosActivos.length > 0 || categoriaActiva != null || termino !== '';
 
-  const limpiarTodo = () => {
-    establecerFiltros([]);
+  // Solo limpia el texto buscado: los filtros de accesibilidad son del
+  // perfil y únicamente la persona los cambia (desde «Filtros»).
+  const limpiarBusqueda = () => {
     setCategoriaActiva(null);
     setBusqueda('');
   };
@@ -476,9 +479,15 @@ export function HomeScreen() {
                   : 'La base de datos no tiene lugares publicados por ahora.'
               }
               textoBoton={
-                hayFiltrosActivos ? 'Limpiar búsqueda y filtros' : undefined
+                termino !== '' || categoriaActiva != null
+                  ? 'Limpiar búsqueda'
+                  : undefined
               }
-              onPressBoton={hayFiltrosActivos ? limpiarTodo : undefined}
+              onPressBoton={
+                termino !== '' || categoriaActiva != null
+                  ? limpiarBusqueda
+                  : undefined
+              }
             />
           ) : (
             <Text

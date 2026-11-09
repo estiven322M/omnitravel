@@ -316,6 +316,8 @@ export class ReportesService {
           'estado', r.estado,
           'descripcion', r.descripcion,
           'fecha_creacion', r.fecha_creacion,
+          'fecha_resolucion', r.fecha_resolucion,
+          'via_resolucion', r.via_resolucion,
           'es_critico', r.es_critico,
           'autor', u.email,
           'confirmaciones', (select count(*) from confirmacion c where c.reporte_id = r.id_reporte),

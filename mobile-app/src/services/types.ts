@@ -173,6 +173,10 @@ export interface ReporteModeracion {
   estado: string;
   descripcion: string;
   fechaCreacion: string;
+  /** Cuándo se publicó o rechazó (null mientras está pendiente). */
+  fechaResolucion?: string | null;
+  /** 'automatica' (consenso de 3) o 'manual' (decisión del moderador). */
+  viaResolucion?: string | null;
   /** Vía B: reportes con barreras críticas que prioriza el moderador. */
   esCritico: boolean;
   autor: string | null;

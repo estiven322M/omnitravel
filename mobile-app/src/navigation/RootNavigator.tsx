@@ -5,6 +5,7 @@ import { useVigilanciaSesion } from '../hooks/useVigilanciaSesion';
 import { LoginScreen } from '../screens/LoginScreen';
 import { IncidenciasScreen } from '../screens/moderacion/IncidenciasScreen';
 import { RevisionReporteScreen } from '../screens/moderacion/RevisionReporteScreen';
+import { VerificadosHoyScreen } from '../screens/moderacion/VerificadosHoyScreen';
 import { NotificacionesScreen } from '../screens/NotificacionesScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { usaPanelModeracion } from '../services/inicioSesion';
@@ -92,6 +93,11 @@ export function RootNavigator() {
                 <Stack.Screen
                   name="Incidencias"
                   component={IncidenciasScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="VerificadosHoy"
+                  component={VerificadosHoyScreen}
                   options={{ animation: 'slide_from_right' }}
                 />
               </>

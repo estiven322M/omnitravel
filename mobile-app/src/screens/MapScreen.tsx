@@ -5,7 +5,6 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Location from 'expo-location';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -38,6 +37,7 @@ import type {
   ReporteResumen,
   ResultadoRuta,
 } from '../services/types';
+import { obtenerUbicacionActual } from '../services/ubicacion';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { sugerenciasDeBusqueda } from '../utils/busqueda';
@@ -163,20 +163,10 @@ export function MapScreen() {
     let activo = true;
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          if (activo) {
-            setPermiso('denegado');
-          }
-          return;
-        }
-        const posicion = await Location.getCurrentPositionAsync({});
+        const posicion = await obtenerUbicacionActual();
         if (activo) {
           setPermiso('concedido');
-          setUbicacionUsuario({
-            latitude: posicion.coords.latitude,
-            longitude: posicion.coords.longitude,
-          });
+          setUbicacionUsuario(posicion);
         }
       } catch {
         if (activo) {
@@ -764,7 +754,7 @@ export function MapScreen() {
                 size={16}
                 color={colors.warning}
               />
-              <Text style={estilos.avisoDatosTexto} numberOfLines={2}>
+              <Text style={estilos.avisoDatosTexto}>
                 El mapa no terminó de cargar: revisa tu conexión a internet y
                 recarga la app (botón Reload en Expo Go).
               </Text>
@@ -913,9 +903,9 @@ export function MapScreen() {
           ) : null}
 
           {resultado?.advertencias && resultado.advertencias.length > 0 ? (
-            <View style={estilos.avisoDatos}>
+            <View style={estilos.avisoAdvertencias}>
               {resultado.advertencias.map((advertencia) => (
-                <View key={advertencia} style={estilos.filaDato}>
+                <View key={advertencia} style={estilos.filaAdvertencia}>
                   <Ionicons
                     name="information-circle-outline"
                     size={16}
@@ -1310,6 +1300,17 @@ const estilos = StyleSheet.create({
     borderRadius: radii.md,
     padding: spacing.md,
     lineHeight: 20,
+  },
+  filaAdvertencia: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  avisoAdvertencias: {
+    gap: spacing.xs,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radii.md,
+    padding: spacing.sm,
   },
   avisoDatos: {
     flexDirection: 'row',
