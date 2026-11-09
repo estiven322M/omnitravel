@@ -92,8 +92,13 @@ describe('iconoDeManeuver', () => {
 });
 
 describe('datosDesactualizados', () => {
+  // Reloj fijo: sin él, entre calcular la fecha y evaluarla pasan unos
+  // milisegundos y el caso límite (60 días exactos) fallaba de forma aleatoria.
+  const AHORA = Date.UTC(2026, 10, 9, 12, 0, 0);
+  beforeEach(() => jest.spyOn(Date, 'now').mockReturnValue(AHORA));
+  afterEach(() => jest.restoreAllMocks());
   const haceDias = (dias: number) =>
-    new Date(Date.now() - dias * 24 * 60 * 60 * 1000).toISOString();
+    new Date(AHORA - dias * 24 * 60 * 60 * 1000).toISOString();
 
   it('considera vigentes los datos recientes (≤ 60 días)', () => {
     expect(datosDesactualizados(haceDias(10))).toBe(false);
