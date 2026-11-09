@@ -84,10 +84,22 @@ html,body,#mapa{height:100%;margin:0;padding:0;}
 <script>
 var mapa = L.map('mapa', { zoomControl: false });
 mapa.setView([__LAT__, __LON__], 13);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© <a href="https://www.openstreetmap.org/copyright" style="color:#4B5563">OpenStreetMap</a>'
-}).addTo(mapa);
+// RNF-09: si el servidor de teselas de OpenStreetMap falla (3 errores),
+// el mapa cambia solo a un proveedor alternativo con los mismos datos de OSM.
+var OSM = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+var RESPALDO = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+var CREDITO = '© <a href="https://www.openstreetmap.org/copyright" style="color:#4B5563">OpenStreetMap</a>';
+var teselas = L.tileLayer(OSM, { maxZoom: 19, attribution: CREDITO }).addTo(mapa);
+var erroresTeselas = 0;
+teselas.on('tileerror', function () {
+  erroresTeselas += 1;
+  if (erroresTeselas === 3) {
+    mapa.attributionControl.removeAttribution(CREDITO);
+    teselas.options.attribution = CREDITO + ' · © <a href="https://carto.com/attributions" style="color:#4B5563">CARTO</a>';
+    mapa.attributionControl.addAttribution(teselas.options.attribution);
+    teselas.setUrl(RESPALDO);
+  }
+});
 var capas = { pois: null, ruta: null, yo: null };
 window.centrar = function(lat, lng) {
   mapa.flyTo([lat, lng], 16, { duration: 0.7 });

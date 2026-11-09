@@ -17,7 +17,7 @@ on:
 
 jobs:
   newman:
-    name: Colección Postman (36 casos, 3 procesos)
+    name: Colección Postman (40 casos, 3 procesos)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
