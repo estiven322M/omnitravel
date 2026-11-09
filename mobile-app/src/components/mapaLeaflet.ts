@@ -7,6 +7,11 @@
  *   mapa → app `{ tipo: 'listo' }` · `{ tipo: 'poi', id }`
  *   app → mapa `window.renderizar(pois, ruta, yo, ajustar)`,
  *              `window.centrar(lat, lng)`
+ *
+ * Etiquetas: cada lugar tiene su tarjeta, pero solo se muestran las que no se
+ * tapan entre sí (auditoría 6.8 ítem 4). Se priorizan el destino activo, las
+ * barreras y los lugares accesibles; las demás aparecen al acercar el mapa o
+ * al pasar el puntero / tocar el marcador.
  */
 
 export interface PoiEnMapa {
@@ -71,6 +76,8 @@ html,body,#mapa{height:100%;margin:0;padding:0;}
 .tarjeta small{display:block;font-size:10px;color:#5B6B86;}
 .tarjeta .ok{color:#0E7F43;}
 .tarjeta .alerta{color:#C2410C;}
+.leaflet-tooltip.tarjeta.oculta{visibility:hidden;}
+.leaflet-tooltip.tarjeta.al-frente{visibility:visible;z-index:1000;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 </head><body><div id="mapa"></div>
@@ -106,8 +113,33 @@ function tarjeta(p) {
   }
   return '<div class="fila">' + foto + '<div>' + lineas + '</div></div>';
 }
+var marcas = [];
+function prioridad(p) {
+  return p.activo ? 4 : p.barrera ? 3 : p.accesible ? 2 : 1;
+}
+function seTocan(a, b) {
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+}
+// Muestra las etiquetas por prioridad y oculta las que se superponen.
+function acomodarEtiquetas() {
+  var ocupadas = [];
+  marcas.forEach(function(m) {
+    var el = m.marca.getTooltip() && m.marca.getTooltip().getElement();
+    if (!el) { return; }
+    el.classList.remove('oculta');
+    var caja = el.getBoundingClientRect();
+    if (ocupadas.some(function(o) { return seTocan(caja, o); })) {
+      el.classList.add('oculta');
+    } else {
+      ocupadas.push(caja);
+    }
+  });
+}
+window.acomodarEtiquetas = acomodarEtiquetas;
+mapa.on('zoomend moveend resize', acomodarEtiquetas);
 window.renderizar = function(pois, ruta, yo, ajustar) {
   var grupo = L.featureGroup();
+  marcas = [];
   pois.forEach(function(p) {
     var marca;
     if (p.barrera) {
@@ -137,8 +169,19 @@ window.renderizar = function(pois, ruta, yo, ajustar) {
     marca.on('click', function() {
       enviar(JSON.stringify({ tipo: 'poi', id: String(p.id) }));
     });
+    // Al pasar el puntero (o enfocar), la etiqueta oculta se muestra encima.
+    marca.on('mouseover', function() {
+      var el = marca.getTooltip() && marca.getTooltip().getElement();
+      if (el) { el.classList.add('al-frente'); }
+    });
+    marca.on('mouseout', function() {
+      var el = marca.getTooltip() && marca.getTooltip().getElement();
+      if (el) { el.classList.remove('al-frente'); }
+    });
+    marcas.push({ marca: marca, prioridad: prioridad(p) });
     grupo.addLayer(marca);
   });
+  marcas.sort(function(a, b) { return b.prioridad - a.prioridad; });
   if (capas.pois) { mapa.removeLayer(capas.pois); }
   capas.pois = grupo;
   grupo.addTo(mapa);
@@ -165,6 +208,7 @@ window.renderizar = function(pois, ruta, yo, ajustar) {
       mapa.fitBounds(caja, { padding: [40, 40] });
     }
   }
+  setTimeout(acomodarEtiquetas, 0);
 };
 </script></body></html>`;
 

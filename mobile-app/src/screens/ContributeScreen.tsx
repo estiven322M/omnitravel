@@ -41,6 +41,7 @@ import {
   estaEtiquetaElegida,
   ETIQUETAS_RAPIDAS,
   TIPOS_POI,
+  errorDeCampo,
   validarPasoDetalles,
   validarPasoUbicacion,
   type BorradorReporte,
@@ -136,6 +137,19 @@ function ListaErrores({ errores }: { errores: string[] }) {
           <Text style={estilos.textoError}>{error}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+/** Error junto a un campo sin `CampoTexto` (chips de tipo, descripción). */
+function ErrorCampo({ mensaje }: { mensaje?: string }) {
+  if (!mensaje) {
+    return null;
+  }
+  return (
+    <View style={estilos.filaError}>
+      <Ionicons name="alert-circle" size={16} color={colors.danger} />
+      <Text style={estilos.textoError}>{mensaje}</Text>
     </View>
   );
 }
@@ -806,6 +820,7 @@ export function ContributeScreen() {
                   value={borrador.nombre}
                   onChangeText={(nombre) => actualizarBorrador({ nombre })}
                   autoCapitalize="words"
+                  error={errorDeCampo(erroresPaso, 'nombre')}
                 />
                 <View>
                   <Text style={estilos.etiquetaGrupo}>Tipo de lugar</Text>
@@ -821,6 +836,7 @@ export function ContributeScreen() {
                       />
                     ))}
                   </View>
+                  <ErrorCampo mensaje={errorDeCampo(erroresPaso, 'tipo')} />
                 </View>
                 <CampoTexto
                   etiqueta="Dirección (opcional)"
@@ -842,6 +858,7 @@ export function ContributeScreen() {
                   value={busquedaPoi}
                   onChangeText={setBusquedaPoi}
                   autoCapitalize="none"
+                  error={errorDeCampo(erroresPaso, 'lugar')}
                 />
                 {poisFiltrados.length === 0 ? (
                   <Text style={estilos.textoSecundario}>
@@ -927,6 +944,7 @@ export function ContributeScreen() {
                     <View style={estilos.campoMitad}>
                       <CampoTexto
                         etiqueta="Latitud"
+                        error={errorDeCampo(erroresPaso, 'ubicacion')}
                         icono="pin-outline"
                         placeholder="4.53389"
                         value={
@@ -1008,6 +1026,7 @@ export function ContributeScreen() {
                   })
                 }
               />
+              <ErrorCampo mensaje={errorDeCampo(erroresPaso, 'descripcion')} />
             </View>
 
             <View style={estilos.seccion}>

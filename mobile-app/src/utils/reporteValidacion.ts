@@ -54,22 +54,46 @@ export const TIPOS_POI: { valor: string; etiqueta: string }[] = [
   { valor: 'atraccion', etiqueta: 'Atracción' },
 ];
 
+/**
+ * Mensajes de validación por campo. La pantalla muestra cada uno junto a su
+ * campo (auditoría 6.8 ítem 6) y, además, el resumen del paso para el lector
+ * de pantalla.
+ */
+export const MENSAJES_VALIDACION = {
+  lugar: 'Selecciona el lugar que quieres actualizar.',
+  nombre: 'Escribe el nombre del lugar.',
+  tipo: 'Elige el tipo de lugar.',
+  ubicacion:
+    'Captura la ubicación del lugar con el botón de GPS (o escríbela).',
+  descripcion: 'Describe brevemente lo que encontraste.',
+} as const;
+
+export type CampoValidado = keyof typeof MENSAJES_VALIDACION;
+
+/** Mensaje de error de un campo concreto, o undefined si está bien. */
+export function errorDeCampo(
+  errores: string[],
+  campo: CampoValidado,
+): string | undefined {
+  return errores.find((error) => error === MENSAJES_VALIDACION[campo]);
+}
+
 /** Identificación del lugar (en el wizard reorganizado se exige en Paso 2). */
 export function validarPaso1(borrador: BorradorReporte): string[] {
   const errores: string[] = [];
 
   if (borrador.modo === 'actualizacion') {
     if (!borrador.poiId) {
-      errores.push('Selecciona el lugar que quieres actualizar.');
+      errores.push(MENSAJES_VALIDACION.lugar);
     }
     return errores;
   }
 
   if (!borrador.nombre.trim()) {
-    errores.push('Escribe el nombre del lugar.');
+    errores.push(MENSAJES_VALIDACION.nombre);
   }
   if (!borrador.tipoPoi) {
-    errores.push('Elige el tipo de lugar.');
+    errores.push(MENSAJES_VALIDACION.tipo);
   }
   return errores;
 }
@@ -85,9 +109,7 @@ export function validarUbicacion(borrador: BorradorReporte): string[] {
     borrador.modo === 'nuevo' &&
     (borrador.lat === null || borrador.lon === null)
   ) {
-    return [
-      'Captura la ubicación del lugar con el botón de GPS (o escríbela).',
-    ];
+    return [MENSAJES_VALIDACION.ubicacion];
   }
   return [];
 }
@@ -95,7 +117,7 @@ export function validarUbicacion(borrador: BorradorReporte): string[] {
 /** Paso 3 — el aporte necesita una descripción de lo que se encontró. */
 export function validarDescripcion(borrador: BorradorReporte): string[] {
   if (!borrador.descripcion.trim()) {
-    return ['Describe brevemente lo que encontraste.'];
+    return [MENSAJES_VALIDACION.descripcion];
   }
   return [];
 }

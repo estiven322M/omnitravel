@@ -2,6 +2,8 @@ import type { CaracteristicaAccesibilidad } from '../services/types';
 import {
   alternarEtiquetaRapida,
   BORRADOR_INICIAL,
+  errorDeCampo,
+  MENSAJES_VALIDACION,
   construirCaracteristicas,
   contarValoresRespondidos,
   estaEtiquetaElegida,
@@ -241,3 +243,37 @@ function porId(id: string): EtiquetaRapida {
   }
   return etiqueta;
 }
+
+describe('errorDeCampo (errores junto a cada campo, auditoría 6.8)', () => {
+  it('ubica cada error del paso en su campo', () => {
+    const errores = validarPasoUbicacion(
+      borrador({
+        modo: 'nuevo',
+        nombre: '',
+        tipoPoi: '',
+        lat: null,
+        lon: null,
+      }),
+    );
+    expect(errorDeCampo(errores, 'nombre')).toBe(MENSAJES_VALIDACION.nombre);
+    expect(errorDeCampo(errores, 'tipo')).toBe(MENSAJES_VALIDACION.tipo);
+    expect(errorDeCampo(errores, 'ubicacion')).toBe(
+      MENSAJES_VALIDACION.ubicacion,
+    );
+    expect(errorDeCampo(errores, 'descripcion')).toBeUndefined();
+  });
+
+  it('no marca campos cuando el paso está completo', () => {
+    const errores = validarPasoUbicacion(
+      borrador({
+        modo: 'nuevo',
+        nombre: 'Parque Sucre',
+        tipoPoi: 'parque',
+        lat: 4.53,
+        lon: -75.67,
+      }),
+    );
+    expect(errores).toEqual([]);
+    expect(errorDeCampo(errores, 'nombre')).toBeUndefined();
+  });
+});
