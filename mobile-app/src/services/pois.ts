@@ -152,8 +152,13 @@ function mapearEstado(estado: string): EstadoVerificacion {
   return 'PENDIENTE';
 }
 
+/** Categorías de la BD (sin tildes) → nombre que ve la persona. */
+const NOMBRE_CATEGORIA: Record<string, string> = { atraccion: 'Atracción' };
+
 function capitalizar(texto: string): string {
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
+  return (
+    NOMBRE_CATEGORIA[texto] ?? texto.charAt(0).toUpperCase() + texto.slice(1)
+  );
 }
 
 /** Respuesta de `GET /mapa`: filas con los nombres de columna de la BD. */
