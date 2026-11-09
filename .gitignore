@@ -60,3 +60,9 @@ docker-compose.override.yml
 docker-compose.dev.yml
 docker-compose.prod.yml
 infra/valhalla/data/valhalla/
+# ==========================================
+# Valhalla: teselas generadas (cientos de MB). Se reconstruyen con
+# infra/valhalla/README.md; solo se versiona la configuración valhalla.json.
+# ==========================================
+
+infra/valhalla/data/valhalla/

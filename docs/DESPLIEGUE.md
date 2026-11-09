@@ -15,7 +15,10 @@ Todo el sistema corre en **Amazon Web Services** (región `us-east-2`, Ohio), de
 | Fotos de evidencia | **Amazon S3** (bucket privado) | El backend las sube con el rol de la tarea de ECS |
 | App Android (APK) | EAS Build (Expo) | `eas build -p android --profile preview` |
 
-El motor de ruteo es el servidor público de Valhalla (`valhalla1.openstreetmap.de`).
+El motor de ruteo es el servidor público de Valhalla (`valhalla1.openstreetmap.de`);
+el backend lo consulta con tiempo límite de 12 s, hasta 3 intentos y, si no
+responde, devuelve 503 con un mensaje de contingencia (`infra/valhalla/README.md`
+explica cómo levantar uno propio).
 Ninguna clave va en el código. GitHub entra a AWS con **OIDC** (rol temporal);
 como la organización de AWS de la cuenta del equipo bloquea OIDC con una política
 SCP, se usa un usuario IAM de mínimos permisos cuyas claves se guardan como
@@ -103,7 +106,7 @@ En iPhone se usa la versión web.
 1. `<API_URL>/health` responde `{"status":"ok"}` y `<API_URL>/mapa` trae los lugares.
 2. La web (`WEB_URL`) abre, inicia sesión y muestra el mapa.
 3. Un reporte con foto se guarda: la foto queda en `s3://<bucket>/evidencia/…`.
-4. **Actions → Pruebas funcionales → Run workflow**: los 31 casos de Postman pasan.
+4. **Actions → Pruebas funcionales → Run workflow**: los 36 casos de Postman pasan.
 5. Antes de la sustentación, borra los datos de prueba:
 
    ```powershell
@@ -111,6 +114,35 @@ En iPhone se usa la versión web.
    npm run limpiar-pruebas                 # muestra qué se borraría
    npm run limpiar-pruebas -- --confirmar  # borra
    ```
+
+## 6. Respaldos y recuperación (auditoría NC-05)
+
+| Qué | Cómo | Recuperación |
+|---|---|---|
+| Base de datos (RDS) | Copias automáticas diarias (3:00 a. m. hora Colombia), retención de 7 días, con restauración a cualquier minuto (PITR) | RDS → *Restore to point in time* o desde la instantánea |
+| Línea base | Instantánea manual `omnitravel-respaldo-<fecha>` | RDS → *Snapshots* → *Restore* |
+| Fotos de evidencia (S3) | Versionado del bucket; las versiones anteriores se guardan 30 días | S3 → objeto → *Versions* → restaurar la versión |
+| Código y esquema | GitHub + migraciones versionadas `backend/sql/000…NNN` (`npm run migrar`) | `npm run migrar -- --aplicar` sobre una base vacía |
+
+**Configurar y probar** (CloudShell, región us-east-2):
+
+```bash
+bash respaldos.sh                         # copias automáticas, instantánea y versionado S3
+bash respaldos.sh --probar-restauracion   # además restaura en una base temporal,
+                                          # compara filas con producción y la elimina
+```
+
+**Procedimiento ante pérdida o daño de datos:**
+
+1. Identificar la hora del daño (registro de errores o `registro_auditoria`).
+2. RDS → base `omnitraveldb` → **Actions → Restore to point in time** con la hora
+   inmediatamente anterior; nombre `omnitraveldb-restaurada`.
+3. Verificar la restaurada (`npm run ver-lugares` con su `DATABASE_URL`).
+4. Cambiar el secreto `DATABASE_URL` en GitHub al nuevo endpoint y volver a
+   ejecutar **Despliegue en AWS** (o renombrar las instancias).
+5. Registrar el incidente en `docs/gestion/bitacora-incidentes.md`.
+
+**Objetivos:** RPO ≤ 5 minutos (PITR) · RTO ≈ 30 minutos (restaurar + redesplegar).
 
 ## Costos y apagado
 
