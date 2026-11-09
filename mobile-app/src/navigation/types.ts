@@ -33,6 +33,8 @@ export type RootStackParamList = {
   RevisionReporte: undefined;
   /** M06 — Incidencias post-viaje (Proceso 3). */
   Incidencias: undefined;
+  /** M02 — Puntos publicados hoy (hora de Colombia). */
+  VerificadosHoy: undefined;
   /** U11 — Notificaciones. */
   Notificaciones: undefined;
   DetallePoi: { poiId: string };

@@ -228,7 +228,7 @@ export function DashboardModeradorScreen() {
                 icono="checkmark"
                 color={colors.success}
                 fondo="#EAF6EF"
-                onPress={irAReportes}
+                onPress={() => navigation.navigate('VerificadosHoy')}
               />
             </View>
 

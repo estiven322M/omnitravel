@@ -119,6 +119,8 @@ interface FilaReporteModeracion {
   estado: string;
   descripcion: string | null;
   fecha_creacion: string;
+  fecha_resolucion?: string | null;
+  via_resolucion?: string | null;
   es_critico: boolean | null;
   autor: string | null;
   confirmaciones: number | null;
@@ -170,6 +172,8 @@ export function mapearReporteModeracion(
     estado: (fila.estado ?? '').trim().toLowerCase(),
     descripcion: fila.descripcion ?? '',
     fechaCreacion: fila.fecha_creacion,
+    fechaResolucion: fila.fecha_resolucion ?? null,
+    viaResolucion: fila.via_resolucion ?? null,
     esCritico: fila.es_critico === true,
     autor: fila.autor,
     confirmaciones: fila.confirmaciones ?? 0,

@@ -147,3 +147,52 @@ describe('profileStore', () => {
     expect(useProfileStore.getState().perfil?.idCuenta).toBe('2');
   });
 });
+
+describe('filtros de accesibilidad por cuenta', () => {
+  beforeEach(() => {
+    useProfileStore.setState({ perfil: null, preferencias: undefined });
+  });
+
+  it('se conservan al cerrar sesión y volver a entrar con la misma cuenta', () => {
+    const { guardarPerfil, establecerFiltros, cerrarSesion } =
+      useProfileStore.getState();
+    guardarPerfil({
+      nombre: 'Ana',
+      necesidades: [],
+      filtrosActivos: [],
+      idCuenta: '7',
+    });
+    establecerFiltros(['sin_escalones', 'ascensor_amplio']);
+    cerrarSesion();
+
+    // El inicio de sesión no conoce los filtros: llegan vacíos.
+    guardarPerfil({
+      nombre: 'Ana',
+      necesidades: [],
+      filtrosActivos: [],
+      idCuenta: '7',
+    });
+    expect(useProfileStore.getState().perfil?.filtrosActivos).toEqual([
+      'sin_escalones',
+      'ascensor_amplio',
+    ]);
+  });
+
+  it('no se mezclan entre cuentas distintas', () => {
+    const { guardarPerfil, establecerFiltros } = useProfileStore.getState();
+    guardarPerfil({
+      nombre: 'Ana',
+      necesidades: [],
+      filtrosActivos: [],
+      idCuenta: '7',
+    });
+    establecerFiltros(['sin_escalones']);
+    guardarPerfil({
+      nombre: 'Beto',
+      necesidades: [],
+      filtrosActivos: [],
+      idCuenta: '8',
+    });
+    expect(useProfileStore.getState().perfil?.filtrosActivos).toEqual([]);
+  });
+});

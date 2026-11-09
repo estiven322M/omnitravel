@@ -32,7 +32,8 @@ export class ModeracionService {
            (select count(*)::int from reporte where estado = 'pendiente_validacion') as pendientes,
            (select count(*)::int from incidencia where estado in ('abierta', 'en_proceso')) as discrepancias,
            (select count(*)::int from reporte
-             where estado = 'publicado' and fecha_resolucion >= date_trunc('day', now())) as verificados_hoy`,
+             where estado = 'publicado'
+               and fecha_resolucion >= (date_trunc('day', now() at time zone 'America/Bogota') at time zone 'America/Bogota')) as verificados_hoy`,
         ),
         this.db.query(
           `select r.id_reporte::int, r.tipo, r.fecha_creacion, p.nombre as poi_nombre, p.direccion,

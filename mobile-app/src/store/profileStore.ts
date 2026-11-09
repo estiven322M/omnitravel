@@ -47,6 +47,28 @@ export interface PerfilAccesibilidad {
 
 export type ModoIngreso = 'viajero' | 'moderacion';
 
+export interface PreferenciasCuenta {
+  necesidades: NecesidadAccesibilidad[];
+  filtrosActivos: FiltroId[];
+}
+
+/** Guarda las preferencias del perfil actual bajo su cuenta. */
+function conPreferencias(
+  preferencias: Record<string, PreferenciasCuenta> | undefined,
+  perfil: PerfilAccesibilidad,
+): Record<string, PreferenciasCuenta> | undefined {
+  if (!perfil.idCuenta) {
+    return preferencias;
+  }
+  return {
+    ...preferencias,
+    [perfil.idCuenta]: {
+      necesidades: perfil.necesidades,
+      filtrosActivos: perfil.filtrosActivos,
+    },
+  };
+}
+
 interface EstadoPerfil {
   /** true cuando el store terminó de leer el almacenamiento seguro. */
   hidratado: boolean;
@@ -57,6 +79,12 @@ interface EstadoPerfil {
    * olvida solo si la persona lo pide.
    */
   ultimoEmail?: string;
+  /**
+   * Necesidades y filtros de accesibilidad POR CUENTA, cifrados en el
+   * dispositivo: sobreviven al cierre de sesión y se restauran al volver a
+   * entrar. Solo cambian cuando la persona los cambia.
+   */
+  preferencias?: Record<string, PreferenciasCuenta>;
   guardarPerfil: (perfil: DatosPerfil) => void;
   recordarEmail: (email: string) => void;
   olvidarEmail: () => void;
@@ -88,9 +116,22 @@ export const useProfileStore = create<EstadoPerfil>()(
       perfil: null,
       ultimoEmail: undefined,
       guardarPerfil: (datos) =>
-        set((estado) => ({
-          perfil: {
+        set((estado) => {
+          // Al volver a entrar con la misma cuenta se restauran sus filtros
+          // y necesidades (el inicio de sesión no los conoce).
+          const guardadas = datos.idCuenta
+            ? estado.preferencias?.[datos.idCuenta]
+            : undefined;
+          const perfil: PerfilAccesibilidad = {
             ...datos,
+            necesidades:
+              datos.necesidades.length > 0 || !guardadas
+                ? datos.necesidades
+                : guardadas.necesidades,
+            filtrosActivos:
+              datos.filtrosActivos.length > 0 || !guardadas
+                ? datos.filtrosActivos
+                : guardadas.filtrosActivos,
             rol: datos.rol ?? 'viajero',
             creadoEn: new Date().toISOString(),
             // La foto sobrevive únicamente entre sesiones de LA MISMA
@@ -101,8 +142,12 @@ export const useProfileStore = create<EstadoPerfil>()(
               estado.perfil?.idCuenta === datos.idCuenta
                 ? (datos.fotoUri ?? estado.perfil?.fotoUri)
                 : datos.fotoUri,
-          },
-        })),
+          };
+          return {
+            perfil,
+            preferencias: conPreferencias(estado.preferencias, perfil),
+          };
+        }),
       recordarEmail: (email) =>
         set({ ultimoEmail: email.trim().toLowerCase() }),
       olvidarEmail: () => set({ ultimoEmail: undefined }),
@@ -118,16 +163,23 @@ export const useProfileStore = create<EstadoPerfil>()(
           const activos = estado.perfil.filtrosActivos.includes(filtro)
             ? estado.perfil.filtrosActivos.filter((f) => f !== filtro)
             : [...estado.perfil.filtrosActivos, filtro];
+          const perfil = { ...estado.perfil, filtrosActivos: activos };
           return {
-            perfil: { ...estado.perfil, filtrosActivos: activos },
+            perfil,
+            preferencias: conPreferencias(estado.preferencias, perfil),
           };
         }),
       establecerFiltros: (filtros) =>
-        set((estado) =>
-          estado.perfil
-            ? { perfil: { ...estado.perfil, filtrosActivos: filtros } }
-            : estado,
-        ),
+        set((estado) => {
+          if (!estado.perfil) {
+            return estado;
+          }
+          const perfil = { ...estado.perfil, filtrosActivos: filtros };
+          return {
+            perfil,
+            preferencias: conPreferencias(estado.preferencias, perfil),
+          };
+        }),
       cerrarSesion: () => set({ perfil: null }),
     }),
     {
@@ -136,6 +188,7 @@ export const useProfileStore = create<EstadoPerfil>()(
       partialize: (estado) => ({
         perfil: estado.perfil,
         ultimoEmail: estado.ultimoEmail,
+        preferencias: estado.preferencias,
       }),
       onRehydrateStorage: () => () => {
         // Marca la hidratación incluso si el almacenamiento falla:

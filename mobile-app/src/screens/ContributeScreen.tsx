@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import * as Location from 'expo-location';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Image,
@@ -32,6 +31,11 @@ import {
 } from '../services/evidencias';
 import { crearReporte, ReporteError } from '../services/reportes';
 import type { IconName } from '../services/types';
+import {
+  mensajeDeUbicacion,
+  obtenerUbicacionActual,
+  UbicacionError,
+} from '../services/ubicacion';
 import { usePoisStore } from '../store/poisStore';
 import {
   alternarEtiquetaRapida,
@@ -287,6 +291,9 @@ export function ContributeScreen() {
 
   const actualizarBorrador = (parcial: Partial<BorradorReporte>) => {
     setBorrador((anterior) => ({ ...anterior, ...parcial }));
+    // Los errores se recalculan al pulsar «Continuar»: al cambiar un dato ya
+    // no aplican (p. ej. pasar de «lugar nuevo» a «actualizar»).
+    setErroresPaso([]);
   };
 
   const actualizarValor = (id: string, valor: ValorBorrador) => {
@@ -320,6 +327,13 @@ export function ContributeScreen() {
         poi.nombre.toLowerCase().includes(busquedaPoi.trim().toLowerCase()),
       )
     : pois;
+
+  // Cada paso empieza arriba: así se ve primero lo que hay que diligenciar
+  // (p. ej. la descripción de la barrera) y no las etiquetas del final.
+  const desplazamientoRef = useRef<ScrollView | null>(null);
+  useEffect(() => {
+    desplazamientoRef.current?.scrollTo({ y: 0, animated: false });
+  }, [paso]);
 
   const anunciar = (mensaje: string) => {
     if (Platform.OS === 'ios') {
@@ -363,22 +377,14 @@ export function ContributeScreen() {
     setUbicacionCargando(true);
     setErrorUbicacion(null);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorUbicacion(
-          'Sin permiso de ubicación. Actívalo en los ajustes del teléfono o escríbela abajo.',
-        );
-        return;
-      }
-      const posicion = await Location.getCurrentPositionAsync({});
-      actualizarBorrador({
-        lat: posicion.coords.latitude,
-        lon: posicion.coords.longitude,
-      });
+      const posicion = await obtenerUbicacionActual();
+      actualizarBorrador({ lat: posicion.latitude, lon: posicion.longitude });
       anunciar('Ubicación capturada.');
-    } catch {
+    } catch (error) {
       setErrorUbicacion(
-        'No pudimos obtener tu ubicación. Inténtalo de nuevo o escríbela abajo.',
+        error instanceof UbicacionError
+          ? error.message
+          : mensajeDeUbicacion('no-disponible'),
       );
     } finally {
       setUbicacionCargando(false);
@@ -621,6 +627,7 @@ export function ContributeScreen() {
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top']}>
       <ScrollView
+        ref={desplazamientoRef}
         contentContainerStyle={estilos.contenido}
         keyboardShouldPersistTaps="handled"
       >

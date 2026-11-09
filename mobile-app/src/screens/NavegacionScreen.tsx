@@ -32,6 +32,7 @@ import {
 } from '../services/api/routes';
 import type { PasoRuta, ResultadoRuta } from '../services/types';
 import { usePoisStore } from '../store/poisStore';
+import { useBusquedaStore } from '../store/busquedaStore';
 import { useProfileStore } from '../store/profileStore';
 import { formatearDistancia } from '../utils/format';
 import {
@@ -63,6 +64,10 @@ const ETIQUETA_PERFIL: Record<string, string> = {
   visual: 'Perfil visual',
   peatonal: 'Perfil peatonal',
 };
+
+/** Alerta que se muestra cuando la persona se aleja del trayecto accesible. */
+const ALERTA_DESVIO =
+  'Te desviaste más de 60 m de la ruta accesible. Vuelve al trayecto azul o pulsa «Cambiar ruta».';
 
 /**
  * U07 — Navegación paso a paso.
@@ -120,6 +125,11 @@ export function NavegacionScreen() {
   const [visitaId, setVisitaId] = useState<number | null>(null);
   const [errorVisita, setErrorVisita] = useState<string | null>(null);
   const [finalizando, setFinalizando] = useState(false);
+  /** Alertas de la ruta (avisos del motor y desvíos) y cuáles ya se leyeron. */
+  const [fueraDeRuta, setFueraDeRuta] = useState(false);
+  const [alertasLeidas, setAlertasLeidas] = useState<string[]>([]);
+  const [panelAlertas, setPanelAlertas] = useState(false);
+  const establecerBusqueda = useBusquedaStore((estado) => estado.establecer);
   const visitaSolicitada = useRef(false);
 
   const cargando = resultado === undefined && !error;
@@ -132,6 +142,18 @@ export function NavegacionScreen() {
       ? resultado.alternativa
       : resultado;
   const pasos = useMemo(() => rutaMostrada?.pasos ?? [], [rutaMostrada]);
+  const alertas = useMemo(
+    () => [
+      ...(fueraDeRuta ? [ALERTA_DESVIO] : []),
+      ...(rutaMostrada?.advertencias ?? []),
+    ],
+    [fueraDeRuta, rutaMostrada],
+  );
+  const alertasNuevas = alertas.filter((a) => !alertasLeidas.includes(a));
+  const cerrarAlertas = () => {
+    setAlertasLeidas(alertas);
+    setPanelAlertas(false);
+  };
   const coordenadasRuta = useMemo(
     () => rutaMostrada?.coordenadas ?? [],
     [rutaMostrada],
@@ -227,6 +249,8 @@ export function NavegacionScreen() {
           if (desvioM <= 60) {
             setRecorridoM((previo) => Math.max(previo, avance));
           }
+          // Más de 60 m fuera del trayecto: alerta de desvío (campana roja).
+          setFueraDeRuta(desvioM > 60);
         },
       );
       if (!activo) {
@@ -329,6 +353,13 @@ export function NavegacionScreen() {
       vigente = false;
     };
   }, [poi?.id]);
+
+  // Inicio conserva en su buscador el lugar que se está visitando.
+  useEffect(() => {
+    if (poi?.nombre) {
+      establecerBusqueda(poi.nombre);
+    }
+  }, [poi?.nombre, establecerBusqueda]);
 
   // Guía por voz: narra la maniobra vigente cuando está activa (es-ES).
   useEffect(() => {
@@ -608,6 +639,69 @@ export function NavegacionScreen() {
             onPoiPulsado={() => undefined}
           />
         )}
+        {alertas.length > 0 ? (
+          <Pressable
+            onPress={() => setPanelAlertas(true)}
+            style={estilos.campana}
+            accessibilityRole="button"
+            accessibilityLabel={
+              alertasNuevas.length > 0
+                ? `Alertas de la ruta: ${alertasNuevas.length} sin leer`
+                : 'Alertas de la ruta'
+            }
+          >
+            <Ionicons
+              name={
+                alertasNuevas.length > 0
+                  ? 'notifications'
+                  : 'notifications-outline'
+              }
+              size={24}
+              color={
+                alertasNuevas.length > 0 ? colors.danger : colors.textPrimary
+              }
+            />
+            {alertasNuevas.length > 0 ? (
+              <View style={estilos.puntoCampana}>
+                <Text style={estilos.numeroCampana}>
+                  {alertasNuevas.length}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
+        {panelAlertas ? (
+          <View
+            style={estilos.panelAlertas}
+            accessibilityViewIsModal
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={estilos.tituloAlertas} accessibilityRole="header">
+              Alertas de la ruta
+            </Text>
+            {alertas.map((alerta) => (
+              <View key={alerta} style={estilos.filaAlerta}>
+                <Ionicons
+                  name={
+                    alerta === ALERTA_DESVIO ? 'warning' : 'information-circle'
+                  }
+                  size={18}
+                  color={
+                    alerta === ALERTA_DESVIO
+                      ? colors.danger
+                      : colors.warningText
+                  }
+                />
+                <Text style={estilos.textoAlerta}>{alerta}</Text>
+              </View>
+            ))}
+            <AppButton
+              titulo="Entendido, seguir navegando"
+              onPress={cerrarAlertas}
+              icono="checkmark"
+            />
+          </View>
+        ) : null}
       </View>
 
       <View style={estilos.hoja}>
@@ -985,6 +1079,70 @@ const estilos = StyleSheet.create({
   textoCargando: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+  },
+  campana: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET / 2,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  puntoCampana: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  numeroCampana: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+  },
+  panelAlertas: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  tituloAlertas: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  filaAlerta: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  textoAlerta: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.textPrimary,
+    lineHeight: 20,
   },
   hoja: {
     backgroundColor: colors.white,

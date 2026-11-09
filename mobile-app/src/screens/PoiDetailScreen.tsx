@@ -30,8 +30,8 @@ import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
 import { fotosDelLugar, type FotoPoi } from '../services/mocks/fotosPoi';
 import {
   experienciasDePoi,
-  finalizarVisita,
-  iniciarVisita,
+  visitasPendientes,
+  type VisitaPendiente,
 } from '../services/api/feedback';
 import {
   confirmarReporte,
@@ -40,7 +40,6 @@ import {
 } from '../services/reportes';
 import type { ExperienciaViajero, ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
-import { Alerta } from '../utils/alerta';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
 import { usaPanelModeracion } from '../services/inicioSesion';
@@ -190,32 +189,43 @@ export function PoiDetailScreen() {
   );
 
   /**
-   * Proceso 3 — visita presencial sin ruta: registra la visita, la cierra y
-   * abre la calificación (FeedbackScreen), igual que «Finalizar ruta» (U07).
+   * Proceso 3 — solo se califica una visita COMPLETADA: la que se cierra al
+   * terminar la navegación hasta el lugar («Finalizar ruta», U07) y aún no
+   * tiene calificación. Sin ella el botón queda deshabilitado y lo explica.
    */
-  const [registrandoVisita, setRegistrandoVisita] = useState(false);
-  const calificarVisitaPresencial = async () => {
-    const lugar = poiPorId(poiId);
-    if (!lugar || registrandoVisita) {
+  const [visitaPorCalificar, setVisitaPorCalificar] = useState<
+    VisitaPendiente | null | undefined
+  >(undefined);
+  useFocusEffect(
+    useCallback(() => {
+      let vigente = true;
+      visitasPendientes()
+        .then((lista) => {
+          if (vigente) {
+            setVisitaPorCalificar(
+              lista.find((visita) => String(visita.poi_id) === poiId) ?? null,
+            );
+          }
+        })
+        .catch(() => {
+          if (vigente) {
+            setVisitaPorCalificar(null);
+          }
+        });
+      return () => {
+        vigente = false;
+      };
+    }, [poiId]),
+  );
+  const calificarVisita = () => {
+    if (!visitaPorCalificar) {
       return;
     }
-    setRegistrandoVisita(true);
-    try {
-      const { visita } = await iniciarVisita(lugar.id);
-      await finalizarVisita(visita.id_visita);
-      navigation.navigate('Feedback', {
-        visitaId: visita.id_visita,
-        poiId: lugar.id,
-        poiNombre: lugar.nombre,
-      });
-    } catch (error) {
-      Alerta.alert(
-        'No pudimos registrar tu visita',
-        (error as Error)?.message ?? 'Revisa tu conexión e inténtalo de nuevo.',
-      );
-    } finally {
-      setRegistrandoVisita(false);
-    }
+    navigation.navigate('Feedback', {
+      visitaId: visitaPorCalificar.id_visita,
+      poiId,
+      poiNombre: visitaPorCalificar.poi_nombre,
+    });
   };
 
   const poi = poiPorId(poiId);
@@ -557,15 +567,23 @@ export function PoiDetailScreen() {
             />
           </View>
           {!enPanelModeracion ? (
-            <AppButton
-              titulo="Calificar mi visita"
-              variante="fantasma"
-              icono="star-outline"
-              cargando={registrandoVisita}
-              deshabilitado={registrandoVisita}
-              onPress={() => void calificarVisitaPresencial()}
-              pistaAccesibilidad="Registra que visitaste el lugar y abre la calificación"
-            />
+            <>
+              <AppButton
+                titulo="Calificar mi visita"
+                variante="fantasma"
+                icono="star-outline"
+                cargando={visitaPorCalificar === undefined}
+                deshabilitado={!visitaPorCalificar}
+                onPress={calificarVisita}
+                pistaAccesibilidad="Abre la calificación de tu visita completada"
+              />
+              {visitaPorCalificar === null ? (
+                <Text style={estilos.ayudaCalificar}>
+                  Podrás calificar este lugar cuando completes una visita: pulsa
+                  «Cómo llegar» y termina la navegación hasta aquí.
+                </Text>
+              ) : null}
+            </>
           ) : null}
           {reporteConfirmable ? (
             <Text
@@ -961,6 +979,12 @@ const estilos = StyleSheet.create({
   },
   boton: {
     flex: 1,
+  },
+  ayudaCalificar: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: -spacing.sm,
   },
   progresoConfirmaciones: {
     fontSize: fontSize.sm,
