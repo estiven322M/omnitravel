@@ -16,6 +16,11 @@ export class ModeracionController {
     return this.moderacion.resumen(usuario.id);
   }
 
+  @Get('estadisticas')
+  estadisticas(@UsuarioActual() usuario: UsuarioToken) {
+    return this.moderacion.estadisticas(usuario.id);
+  }
+
   @Get('incidencias')
   incidencias(@UsuarioActual() usuario: UsuarioToken) {
     return this.moderacion.incidencias(usuario.id);
