@@ -41,6 +41,7 @@ import {
   estaEtiquetaElegida,
   ETIQUETAS_RAPIDAS,
   TIPOS_POI,
+  errorDeCampo,
   validarPasoDetalles,
   validarPasoUbicacion,
   type BorradorReporte,
@@ -140,6 +141,19 @@ function ListaErrores({ errores }: { errores: string[] }) {
   );
 }
 
+/** Error junto a un campo sin `CampoTexto` (chips de tipo, descripción). */
+function ErrorCampo({ mensaje }: { mensaje?: string }) {
+  if (!mensaje) {
+    return null;
+  }
+  return (
+    <View style={estilos.filaError}>
+      <Ionicons name="alert-circle" size={16} color={colors.danger} />
+      <Text style={estilos.textoError}>{mensaje}</Text>
+    </View>
+  );
+}
+
 /** Barra de 4 pasos: círculos completados/activo/pendiente + conectores. */
 function BarraPasos({ paso }: { paso: Paso }) {
   return (
@@ -218,7 +232,7 @@ function EtiquetaChip({
       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
       accessibilityRole="checkbox"
       accessibilityLabel={etiqueta.etiqueta}
-      accessibilityState={{ checked: activa }}
+      aria-checked={activa}
       style={({ pressed }) => [
         estilos.etiquetaChip,
         { backgroundColor: PALETA_TONO[etiqueta.tono].fondo },
@@ -395,7 +409,7 @@ export function ContributeScreen() {
     setErrorEnvio(null);
     try {
       // La evidencia se sube primero; si falla, el reporte viaja sin foto
-      // (degradación con gracia, RNF-19).
+      // (degradación con gracia, RNF-09).
       let storageKey: string | null = null;
       let avisoFoto: string | undefined;
       if (foto) {
@@ -641,9 +655,7 @@ export function ContributeScreen() {
             <Pressable
               onPress={() => elegirTipo(false)}
               accessibilityRole="radio"
-              accessibilityState={{
-                selected: tipoElegido && !borrador.esCritico,
-              }}
+              aria-checked={tipoElegido && !borrador.esCritico}
               accessibilityHint="Reporta un lugar que cuenta con condiciones de accesibilidad para todas las personas"
               style={[
                 estilos.tarjetaTipo,
@@ -683,9 +695,7 @@ export function ContributeScreen() {
             <Pressable
               onPress={() => elegirTipo(true)}
               accessibilityRole="radio"
-              accessibilityState={{
-                selected: tipoElegido && borrador.esCritico,
-              }}
+              aria-checked={tipoElegido && borrador.esCritico}
               accessibilityHint="Reporta una barrera u obstáculo que dificulte la movilidad o el acceso en un lugar"
               style={[
                 estilos.tarjetaTipo,
@@ -744,7 +754,7 @@ export function ContributeScreen() {
                     actualizarBorrador({ modo: 'nuevo', poiId: null })
                   }
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: borrador.modo === 'nuevo' }}
+                  aria-checked={borrador.modo === 'nuevo'}
                   accessibilityHint="Un lugar que todavía no aparece en el mapa"
                   style={[
                     estilos.opcion,
@@ -769,9 +779,7 @@ export function ContributeScreen() {
                 <Pressable
                   onPress={() => actualizarBorrador({ modo: 'actualizacion' })}
                   accessibilityRole="radio"
-                  accessibilityState={{
-                    selected: borrador.modo === 'actualizacion',
-                  }}
+                  aria-checked={borrador.modo === 'actualizacion'}
                   accessibilityHint="Corrige o amplía los datos de un lugar del mapa"
                   style={[
                     estilos.opcion,
@@ -806,6 +814,7 @@ export function ContributeScreen() {
                   value={borrador.nombre}
                   onChangeText={(nombre) => actualizarBorrador({ nombre })}
                   autoCapitalize="words"
+                  error={errorDeCampo(erroresPaso, 'nombre')}
                 />
                 <View>
                   <Text style={estilos.etiquetaGrupo}>Tipo de lugar</Text>
@@ -821,6 +830,7 @@ export function ContributeScreen() {
                       />
                     ))}
                   </View>
+                  <ErrorCampo mensaje={errorDeCampo(erroresPaso, 'tipo')} />
                 </View>
                 <CampoTexto
                   etiqueta="Dirección (opcional)"
@@ -842,6 +852,7 @@ export function ContributeScreen() {
                   value={busquedaPoi}
                   onChangeText={setBusquedaPoi}
                   autoCapitalize="none"
+                  error={errorDeCampo(erroresPaso, 'lugar')}
                 />
                 {poisFiltrados.length === 0 ? (
                   <Text style={estilos.textoSecundario}>
@@ -855,7 +866,7 @@ export function ContributeScreen() {
                         key={poi.id}
                         onPress={() => actualizarBorrador({ poiId: poi.id })}
                         accessibilityRole="radio"
-                        accessibilityState={{ selected: activo }}
+                        aria-checked={activo}
                         accessibilityLabel={`${poi.nombre}, ${poi.categoria}`}
                         style={[
                           estilos.filaLugar,
@@ -927,6 +938,7 @@ export function ContributeScreen() {
                     <View style={estilos.campoMitad}>
                       <CampoTexto
                         etiqueta="Latitud"
+                        error={errorDeCampo(erroresPaso, 'ubicacion')}
                         icono="pin-outline"
                         placeholder="4.53389"
                         value={
@@ -1008,6 +1020,7 @@ export function ContributeScreen() {
                   })
                 }
               />
+              <ErrorCampo mensaje={errorDeCampo(erroresPaso, 'descripcion')} />
             </View>
 
             <View style={estilos.seccion}>
@@ -1439,7 +1452,7 @@ const estilos = StyleSheet.create({
   tituloTipoBarrera: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: colors.warning,
+    color: colors.warningText,
   },
   textoTipo: {
     fontSize: fontSize.sm,

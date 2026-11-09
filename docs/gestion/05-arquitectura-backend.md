@@ -23,7 +23,7 @@ src/
 ├── common/                       # filtros de excepción, interceptores, DTO comunes
 │   └── exception/                # formato de error `Error` y códigos estables
 ├── security/                     # guards JWT, RBAC por rol, decoradores, extracción de identidad
-├── auth/                         # registro, login, sesión (JWT propio del backend, bcrypt; ver ADR-007)
+├── auth/                         # registro, login, sesión (JWT propio del backend, bcrypt; ver ADR-09)
 ├── users/                        # perfiles públicos (sin datos sensibles), roles, estados
 ├── pois/                         # catálogo POI, búsqueda por bounding box (GeoJSON), detalle
 ├── accessibility/                # catálogo de características y valores vigentes por POI
@@ -44,26 +44,26 @@ Módulos con `@Module` por dominio; servicio y controlador separados; DTO con `c
 - Storage: la app sube evidencia a S3 con credenciales presignadas de corta duración; el backend valida tipo/tamaño antes de emitirlas y registra los metadatos.
 
 ## Persistencia
-- PostgreSQL + PostGIS en **AWS RDS** (base `omnitravel_db`, puerto 5432, conexión con SSL). El backend es la única puerta a la BD: la app nunca se conecta directamente. SRID 4326 e índices GIST para todo lo geoespacial (RNF-04). El `postgis/postgis:17-3.5` de `docker-compose.yml` queda solo como opción local de desarrollo.
+- PostgreSQL + PostGIS en **AWS RDS** (base `omnitravel_db`, puerto 5432, conexión con SSL). El backend es la única puerta a la BD: la app nunca se conecta directamente. SRID 4326 e índices GIST para todo lo geoespacial (RNF-02). El `postgis/postgis:17-3.5` de `docker-compose.yml` queda solo como opción local de desarrollo.
 - ORM del framework con operaciones ordinarias y SQL espacial selectiva encapsulada (índices GIST, `ST_DWithin`, `ST_Intersects`).
 - Configuración por variables de entorno desde un archivo `.env` no versionado (`DATABASE_URL` de AWS RDS, `DB_SSL`, `JWT_SECRET`, credenciales de S3, token de push). Nunca credenciales en el repositorio.
 - Migraciones SQL aditivas e idempotentes en `backend/sql/` (TypeORM con `synchronize: false`). Los datos del proyecto Supabase anterior se copian con `backend/scripts/copiar-supabase-a-aws.mjs`.
-- El backend **no persiste** datos sensibles de discapacidad (RNF-07): el cliente los guarda localmente y envía solo parámetros de restricción anónimos y temporales.
+- El backend **no persiste** datos sensibles de discapacidad (RNF-22): el cliente los guarda localmente y envía solo parámetros de restricción anónimos y temporales.
 
 ## Motor de ruteo (Valhalla)
 - Contenedor ya provisionado (`omnitravel-valhalla`, comando `valhalla_service /data/valhalla.json`, puerto 8002; tiles en `./infra/valhalla/data`).
-- Pendiente operativo: generar el grafo con *extracto OSM* del Quindío, activar `costing` peatonal accesible y el mecanismo de exclusión de segmentos con barreras (RNF-21/RNF-26: hoy el backend usa `costing: 'auto'`, notado en `src/services/api/routes.ts`).
-- El backend es el único cliente de Valhalla; añade referencia de perfil del usuario como **parámetros anónimos** del payload, nunca datos personales (RNF-07), y maneja los fallos con mensajes claros (RNF-17).
+- Pendiente operativo: generar el grafo con *extracto OSM* del Quindío, activar `costing` peatonal accesible y el mecanismo de exclusión de segmentos con barreras (RNF-26/RNF-26: hoy el backend usa `costing: 'auto'`, notado en `src/services/api/routes.ts`).
+- El backend es el único cliente de Valhalla; añade referencia de perfil del usuario como **parámetros anónimos** del payload, nunca datos personales (RNF-22), y maneja los fallos con mensajes claros (RNF-09).
 
 ## Transacciones y consistencia
 - Confirmación comunitaria (C3): transacción con bloqueo del POI; incremento de `confirmaciones` idempotente y `UNIQUE(poi_id, usuario_id)`; la 3ra confirmación publica exactamente una vez.
 - Decisión del moderador (A1): transacción que fija el estado del reporte y del POI de forma coherente, registrando auditoría inmutable (RNF-30).
-- Subida de evidencia: reintentos en el dispositivo ante fallos de red ≤ 5 min sin perder evidencia (RNF-19); los metadatos se registran solo tras la confirmación de la subida en S3.
+- Subida de evidencia: reintentos en el dispositivo ante fallos de red ≤ 5 min sin perder evidencia (RNF-09); los metadatos se registran solo tras la confirmación de la subida en S3.
 
 ## Observabilidad y configuración
 - Configuración única (ConfigModule con `envSchema`), secretos por variables de entorno; Swagger/OpenAPI habilitado en desarrollo y revisado antes del despliegue (exposición pública).
 - Logs estructurados con identificadores de correlación; sin contraseñas, tokens, coordenadas persistentes ni datos personales innecesarios.
-- Healthcheck: `GET /health` o endpoint equivalente para monitoreo (RNF-16).
+- Healthcheck: `GET /health` o endpoint equivalente para monitoreo (RNF-06).
 
 ## Despliegue
 - Local: `docker-compose.yml` (PostGIS + Valhalla) + `npx expo start` para la app.

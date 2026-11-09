@@ -187,7 +187,13 @@ export interface ReporteModeracion {
     lon?: number;
   };
   valores: ValorCaracteristicaReporte[];
-  evidencia: { id: string; tipo: string; storageKey: string }[];
+  evidencia: {
+    id: string;
+    tipo: string;
+    storageKey: string;
+    /** Permiso temporal de lectura que firma el backend (`exp=…&firma=…`). */
+    acceso: string | null;
+  }[];
 }
 
 /** Acción ejecutiva del moderador sobre un reporte (M05). */

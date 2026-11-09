@@ -246,7 +246,11 @@ export function ReportesPendientesScreen() {
           return (
             <View style={estilos.tarjeta}>
               <FotoReporte
-                uri={foto ? urlPublicaEvidencia(foto.storageKey) : null}
+                uri={
+                  foto
+                    ? urlPublicaEvidencia(foto.storageKey, foto.acceso)
+                    : null
+                }
                 nombre={item.poi.nombre}
                 tipo={item.poi.tipo}
               />

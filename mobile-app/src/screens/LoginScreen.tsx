@@ -197,7 +197,7 @@ export function LoginScreen() {
 
   /**
    * El backend aún no envía correos de recuperación: se informa con
-   * transparencia en lugar de simular un envío (RNF-17).
+   * transparencia en lugar de simular un envío (RNF-09).
    */
   const recuperarContrasena = () => {
     Alerta.alert(
@@ -277,7 +277,7 @@ export function LoginScreen() {
                     activa ? estilos.opcionRolActiva : null,
                   ]}
                   accessibilityRole="radio"
-                  accessibilityState={{ checked: activa }}
+                  aria-checked={activa}
                   accessibilityLabel={opcion.titulo}
                   accessibilityHint={opcion.ayuda}
                 >

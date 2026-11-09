@@ -1,0 +1,39 @@
+Issue Id,Parent Id,Issue Type,Summary,Assignee,Start date,Due date,Sprint,Status,Labels
+E1,,Epic,Proceso 1 - Validación colaborativa de infraestructura,,2026-08-18,2026-11-10,,Done,omnitravel
+E2,,Epic,Proceso 2 - Planificación de rutas accesibles,,2026-08-18,2026-11-10,,Done,omnitravel
+E3,,Epic,Proceso 3 - Retroalimentación e incidencias post-viaje,,2026-08-18,2026-11-10,,Done,omnitravel
+E4,,Epic,"Plataforma, calidad y despliegue",,2026-08-18,2026-11-10,,Done,omnitravel
+T1,E4,Task,"Definición del proyecto: caso de estudio, actores y procesos",sjfaustinot@uqvirtual.edu.co,2026-08-18,2026-09-07,Sprint 0 - Definición,Done,omnitravel
+T2,E4,Task,"Glosario, objetivos y alcance",yamileth.londonob@uqvirtual.edu.co,2026-08-18,2026-09-07,Sprint 0 - Definición,Done,omnitravel
+T3,E4,Task,Fichas de los procesos de negocio P1–P3,jhons.mendeza@uqvirtual.edu.co,2026-08-18,2026-09-07,Sprint 0 - Definición,Done,omnitravel
+T4,E4,Task,Documento C4 Model y decisiones de arquitectura (ADR),jhons.mendeza@uqvirtual.edu.co,2026-09-08,2026-09-28,Sprint 1 - Arquitectura y calidad,Done,omnitravel
+T5,E4,Task,"Plan de Gestión de la Calidad (ISO/IEC 25010, RNF y métricas)",sjfaustinot@uqvirtual.edu.co,2026-09-08,2026-09-28,Sprint 1 - Arquitectura y calidad,Done,omnitravel
+T6,E4,Task,Mockups de la interfaz U01–U12 y M01–M07,yamileth.londonob@uqvirtual.edu.co,2026-09-08,2026-09-28,Sprint 1 - Arquitectura y calidad,Done,omnitravel
+T7,E4,Task,"Documento de Diseño, Reutilización y Pruebas",sjfaustinot@uqvirtual.edu.co,2026-09-29,2026-10-12,Sprint 2 - Diseño y base técnica,Done,omnitravel
+T8,E4,Task,Núcleo del backend NestJS y autenticación,jhons.mendeza@uqvirtual.edu.co,2026-09-29,2026-10-12,Sprint 2 - Diseño y base técnica,Done,omnitravel
+T9,E4,Task,"Proyecto Expo, sistema de diseño y componentes accesibles",yamileth.londonob@uqvirtual.edu.co,2026-09-29,2026-10-12,Sprint 2 - Diseño y base técnica,Done,omnitravel
+T10,E4,Task,Modelo de datos PostgreSQL + PostGIS,sjfaustinot@uqvirtual.edu.co,2026-09-29,2026-10-12,Sprint 2 - Diseño y base técnica,Done,omnitravel
+T11,E1,Task,Wizard de reporte U09/U10 con foto de evidencia,yamileth.londonob@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T12,E1,Task,Consenso de 3 confirmaciones y anti-autoconfirmación,yamileth.londonob@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T13,E1,Task,Consola de moderación M03–M05,yamileth.londonob@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T14,E1,Task,Migración de Supabase a AWS RDS,sjfaustinot@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T15,E2,Task,Integración del motor de rutas Valhalla (perfil silla de ruedas),jhons.mendeza@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T16,E2,Task,Mapa U06 y navegación paso a paso U07,yamileth.londonob@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T17,E4,Task,Pruebas unitarias (Jest) y funcionales (Postman) de P1 y P2,yamileth.londonob@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T18,E4,Task,Manuales de usuario (viajero y moderador),sjfaustinot@uqvirtual.edu.co,2026-10-13,2026-10-20,Sprint 3 - Entrega 2 (P1 y P2),Done,omnitravel
+T19,E4,Task,"Seguridad: escalada de rol, bcrypt y límite de intentos",yamileth.londonob@uqvirtual.edu.co,2026-10-21,2026-11-02,Sprint 4 - Endurecimiento,Done,omnitravel
+T20,E4,Task,Integración continua en GitHub Actions,yamileth.londonob@uqvirtual.edu.co,2026-10-21,2026-11-02,Sprint 4 - Endurecimiento,Done,omnitravel
+T21,E1,Task,Estadísticas y tablero del moderador M02/M07,yamileth.londonob@uqvirtual.edu.co,2026-10-21,2026-11-02,Sprint 4 - Endurecimiento,Done,omnitravel
+T22,E4,Task,Revisión de calidad y trazabilidad de requisitos,sjfaustinot@uqvirtual.edu.co,2026-10-21,2026-11-02,Sprint 4 - Endurecimiento,Done,omnitravel
+T23,E3,Task,Visitas: inicio y fin de la visita a un lugar,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T24,E3,Task,Experiencias post-viaje y apertura de incidencias,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T25,E3,Task,Incidencias M06 y re-verificación hacia el Proceso 1,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T26,E4,Task,"Despliegue en AWS: ECS, Amplify, RDS y S3",yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T27,E4,Task,Revisión del backend y del despliegue en AWS,jhons.mendeza@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T28,E2,Task,Filtros obligatorios y «Cambiar ruta»,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T29,E1,Task,Carga de 39 lugares reales de Armenia con fotos,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T30,E4,Task,"Correcciones de la auditoría: seguridad, BD y pruebas de integración",yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T31,E4,Task,"Correcciones de la auditoría: documentos, cronograma y metodología",sjfaustinot@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T32,E4,Task,Validación de requisitos y prueba de aceptación con usuarios,sjfaustinot@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T33,E4,Task,Respaldos de la base de datos y prueba de restauración,yamileth.londonob@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel
+T34,E4,Task,Preparación de la sustentación y entrega final,sjfaustinot@uqvirtual.edu.co,2026-11-03,2026-11-10,Sprint 5 - Entrega final,Done,omnitravel

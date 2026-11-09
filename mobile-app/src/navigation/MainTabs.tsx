@@ -40,9 +40,10 @@ function BotonContribuir({
     <Pressable
       onPress={onPress}
       style={estilos.contenedorCentral}
-      accessibilityRole="button"
+      // Es una pestaña más de la barra (tablist): rol «tab», no «button».
+      accessibilityRole="tab"
       accessibilityLabel="Contribuir: crear un reporte"
-      accessibilityState={{ selected: activo }}
+      aria-selected={activo}
     >
       <View style={estilos.circulo}>
         <Ionicons name="add" size={34} color={colors.white} />

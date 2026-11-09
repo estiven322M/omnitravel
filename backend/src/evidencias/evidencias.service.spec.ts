@@ -3,7 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { EvidenciasService, PREFIJO_S3 } from './evidencias.service';
 
-/** Evidencia fotográfica en S3 (ADR-07, RNF-29). El cliente de S3 es simulado. */
+/** Evidencia fotográfica en S3 (ADR-07, RNF-28). El cliente de S3 es simulado. */
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString('base64');
 
 function crear(bucket?: string) {

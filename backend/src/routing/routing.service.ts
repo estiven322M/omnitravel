@@ -1,7 +1,5 @@
-import {
-    Injectable,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { consultarValhalla } from './valhalla-cliente';
 import {
     construirSolicitudValhalla,
     normalizarRespuestaValhalla,
@@ -40,34 +38,8 @@ export class RoutingService {
             evitar,
         );
 
-        let crudo: unknown;
-        try {
-            const response = await fetch(`${this.valhallaUrl}/route`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(solicitud),
-            });
-
-            if (!response.ok) {
-                const error = await response.text();
-
-                throw new InternalServerErrorException(
-                    `Valhalla respondió con ${response.status}: ${error}`,
-                );
-            }
-
-            crudo = await response.json();
-        } catch (error) {
-            if (error instanceof InternalServerErrorException) {
-                throw error;
-            }
-
-            throw new InternalServerErrorException(
-                'No fue posible comunicarse con el motor de ruteo.',
-            );
-        }
+        // Tiempo límite, reintentos y mensaje de contingencia: valhalla-cliente.ts.
+        const crudo = await consultarValhalla(this.valhallaUrl, solicitud);
 
         return normalizarRespuestaValhalla(
             crudo,

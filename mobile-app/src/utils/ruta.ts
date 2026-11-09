@@ -126,7 +126,7 @@ export function iconoDeManeuver(tipo: number): IconName {
 /**
  * Detecta escaleras en la narración de la ruta (los motores las mencionan en
  * la instrucción: "escalera(s)" en es / "stairs" en en) y compone advertencias
- * accionables sin duplicar avisos (RNF-14: errores visibles y objetivo).
+ * accionables sin duplicar avisos (RNF-12: errores visibles y objetivo).
  */
 export function advertenciasDeEscaleras(
   pasos: PasoRuta[],

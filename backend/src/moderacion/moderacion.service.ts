@@ -3,6 +3,10 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { errorDominio } from '../common/errores';
 import { exigirModerador } from '../common/exigir-moderador';
+import {
+  firmarEvidencia,
+  secretoEvidencias,
+} from '../evidencias/firma-evidencia';
 
 /** Gravedad de una incidencia según la calificación del viajero (1–5). */
 const SQL_GRAVEDAD = `case when r.calificacion <= 1 then 'alta'
@@ -11,7 +15,7 @@ const SQL_GRAVEDAD = `case when r.calificacion <= 1 then 'alta'
 
 /**
  * Panel de moderación (M02, M06, M07) y Proceso 3 (incidencias post-viaje).
- * Todas las operaciones verifican el rol en la BD (RNF-09).
+ * Todas las operaciones verifican el rol en la BD (RNF-23).
  */
 @Injectable()
 export class ModeracionService {
@@ -75,7 +79,14 @@ export class ModeracionService {
       pendientes: cifras.pendientes,
       discrepancias: cifras.discrepancias,
       verificadosHoy: cifras.verificados_hoy,
-      alertasCriticas,
+      alertasCriticas: (alertasCriticas as { evidencia: string | null }[]).map(
+        (alerta) => ({
+          ...alerta,
+          evidencia_acceso: alerta.evidencia
+            ? firmarEvidencia(alerta.evidencia, secretoEvidencias())
+            : null,
+        }),
+      ),
       actividadReciente,
       desempeno: {
         tasaResolucion: tasa,

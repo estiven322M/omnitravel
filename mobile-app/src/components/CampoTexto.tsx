@@ -42,7 +42,7 @@ interface CampoTextoProps {
 /**
  * Campo de texto accesible compartido por el flujo de cuenta
  * (U01/U02 inicio de sesión y U03 registro): etiqueta explícita, errores por
- * región viva y área táctil mínima (RNF-11/14).
+ * región viva y área táctil mínima (RNF-11/12).
  */
 export function CampoTexto({
   etiqueta,

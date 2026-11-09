@@ -14,6 +14,8 @@ export interface AlertaCritica {
   direccion: string;
   confirmaciones: number;
   evidencia: string | null;
+  /** Permiso temporal de lectura de la foto (`exp=…&firma=…`). */
+  evidenciaAcceso: string | null;
 }
 
 export interface ActividadModeracion {
@@ -81,6 +83,7 @@ interface ResumenCrudo {
     direccion: string | null;
     confirmaciones: number;
     evidencia: string | null;
+    evidencia_acceso?: string | null;
   }[];
   actividadReciente: {
     id_moderacion: number;
@@ -107,6 +110,7 @@ export async function obtenerResumenModeracion(): Promise<ResumenModeracion> {
       direccion: fila.direccion ?? '',
       confirmaciones: fila.confirmaciones,
       evidencia: fila.evidencia,
+      evidenciaAcceso: fila.evidencia_acceso ?? null,
     })),
     actividadReciente: crudo.actividadReciente.map((fila) => ({
       id: String(fila.id_moderacion),

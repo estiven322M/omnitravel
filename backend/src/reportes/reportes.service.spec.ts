@@ -3,7 +3,7 @@ import type { DataSource } from 'typeorm';
 import { coordenadaValida, estadoParaBd, ReportesService } from './reportes.service';
 
 /**
- * Proceso 1 — validación colaborativa (RF-02, RNF-18, RNF-23, RNF-28).
+ * Proceso 1 — validación colaborativa (RF-02, RNF-07, RNF-07, RNF-29).
  * Pruebas unitarias del servicio con una BD simulada: `query` responde en el
  * orden en que el servicio consulta, y la transacción reutiliza el mismo mock.
  */
@@ -96,7 +96,7 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
     });
   });
 
-  describe('confirmar reporte — consenso de 3 (RNF-18, RNF-23, RNF-28)', () => {
+  describe('confirmar reporte — consenso de 3 (RNF-07, RNF-07, RNF-29)', () => {
     const pendienteDe = (creador: string) => [{ usuario_creador_id: creador, estado: 'pendiente_validacion' }];
 
     it('CP-U07 impide la autoconfirmación (422 AUTOCONFIRMACION)', async () => {
@@ -157,7 +157,7 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
     });
   });
 
-  describe('moderación (RNF-09)', () => {
+  describe('moderación (RNF-23)', () => {
     it('CP-U13 solo un moderador puede decidir (403)', async () => {
       const { db } = crearDb([[]]);
       const error = await capturar(new ReportesService(db).decidir('5', '11', 'aprobado'));
@@ -200,5 +200,48 @@ describe('ReportesService — Proceso 1: validación colaborativa', () => {
       expect(estadoParaBd('pendiente')).toBe('pendiente_validacion');
       expect(estadoParaBd('publicado')).toBe('publicado');
     });
+  });
+});
+
+describe('ReportesService — consulta de solo lectura (antes módulo reports)', () => {
+  it('pagina del más reciente al más antiguo con sus metadatos', async () => {
+    const fila = { id_reporte: '9', estado: 'publicado' };
+    const { db, query } = crearDb([[fila], [{ total: 21 }]]);
+    const resultado = await new ReportesService(db).listarPaginado(2, 10);
+    expect(resultado).toEqual({
+      data: [fila],
+      meta: { page: 2, limit: 10, total: 21, totalPages: 3 },
+    });
+    expect(query.mock.calls[0][0]).toContain('order by fecha_creacion desc');
+    expect(query.mock.calls[0][1]).toEqual([10, 10]);
+  });
+
+  it('rechaza page o limit fuera de rango (400 VALIDATION_ERROR)', async () => {
+    const { db, query } = crearDb([]);
+    const servicio = new ReportesService(db);
+    expect(codigo(await capturar(servicio.listarPaginado(0, 10)))).toBe('VALIDATION_ERROR');
+    expect(codigo(await capturar(servicio.listarPaginado(1, 101)))).toBe('VALIDATION_ERROR');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('obtiene un reporte por id o responde 404', async () => {
+    const { db } = crearDb([[{ id_reporte: '3' }], []]);
+    const servicio = new ReportesService(db);
+    await expect(servicio.obtener('3')).resolves.toEqual({ id_reporte: '3' });
+    const error = await capturar(servicio.obtener('99'));
+    expect(error.getStatus()).toBe(404);
+  });
+});
+
+describe('ReportesService — fotos de evidencia con permiso temporal', () => {
+  it('cada foto de la consola de moderación lleva exp y firma', async () => {
+    process.env.JWT_SECRET = 'x'.repeat(40);
+    const fila = {
+      estado: 'pendiente_validacion',
+      evidencia: [{ id_evidencia: 1, tipo: 'foto', storage_key: '5/1700000000000-abcdef123456.jpg' }],
+    };
+    const { db } = crearDb([ES_MODERADOR, [{ fila }]]);
+    const [reporte] = await new ReportesService(db).listarModeracion('2');
+    expect(reporte.evidencia[0].acceso).toMatch(/^exp=\d+&firma=[\w-]+$/);
   });
 });

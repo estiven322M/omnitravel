@@ -362,7 +362,7 @@ export function FeedbackScreen() {
                             onPress={() => setTipoIncidencia(tipo.id)}
                             accessibilityRole="radio"
                             accessibilityLabel={tipo.etiqueta}
-                            accessibilityState={{ checked: activo }}
+                            aria-checked={activo}
                             style={[
                               estilos.chip,
                               activo ? estilos.chipActivo : null,

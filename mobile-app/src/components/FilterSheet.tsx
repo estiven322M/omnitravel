@@ -72,7 +72,7 @@ export function FilterSheet({
 
   const aplicar = () => {
     onAplicar(seleccion);
-    // Retroalimentación auditiva de la acción crítica (RNF-14).
+    // Retroalimentación auditiva de la acción crítica (RNF-12).
     if (Platform.OS === 'ios') {
       AccessibilityInfo.announceForAccessibility(
         `Filtros aplicados. ${seleccion.length} filtros activos.`,

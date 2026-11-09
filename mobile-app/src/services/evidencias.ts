@@ -6,7 +6,7 @@ import { API_URL, apiFetch } from './api/client';
  *
  * Flujo: image-picker captura con `base64: true` (compatible con Expo Go y
  * con el APK de EAS) → se envía a `POST /evidencias` del backend, que valida
- * peso (5 MB) y tipo de imagen (RNF-29) y la guarda en la carpeta del
+ * peso (5 MB) y tipo de imagen (RNF-28) y la guarda en la carpeta del
  * usuario autenticado (`<id_usuario>/…`). Por ahora el backend la guarda en
  * su disco; al desplegar en AWS pasará a un bucket S3 sin cambiar este
  * contrato. Si la subida falla, el reporte se envía igual sin foto.
@@ -107,7 +107,15 @@ export async function subirEvidencia(
   }
 }
 
-/** URL pública de una evidencia (lectura comunitaria desde el backend). */
-export function urlPublicaEvidencia(storageKey: string): string {
-  return `${API_URL}/evidencias/archivo/${storageKey}`;
+/**
+ * URL de lectura de una evidencia. El backend solo entrega la foto con el
+ * permiso temporal (`exp=…&firma=…`) que agrega a los reportes que ve un
+ * moderador; sin él responde 403.
+ */
+export function urlPublicaEvidencia(
+  storageKey: string,
+  acceso?: string | null,
+): string {
+  const base = `${API_URL}/evidencias/archivo/${storageKey}`;
+  return acceso ? `${base}?${acceso}` : base;
 }

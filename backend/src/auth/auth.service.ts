@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -60,8 +60,17 @@ export interface Credenciales {
   codigoInvitacion?: unknown;
 }
 
+/** Eventos de cuenta que quedan en `registro_auditoria` (auditoría 6.7 ítem 9). */
+export type EventoCuenta =
+  | 'registro_cuenta'
+  | 'inicio_sesion'
+  | 'inicio_sesion_fallido'
+  | 'cambio_contrasena';
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarios: Repository<Usuario>,
@@ -104,6 +113,8 @@ export class AuthService {
       }),
     );
 
+    // Asignar un rol al crear la cuenta es un cambio de rol: queda auditado.
+    await this.auditar(id, 'registro_cuenta', { rol: rol.nombre });
     return this.respuestaSesion(id, email, rol);
   }
 
@@ -120,6 +131,11 @@ export class AuthService {
       await bcrypt.compare(password, HASH_DE_RELLENO);
     }
     if (!usuario || !(await this.contrasenaValida(usuario, password))) {
+      if (usuario) {
+        await this.auditar(usuario.id, 'inicio_sesion_fallido', {
+          motivo: 'contrasena_incorrecta',
+        });
+      }
       throw errorDominio(
         HttpStatus.UNAUTHORIZED,
         'INVALID_CREDENTIALS',
@@ -127,6 +143,9 @@ export class AuthService {
       );
     }
     if (usuario.estadoCuenta !== 'activo') {
+      await this.auditar(usuario.id, 'inicio_sesion_fallido', {
+        motivo: 'cuenta_inactiva',
+      });
       throw errorDominio(
         HttpStatus.FORBIDDEN,
         'USER_INACTIVE',
@@ -135,6 +154,9 @@ export class AuthService {
     }
 
     const rol = await this.roles.findOneBy({ id: usuario.rolId });
+    await this.auditar(usuario.id, 'inicio_sesion', {
+      rol: rol?.nombre ?? ROL_POR_DEFECTO,
+    });
     return this.respuestaSesion(usuario.id, usuario.email, rol);
   }
 
@@ -170,6 +192,7 @@ export class AuthService {
     await this.usuarios.update(usuario.id, {
       passwordHash: await bcrypt.hash(datos.nueva, 10),
     });
+    await this.auditar(usuario.id, 'cambio_contrasena', {});
     return { actualizada: true };
   }
 
@@ -221,7 +244,10 @@ export class AuthService {
       );
     }
     const codigo = datos?.codigoInvitacion;
-    if (typeof codigo !== 'string' || !igualdadSegura(codigo.trim(), esperado)) {
+    if (
+      typeof codigo !== 'string' ||
+      !igualdadSegura(codigo.trim(), esperado)
+    ) {
       throw errorDominio(
         HttpStatus.FORBIDDEN,
         'CODIGO_INVITACION_INVALIDO',
@@ -229,6 +255,29 @@ export class AuthService {
       );
     }
     return ROL_ADMINISTRADOR;
+  }
+
+  /**
+   * Registra un evento de cuenta. Nunca guarda la contraseña ni el correo en
+   * el detalle (el usuario ya identifica la cuenta). Si la tabla no responde,
+   * se deja constancia en el log y el inicio de sesión continúa.
+   */
+  private async auditar(
+    usuarioId: string,
+    accion: EventoCuenta,
+    detalle: Record<string, string>,
+  ): Promise<void> {
+    try {
+      await this.usuarios.manager.query(
+        `insert into registro_auditoria (usuario_id, accion, detalle)
+         values ($1, $2, $3::jsonb)`,
+        [usuarioId, accion, JSON.stringify(detalle)],
+      );
+    } catch {
+      this.logger.warn(
+        `No se pudo registrar el evento ${accion} en la auditoría.`,
+      );
+    }
   }
 
   private validar(datos: Credenciales) {

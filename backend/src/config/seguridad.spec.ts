@@ -1,9 +1,11 @@
 import {
   asegurarCaRds,
+  OPCIONES_HELMET,
   ORIGENES_DESARROLLO,
   opcionesSsl,
   origenesCors,
   revisarSecretoJwt,
+  swaggerHabilitado,
   telemetriaActiva,
   urlSinParametrosSsl,
 } from './seguridad';
@@ -136,5 +138,37 @@ describe('asegurarCaRds', () => {
         Promise.reject(new Error('sin red')),
       ),
     ).rejects.toThrow(/descargar-ca-rds/);
+  });
+});
+
+describe('swaggerHabilitado', () => {
+  it('publica /api/docs en desarrollo y pruebas', () => {
+    expect(swaggerHabilitado({})).toBe(true);
+    expect(swaggerHabilitado({ NODE_ENV: 'test' })).toBe(true);
+  });
+
+  it('lo oculta en producción salvo SWAGGER_PUBLICO=true', () => {
+    expect(swaggerHabilitado({ NODE_ENV: 'production' })).toBe(false);
+    expect(
+      swaggerHabilitado({ NODE_ENV: 'production', SWAGGER_PUBLICO: 'no' }),
+    ).toBe(false);
+    expect(
+      swaggerHabilitado({ NODE_ENV: 'production', SWAGGER_PUBLICO: 'TRUE' }),
+    ).toBe(true);
+  });
+});
+
+describe('OPCIONES_HELMET', () => {
+  it('usa una CSP que no permite cargar nada ni incrustar la API', () => {
+    expect(OPCIONES_HELMET.contentSecurityPolicy.directives).toEqual({
+      defaultSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    });
+  });
+
+  it('deja que la web (otro dominio) muestre las fotos de evidencia', () => {
+    expect(OPCIONES_HELMET.crossOriginResourcePolicy).toEqual({
+      policy: 'cross-origin',
+    });
   });
 });

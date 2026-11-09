@@ -7,7 +7,7 @@ info:
     Derivado de docs/gestion/07-contrato-api.md. No se aprueba como fuente normativa
     hasta la validación del equipo. Convenciones: errores con `code` estable (inglés)
     y `message` de presentación en español; datos sensibles de discapacidad nunca
-    viajan en el payload (RNF-07).
+    viajan en el payload (RNF-22).
   x-status: BORRADOR
   x-outline: docs/gestion/07-contrato-api.md
 servers:
@@ -159,7 +159,7 @@ components:
         destination: { type: array, items: { type: number }, minItems: 2, maxItems: 2, description: '[lat, lon]' }
         restrictions:
           type: object
-          description: 'Parámetros de restricción anónimos y temporales (RNF-07).'
+          description: 'Parámetros de restricción anónimos y temporales (RNF-22).'
           properties:
             avoidStairs: { type: boolean }
             requireElevator: { type: boolean }
@@ -426,7 +426,7 @@ paths:
   /evidences/presign:
     post:
       tags: [reports]
-      summary: 'URL presignada S3 para evidencia (C2b); valida MIME/tamaño (RNF-29)'
+      summary: 'URL presignada S3 para evidencia (C2b); valida MIME/tamaño (RNF-28)'
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true

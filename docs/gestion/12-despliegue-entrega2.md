@@ -118,7 +118,7 @@ update public.usuario set rol_id = 4 where email = 'moderador.demo@omnitravel.te
 | Viajero 3 | (registrar) | (definir) | Confirmar consenso |
 | Moderador | moderador.demo@… | (definir) | Consola M03–M05 |
 
-> El autor de un reporte no puede confirmar su propio reporte (RNF-28): repartir los 3 votos del consenso entre cuentas distintas a la autora del reporte.
+> El autor de un reporte no puede confirmar su propio reporte (RNF-29): repartir los 3 votos del consenso entre cuentas distintas a la autora del reporte.
 
 ## 5. Verificación post-despliegue (día de la entrega)
 

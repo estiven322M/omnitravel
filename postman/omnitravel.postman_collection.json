@@ -500,7 +500,7 @@
           }
         },
         {
-          "name": "CP-F105 El autor intenta confirmar su propio reporte (RNF-28)",
+          "name": "CP-F105 El autor intenta confirmar su propio reporte (RNF-29)",
           "event": [
             {
               "listen": "test",
@@ -578,7 +578,7 @@
           }
         },
         {
-          "name": "CP-F107 Confirmación duplicada del mismo usuario (RNF-18)",
+          "name": "CP-F107 Confirmación duplicada del mismo usuario (RNF-07, RNF-29)",
           "event": [
             {
               "listen": "test",
@@ -656,7 +656,7 @@
           }
         },
         {
-          "name": "CP-F109 Tercera confirmación publica el reporte (RNF-18, RNF-23)",
+          "name": "CP-F109 Tercera confirmación publica el reporte (RNF-07)",
           "event": [
             {
               "listen": "test",
@@ -735,7 +735,7 @@
           }
         },
         {
-          "name": "CP-F111 Un viajero no puede usar la consola de moderación (RNF-09)",
+          "name": "CP-F111 Un viajero no puede usar la consola de moderación (RNF-23)",
           "event": [
             {
               "listen": "test",
@@ -778,7 +778,7 @@
       "name": "Proceso 2 — Rutas accesibles",
       "item": [
         {
-          "name": "CP-F201 Ruta para silla de ruedas evitando escaleras (RF-01, RNF-21)",
+          "name": "CP-F201 Ruta para silla de ruedas evitando escaleras (RF-01, RNF-26)",
           "event": [
             {
               "listen": "test",
@@ -832,7 +832,7 @@
           }
         },
         {
-          "name": "CP-F202 Ruta para perfil visual (RNF-12)",
+          "name": "CP-F202 Ruta para perfil visual (RNF-26)",
           "event": [
             {
               "listen": "test",
@@ -1030,7 +1030,7 @@
           }
         },
         {
-          "name": "CP-F206 Ruta sin sesión → 401 (RNF-06)",
+          "name": "CP-F206 Ruta sin sesión → 401 (RNF-21)",
           "event": [
             {
               "listen": "test",

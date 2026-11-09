@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { errorDominio } from '../common/errores';
 import { exigirModerador } from '../common/exigir-moderador';
+import { firmarEvidencia, secretoEvidencias } from '../evidencias/firma-evidencia';
 
 /**
  * Proceso 1 — validación colaborativa. Traslada al backend las funciones
@@ -18,6 +19,11 @@ import { exigirModerador } from '../common/exigir-moderador';
  */
 
 const CONFIRMACIONES_PARA_PUBLICAR = 3;
+
+/** Columnas de la consulta de solo lectura (`GET /reportes`, `GET /reportes/:id`). */
+const SELECT_CONSULTA = `select id_reporte::text, poi_id::text, usuario_creador_id::text, tipo,
+         descripcion, estado, via_resolucion, fecha_creacion, fecha_resolucion
+    from reporte`;
 const ESTADO_PENDIENTE_BD = 'pendiente_validacion';
 
 /** Estado de BD → estado que recibe la app (sin traducción). */
@@ -235,6 +241,50 @@ export class ReportesService {
   }
 
   /** U12 «Mis reportes»: los creados por la persona autenticada, recientes primero. */
+  /**
+   * GET /reportes?page&limit — consulta paginada de solo lectura, del más
+   * reciente al más antiguo (antes en el módulo `reports`, unificado aquí
+   * por la auditoría 6.4 ítem 8: un solo módulo por dominio).
+   */
+  async listarPaginado(pagina: number, limite: number) {
+    if (!Number.isInteger(pagina) || pagina < 1) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_ERROR',
+        'El parámetro page debe ser un entero positivo.',
+      );
+    }
+    if (!Number.isInteger(limite) || limite < 1 || limite > 100) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_ERROR',
+        'El parámetro limit debe estar entre 1 y 100.',
+      );
+    }
+    const [datos, [{ total }]] = await Promise.all([
+      this.db.query(
+        `${SELECT_CONSULTA}
+         order by fecha_creacion desc
+         limit $1 offset $2`,
+        [limite, (pagina - 1) * limite],
+      ),
+      this.db.query('select count(*)::int as total from reporte'),
+    ]);
+    return {
+      data: datos,
+      meta: { page: pagina, limit: limite, total, totalPages: Math.ceil(total / limite) },
+    };
+  }
+
+  /** GET /reportes/:id — un reporte (solo lectura) o 404. */
+  async obtener(id: string) {
+    const [reporte] = await this.db.query(`${SELECT_CONSULTA} where id_reporte = $1`, [id]);
+    if (!reporte) {
+      throw errorDominio(HttpStatus.NOT_FOUND, 'NOT_FOUND', `No se encontró el reporte con ID ${id}.`);
+    }
+    return reporte;
+  }
+
   async listarMios(usuarioId: string) {
     return this.db.query(
       `${SELECT_RESUMEN}
@@ -306,7 +356,16 @@ export class ReportesService {
       [filtro],
     );
 
-    return filas.map(({ fila }) => ({ ...fila, estado: estadoParaApp(fila.estado) }));
+    // Cada foto lleva su permiso temporal de lectura (ver firma-evidencia.ts).
+    const secreto = secretoEvidencias();
+    return filas.map(({ fila }) => ({
+      ...fila,
+      estado: estadoParaApp(fila.estado),
+      evidencia: ((fila.evidencia ?? []) as { storage_key: string | null }[]).map((e) => ({
+        ...e,
+        acceso: e.storage_key ? firmarEvidencia(e.storage_key, secreto) : null,
+      })),
+    }));
   }
 
   /** M04/M05 (Vía B): aprobar publica; rechazar exige motivo. Queda auditado. */

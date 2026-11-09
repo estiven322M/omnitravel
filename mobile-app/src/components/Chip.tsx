@@ -47,7 +47,7 @@ export function Chip({
       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
       accessibilityRole="checkbox"
       accessibilityLabel={etiqueta}
-      accessibilityState={{ checked: seleccionado }}
+      aria-checked={seleccionado}
       style={({ pressed }) => [
         estilos.base,
         seleccionado ? estilos.seleccionado : estilos.noSeleccionado,

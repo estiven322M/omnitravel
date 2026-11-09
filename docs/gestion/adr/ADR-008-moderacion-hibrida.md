@@ -1,8 +1,0 @@
-# ADR-008: Moderación híbrida — consenso automático con intervención manual selectiva
-
-- **Estado:** Aceptada según la Definición del Proyecto (Proceso 1, vías A y B).
-- **Contexto:** Moderar todo manualmente no escala y moderar todo automáticamente permite abusos (RNF-28) y "falsamente accesible"; el moderador no puede validar cada reporte ordinario.
-- **Decisión:** Doble vía; **Vía A (consenso comunitario)**: todo reporte nuevo entra en `PENDIENTE_VALIDACION` y, al acumular 3 confirmaciones independientes de usuarios distintos (sin autoconfirmación y sin repetición), pasa automáticamente a `PUBLICADO` en la capa pública. **Vía B (excepción/prioridad)**: el moderador interviene manualmente solo para aprobación/rechazo directo de reportes con alertas de barreras críticas o incongruencias severas de coordenadas GPS, atención de denuncias por falsedad/spam y gestión de incidencias post-viaje (M03–M06); su decisión es ejecutiva y sobreescribe cualquier estado previo del consenso. Todas las acciones quedan auditadas (RNF-30).
-- **Alternativas:** Moderación manual de todo el flujo; publicación directa sin consenso; consenso ponderado por reputación.
-- **Justificación:** Balancea cobertura y calidad: el flujo ordinario escala sin cuello humano y la vía B protege contra datos peligrosos; `PENDIENTE`/`EN_REVISION`/`VERIFICADO` reflejan el ciclo en el POI (RNF-20/22).
-- **Consecuencias:** La transacción del consenso debe ser idempotente y concurrentemente segura; el flujo de excepción (vía B) necesita dashboard y estadísticas operativas; los patrones de manipulación del consenso deben monitorearse y derivar en revisión reactiva.

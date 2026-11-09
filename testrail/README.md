@@ -5,7 +5,7 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
 
 | Archivo | Para qué sirve |
 |---|---|
-| `omnitravel_casos_testrail.csv` | Los 306 casos: 270 unitarios (Jest, backend y app) y 36 funcionales (Postman) de los tres procesos, más las pruebas transversales de seguridad y sesión |
+| `omnitravel_casos_testrail.csv` | Los 366 casos: 299 unitarios (Jest: 138 backend y 161 app), 20 de integración (API + PostGIS real), 36 funcionales (Postman) y 11 de accesibilidad (axe-core, WCAG 2.1 AA), organizados por proceso más las pruebas transversales de seguridad y sesión |
 
 ## 1. Crear el proyecto
 
@@ -33,12 +33,14 @@ Esta carpeta tiene lo necesario para gestionar las pruebas de la entrega final e
 1. Ve a **Milestones → Add Milestone** y crea el hito **Entrega final**.
 2. Ve a **Test Runs & Results → Add Test Run**. Crea un run por tipo de prueba, todos ligados al hito:
    - **Run 1 – Unitarias**: elige las secciones de Pruebas unitarias.
-   - **Run 2 – Funcionales API**: elige las secciones de Pruebas funcionales.
+   - **Run 2 – Integración**: elige las secciones de Pruebas de integración.
+   - **Run 3 – Funcionales API**: elige las secciones de Pruebas funcionales.
+   - **Run 4 – Accesibilidad**: elige la sección de Pruebas de accesibilidad.
 3. Registra cada resultado como **Passed**, **Failed**, **Blocked** o **Retest**. Cuando un caso falle, adjunta la captura y crea el defecto.
 
 ## 4. Subir resultados automáticamente desde la CI (opcional)
 
-El flujo de CI genera reportes JUnit: `junit-backend.xml`, `junit-app.xml` y `junit-postman.xml`. TestRail los recibe con su herramienta oficial **trcli**:
+El flujo de CI genera reportes JUnit: `junit-backend.xml`, `junit-integracion.xml`, `junit-app.xml` y `junit-postman.xml`. TestRail los recibe con su herramienta oficial **trcli**:
 
 ```bash
 pip install trcli

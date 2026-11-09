@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard, UsuarioActual, type UsuarioToken } from '../auth/jwt-auth.guard';
 import { ReportesService, type DatosNuevoReporte } from './reportes.service';
 
@@ -24,6 +34,24 @@ export class ReportesController {
   @Get('reportes/barreras')
   barreras() {
     return this.reportesService.listarBarreras();
+  }
+
+  // GET /reportes?page=1&limit=10 — consulta paginada (solo lectura)
+  @Get('reportes')
+  @UseGuards(JwtAuthGuard)
+  listarPaginado(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.reportesService.listarPaginado(page, limit);
+  }
+
+  // GET /reportes/:id — un reporte (solo lectura). Va después de /mios y
+  // /barreras para que esas rutas no se confundan con un id.
+  @Get('reportes/:id')
+  @UseGuards(JwtAuthGuard)
+  obtener(@Param('id', ParseIntPipe) id: number) {
+    return this.reportesService.obtener(String(id));
   }
 
   // POST /reportes/:id/confirmaciones — confirmar (C3)

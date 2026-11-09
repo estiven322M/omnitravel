@@ -92,7 +92,7 @@ Incluye, con arranque en un bloque de DIAGNÓSTICO (leer antes de ejecutar):
    `confirmar_reporte` (consenso de 3, anti-autoconfirmación, publicación
    exactamente una vez), `decidir_reporte` (aprobación/rechazo con motivo) y
    `listar_reportes_moderacion` (M03/M04).
-4. Bucket `evidencia` con límite de 5 MB y MIME de imagen (RNF-29) y
+4. Bucket `evidencia` con límite de 5 MB y MIME de imagen (RNF-28) y
    políticas de subida por carpeta de usuario.
 5. Semilla del reporte de demostración del POI 5 y verificación final.
 
@@ -153,7 +153,7 @@ otros usuarios invisibles · DELETE 204 · 0 filas huérfanas.
 - Parser geoespacial puro y probado (`services/coordenadas.ts`,
   65 pruebas unitarias en 9 suites, typecheck + lint en verde).
 
-## 5. Avisos de privacidad (RNF-07/08/09)
+## 5. Avisos de privacidad (RNF-20/25/09)
 
 - El perfil de accesibilidad (necesidades) sigue siendo **100 % local**
   (Ley 1581): nunca viaja a la BD.

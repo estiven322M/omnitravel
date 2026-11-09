@@ -1,0 +1,171 @@
+erDiagram
+  caracteristica_accesibilidad {
+    bigint id_caracteristica PK
+    text nombre UK
+    text descripcion "opcional"
+    text tipo_valor
+    boolean activa
+  }
+  confirmacion {
+    bigint id_confirmacion PK
+    bigint reporte_id FK
+    bigint usuario_id FK
+    text tipo_confirmacion
+    timestamptz fecha
+  }
+  establecimiento_turistico {
+    bigint poi_id PK, FK
+    text estado_participacion
+    bigint usuario_responsable_id FK "opcional"
+    timestamptz fecha_registro_participacion "opcional"
+  }
+  evidencia {
+    bigint id_evidencia PK
+    bigint reporte_id FK
+    text storage_key
+    text tipo
+    timestamptz fecha
+  }
+  favorito {
+    bigint usuario_id PK, FK
+    bigint poi_id PK, FK
+    timestamptz fecha
+  }
+  incidencia {
+    bigint id_incidencia PK
+    bigint retroalimentacion_id FK
+    text tipo
+    text descripcion "opcional"
+    text estado
+    timestamptz fecha_creacion
+    timestamptz fecha_resolucion "opcional"
+  }
+  moderacion {
+    bigint id_moderacion PK
+    bigint reporte_id FK
+    bigint moderador_id FK "opcional"
+    text accion
+    text motivo "opcional"
+    timestamptz fecha
+  }
+  poi {
+    bigint id_poi PK
+    text nombre
+    text descripcion "opcional"
+    text tipo
+    text direccion "opcional"
+    geometry_point ubicacion
+    text estado
+    timestamptz fecha_creacion
+    timestamptz fecha_actualizacion
+  }
+  poi_foto {
+    bigint id_foto PK
+    bigint poi_id FK
+    text url
+    text leyenda "opcional"
+    text autor "opcional"
+    text licencia "opcional"
+    text fuente_url "opcional"
+    integer orden
+  }
+  registro_auditoria {
+    bigint id_auditoria PK
+    bigint usuario_id FK "opcional"
+    text accion
+    jsonb detalle "opcional"
+    timestamptz fecha
+  }
+  reporte {
+    bigint id_reporte PK
+    bigint poi_id FK
+    bigint usuario_creador_id FK "opcional"
+    text tipo
+    text descripcion "opcional"
+    text estado
+    text via_resolucion "opcional"
+    timestamptz fecha_creacion
+    timestamptz fecha_resolucion "opcional"
+    boolean es_critico
+  }
+  retroalimentacion {
+    bigint id_retroalimentacion PK
+    bigint usuario_id FK "opcional"
+    bigint poi_id FK
+    smallint calificacion
+    text comentario "opcional"
+    timestamptz fecha
+    bigint visita_id FK, UK "opcional"
+  }
+  rol {
+    bigint id_rol PK
+    text nombre_rol UK
+  }
+  solicitud_reverificacion {
+    bigint id_solicitud PK
+    bigint incidencia_id FK, UK
+    bigint reporte_generado_id FK "opcional"
+    text estado
+    timestamptz fecha_creacion
+    timestamptz fecha_resolucion "opcional"
+  }
+  usuario {
+    bigint id_usuario PK
+    text email UK
+    text password_hash
+    bigint rol_id FK
+    timestamptz fecha_registro
+    text estado_cuenta
+    uuid auth_user_id "opcional"
+  }
+  valor_accesibilidad_poi {
+    bigint id_valor PK
+    bigint poi_id FK
+    bigint caracteristica_id FK
+    text valor_texto "opcional"
+    numeric valor_numerico "opcional"
+    boolean valor_booleano "opcional"
+    timestamptz fecha_actualizacion
+  }
+  valor_caracteristica_reporte {
+    bigint id_valor_reporte PK
+    bigint reporte_id FK
+    bigint caracteristica_id FK
+    text valor_texto "opcional"
+    numeric valor_numerico "opcional"
+    boolean valor_booleano "opcional"
+  }
+  visita {
+    bigint id_visita PK
+    bigint usuario_id FK
+    bigint poi_id FK
+    text estado
+    timestamptz fecha_inicio
+    timestamptz fecha_fin "opcional"
+  }
+  rol ||--o{ usuario : "rol_id"
+  poi ||--o| establecimiento_turistico : "poi_id"
+  usuario o|--o{ establecimiento_turistico : "usuario_responsable_id"
+  poi ||--o{ reporte : "poi_id"
+  usuario o|--o{ reporte : "usuario_creador_id"
+  reporte ||--o{ confirmacion : "reporte_id"
+  usuario ||--o{ confirmacion : "usuario_id"
+  reporte ||--o{ evidencia : "reporte_id"
+  usuario o|--o{ moderacion : "moderador_id"
+  reporte ||--o{ moderacion : "reporte_id"
+  poi ||--o{ retroalimentacion : "poi_id"
+  usuario o|--o{ retroalimentacion : "usuario_id"
+  visita o|--o| retroalimentacion : "visita_id"
+  retroalimentacion ||--o{ incidencia : "retroalimentacion_id"
+  incidencia ||--o| solicitud_reverificacion : "incidencia_id"
+  reporte o|--o{ solicitud_reverificacion : "reporte_generado_id"
+  poi ||--o{ favorito : "poi_id"
+  usuario ||--o{ favorito : "usuario_id"
+  usuario o|--o{ registro_auditoria : "usuario_id"
+  caracteristica_accesibilidad ||--o{ valor_accesibilidad_poi : "caracteristica_id"
+  poi ||--o{ valor_accesibilidad_poi : "poi_id"
+  caracteristica_accesibilidad ||--o{ valor_caracteristica_reporte : "caracteristica_id"
+  reporte ||--o{ valor_caracteristica_reporte : "reporte_id"
+  poi ||--o{ visita : "poi_id"
+  usuario ||--o{ visita : "usuario_id"
+  poi ||--o{ poi_foto : "poi_id"

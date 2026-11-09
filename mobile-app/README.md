@@ -82,7 +82,7 @@ npx expo start              # escanea el QR con Expo Go
 | **U04** Inicio (feed) | ✅ | Logo, campana (abre U11), avatar, buscador con filtros, chips de categorías en plural, **tarjetas con foto** (propia del lugar o de referencia de su categoría), distancia, etiquetas con icono, «validaciones / confiabilidad» y corazón de guardados. Barra inferior con el botón central «+ Contribuir» |
 | **U05** Filtros de accesibilidad | ✅ | Hoja inferior con bandas Físico/Motriz y Sensorial, iconos por filtro, «Limpiar» y «Aplicar filtros»; filtro estricto (sin dato ≠ pasa) |
 | **U06** Mapa y Ruteo | ✅ | Leaflet en WebView con tiles OSM + POIs reales de la BD (fallback demo con aviso) + buscador, chips de categorías, FAB "mi ubicación", **barreras comunitarias** (`GET /reportes/barreras`, marcador naranja) y ruta real contra `POST /routes` con panel "Ruta peatonal" (distancia/duración/advertencias). El mapa mantiene **mínimo la mitad de la pantalla** cuando el panel crece (el contenido se desplaza dentro) |
-| **U07** Navegación paso a paso | ✅ | `maneuvers` de Valhalla + tarjeta de maniobra + **guía por voz con `expo-speech` (es-ES)** activable, stats del avance y "Finalizar ruta"; fallo del motor con mensaje y reintento (RNF-17). «Recalcular ruta» **alterna a un camino distinto** (Valhalla `alternates`) en lugar de repetir el trayecto, con sello "Ruta alternativa" |
+| **U07** Navegación paso a paso | ✅ | `maneuvers` de Valhalla + tarjeta de maniobra + **guía por voz con `expo-speech` (es-ES)** activable, stats del avance y "Finalizar ruta"; fallo del motor con mensaje y reintento (RNF-09). «Recalcular ruta» **alterna a un camino distinto** (Valhalla `alternates`) en lugar de repetir el trayecto, con sello "Ruta alternativa" |
 | **U08** Detalle del lugar | ✅ | Galería con foto grande, contador y miniaturas con leyenda; calificación, «Accesibilidad Verificada», fichas de características con check (Ver todas), «Cómo llegar (Ruta Segura)» / «Validar información», experiencias de viajeros y compartir |
 | **U09–U10** Contribuir (reporte) | ✅ | Wizard de **4 pasos = mockup U09/U10**: Tipo (Lugar accesible vs Barrera) → Ubicación (nuevo/actualizar + GPS) → Detalles (descripción 0/500 + **etiquetas rápidas** + foto) → Confirmación. Las etiquetas fijan valores del catálogo y viajan en el mismo `POST /reportes`; pantalla de éxito estilo mockup ("3 confirmaciones") |
 | **S01** Modal | ✅ | «¡Validación alcanzada!» al publicarse un reporte |
@@ -109,7 +109,7 @@ npx expo start              # escanea el QR con Expo Go
   producción el nativo sigue siendo una opción documentada (API key vía
   plugin en `app.json`).
 - **Perfil de accesibilidad 100 % local** en `expo-secure-store` (AES-256 del
-  sistema): nunca se envía al backend (ADR-09, Ley 1581, RNF-07/08). Igual la
+  sistema): nunca se envía al backend (ADR-09, Ley 1581, RNF-20/25). Igual la
   **foto de perfil** (`expo-image-picker` + copia local con `expo-file-system`)
   y el último correo recordado para "entrar sin registrarme".
 - **Foto por cuenta:** la imagen vive en `perfil-foto-<idCuenta>.jpg`

@@ -1122,7 +1122,7 @@ const estilos = StyleSheet.create({
   },
   avisoVisita: {
     fontSize: fontSize.xs,
-    color: colors.warning,
+    color: colors.warningText,
     textAlign: 'center',
     lineHeight: 18,
   },

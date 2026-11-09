@@ -4,8 +4,8 @@
 -- Contexto: el front móvil necesita la vía de ESCRITURA del Proceso 1
 -- (Validación Colaborativa de Infraestructura):
 --   · U09/U10  crear reporte con foto + GPS + características
---   · C3       confirmaciones comunitarias con consenso de 3 (RNF-18/23/28)
---   · Vía B    decisión del moderador (M03–M05) con motivo y auditoría (RNF-22/30)
+--   · C3       confirmaciones comunitarias con consenso de 3 (RNF-22/07/28)
+--   · Vía B    decisión del moderador (M03–M05) con motivo y auditoría (RNF-05/30)
 --
 -- Diseño acordado (ADR de ventana): las escrituras van DIRECTAS a Supabase a
 -- través de funciones RPC `security definer` (atómicas y a prueba de
@@ -167,7 +167,7 @@ as $$
   limit 1;
 $$;
 
--- 3.b) ¿El solicitante es moderador o administrador? (RNF-09)
+-- 3.b) ¿El solicitante es moderador o administrador? (RNF-23)
 create or replace function public.es_moderador()
 returns boolean
 language sql stable security definer
@@ -200,7 +200,7 @@ grant execute on function public.es_moderador() to authenticated;
 --   evidencia.tipo: 'foto'
 
 
--- 4.a) PUBLICAR REPORTE (interna) — publicación exactamente una vez (RNF-23)
+-- 4.a) PUBLICAR REPORTE (interna) — publicación exactamente una vez (RNF-07)
 create or replace function public.publicar_reporte(p_reporte_id bigint)
 returns void
 language plpgsql security definer
@@ -347,7 +347,7 @@ revoke all on function public.crear_reporte(bigint, text, text, text, double pre
 grant execute on function public.crear_reporte(bigint, text, text, text, double precision, double precision, text, text, boolean, jsonb, text) to authenticated;
 
 
--- 4.c) CONFIRMAR REPORTE (C3) — 3 confirmaciones independientes publican (RNF-18/23/28)
+-- 4.c) CONFIRMAR REPORTE (C3) — 3 confirmaciones independientes publican (RNF-22/07/28)
 create or replace function public.confirmar_reporte(p_reporte_id bigint)
 returns jsonb
 language plpgsql security definer
@@ -411,7 +411,7 @@ revoke all on function public.confirmar_reporte(bigint) from public, anon;
 grant execute on function public.confirmar_reporte(bigint) to authenticated;
 
 
--- 4.d) DECIDIR REPORTE (Vía B, M04/M05) — decisión ejecutiva con motivo (RNF-22/30)
+-- 4.d) DECIDIR REPORTE (Vía B, M04/M05) — decisión ejecutiva con motivo (RNF-05/30)
 create or replace function public.decidir_reporte(
   p_reporte_id bigint,
   p_accion     text,   -- 'aprobado' | 'rechazado'            >> AJUSTAR
@@ -533,7 +533,7 @@ grant execute on function public.listar_reportes_moderacion(text) to authenticat
 
 
 -- ============================================================================
--- SECCIÓN 5 · STORAGE — bucket de evidencia fotográfica (RNF-29)
+-- SECCIÓN 5 · STORAGE — bucket de evidencia fotográfica (RNF-28)
 -- ============================================================================
 -- Bucket público de LECTURA (las fotos de infraestructura son evidencia
 -- comunitaria del mapa) y subida restringida a usuarios autenticados, cada
@@ -618,5 +618,5 @@ select
 -- 4) `POST /rest/v1/rpc/listar_reportes_moderacion` con la cuenta moderadora
 --    → 200 con la lista; con una cuenta viajera → error 'ACCESO_DENEGADO'.
 -- 5) Subida de foto: `POST /storage/v1/object/evidencia/<uid>/prueba.jpg`
---    → 200; archivo > 5 MB o no-imagen → rechazo del bucket (RNF-29).
+--    → 200; archivo > 5 MB o no-imagen → rechazo del bucket (RNF-28).
 -- ============================================================================

@@ -7,7 +7,7 @@ import * as SecureStore from '../almacenamiento';
  * - Usa EXPO_PUBLIC_API_URL (ver .env.example).
  * - Adjunta el JWT de sesión (guardado cifrado con expo-secure-store).
  * - Timeout de 10 s y errores normalizados para que la UI pueda mostrar
- *   mensajes claros (RNF-17: nunca fallar en silencio).
+ *   mensajes claros (RNF-09: nunca fallar en silencio).
  * - Sesión vencida: si el JWT ya expiró, o el backend responde 401 a una
  *   petición autenticada, avisa al manejador registrado (cierra la sesión y
  *   lleva al login) en lugar de dejar la app en un estado a medias.

@@ -106,7 +106,7 @@ function PreguntaChecklist({
           onPress={() => onCambio(valor === opcion ? null : opcion)}
           style={estilos.casilla}
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: valor === opcion }}
+          aria-checked={valor === opcion}
           accessibilityLabel={`${pregunta} ${opcion === 'si' ? 'Sí' : 'No'}`}
         >
           <Ionicons
@@ -292,7 +292,10 @@ export function RevisionReporteScreen() {
             {fotos.length > 0 ? (
               <Image
                 source={{
-                  uri: urlPublicaEvidencia(fotos[fotoActiva]?.storageKey ?? ''),
+                  uri: urlPublicaEvidencia(
+                    fotos[fotoActiva]?.storageKey ?? '',
+                    fotos[fotoActiva]?.acceso,
+                  ),
                 }}
                 style={estilos.evidencia}
                 accessibilityRole="image"
@@ -410,7 +413,9 @@ export function RevisionReporteScreen() {
                 accessibilityLabel={`Ver foto ${indice + 1}`}
               >
                 <Image
-                  source={{ uri: urlPublicaEvidencia(foto.storageKey) }}
+                  source={{
+                    uri: urlPublicaEvidencia(foto.storageKey, foto.acceso),
+                  }}
                   style={[
                     estilos.miniatura,
                     indice === fotoActiva ? estilos.miniaturaActiva : null,
@@ -552,7 +557,7 @@ export function RevisionReporteScreen() {
                         elegido ? estilos.opcionElegida : null,
                       ]}
                       accessibilityRole="radio"
-                      accessibilityState={{ checked: elegido }}
+                      aria-checked={elegido}
                       accessibilityLabel={`${opcion.titulo}. ${opcion.detalle}`}
                     >
                       <Ionicons
