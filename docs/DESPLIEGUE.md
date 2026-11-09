@@ -106,7 +106,7 @@ En iPhone se usa la versión web.
 1. `<API_URL>/health` responde `{"status":"ok"}` y `<API_URL>/mapa` trae los lugares.
 2. La web (`WEB_URL`) abre, inicia sesión y muestra el mapa.
 3. Un reporte con foto se guarda: la foto queda en `s3://<bucket>/evidencia/…`.
-4. **Actions → Pruebas funcionales → Run workflow**: los 36 casos de Postman pasan.
+4. **Actions → Pruebas funcionales → Run workflow**: los 40 casos de Postman pasan.
 5. Antes de la sustentación, borra los datos de prueba:
 
    ```powershell
