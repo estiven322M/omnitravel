@@ -65,6 +65,26 @@ const normalizar = (texto) =>
 
 /** Nombres que no identifican un lugar concreto. */
 const GENERICO = /^(restaurante|hotel|museo|parque|parqueadero|zona verde|plazoleta)( \d+)?$/;
+/** Clubes y escenarios deportivos privados no son parques públicos. */
+const NO_ES_PARQUE = /\b(club|deportivo|coliseo|cancha|estadio)\b/;
+/** Nombres de OSM que no se pudieron confirmar como lugares públicos. */
+const DESCARTADOS = new Set(['bomberos']);
+
+/**
+ * Nombre legible para la app: sin el número de sucursal («La Feria 2») y con
+ * la categoría delante cuando OSM solo trae la marca («Kandy» → «Hotel Kandy»).
+ */
+function nombreDe(tipo, nombre) {
+  const limpio = nombre
+    .replace(/\s+\d{1,2}$/, '')
+    .replace(/\bPlatanos\b/, 'Plátanos')
+    .trim();
+  const n = normalizar(limpio);
+  if (tipo === 'hotel' && !/\b(hotel|hostal|hostel|apartahotel)\b/.test(n)) return `Hotel ${limpio}`;
+  if (tipo === 'parque' && !/\b(parque|ecoparque|centro recreacional|bosque)\b/.test(n)) return `Parque ${limpio}`;
+  if (tipo === 'parque' && /^(el|la|los|las) /.test(n)) return `Parque ${limpio}`;
+  return limpio;
+}
 
 function tipoDe(tags) {
   if (tags.amenity === 'restaurant') return 'restaurante';
@@ -169,18 +189,24 @@ async function main() {
         const tipo = tipoDe(tags);
         const lat = elemento.lat ?? elemento.center?.lat;
         const lon = elemento.lon ?? elemento.center?.lon;
-        return { tags, tipo, lat, lon, nombre: (tags.name ?? '').trim() };
+        const original = (tags.name ?? '').trim();
+        return { tags, tipo, lat, lon, original, nombre: tipo ? nombreDe(tipo, original) : original };
       })
-      .filter((c) => c.tipo && c.lat && c.lon && c.nombre.length >= 4)
-      .filter((c) => !GENERICO.test(normalizar(c.nombre)))
+      .filter((c) => c.tipo && c.lat && c.lon && c.original.length >= 4)
+      .filter((c) => !GENERICO.test(normalizar(c.original)))
+      .filter((c) => !DESCARTADOS.has(normalizar(c.original)))
+      .filter((c) => c.tipo !== 'parque' || !NO_ES_PARQUE.test(normalizar(c.original)))
       .sort((a, b) => puntaje(b.tags) - puntaje(a.tags) || a.nombre.localeCompare(b.nombre));
 
     const elegidos = [];
     const porTipo = {};
     for (const candidato of candidatos) {
       const clave = normalizar(candidato.nombre);
-      if (vistos.has(clave) || (porTipo[candidato.tipo] ?? 0) >= CUPOS[candidato.tipo]) continue;
+      const claveOriginal = normalizar(candidato.original);
+      if (vistos.has(clave) || vistos.has(claveOriginal)) continue;
+      if ((porTipo[candidato.tipo] ?? 0) >= CUPOS[candidato.tipo]) continue;
       vistos.add(clave);
+      vistos.add(claveOriginal);
       porTipo[candidato.tipo] = (porTipo[candidato.tipo] ?? 0) + 1;
       elegidos.push(candidato);
     }
