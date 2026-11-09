@@ -1745,7 +1745,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (!pm.collectionVariables.get('email_moderador')) {",
+                  "if (!pm.variables.get('email_moderador') || !pm.variables.get('clave_moderador')) {",
                   "  console.log('Define email_moderador y clave_moderador para ejecutar CP-F316 a CP-F319.');",
                   "  pm.execution.skipRequest();",
                   "}"
