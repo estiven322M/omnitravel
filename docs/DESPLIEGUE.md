@@ -119,8 +119,8 @@ En iPhone se usa la versión web.
 
 | Qué | Cómo | Recuperación |
 |---|---|---|
-| Base de datos (RDS) | Copias automáticas diarias (3:00 a. m. hora Colombia), retención de 7 días, con restauración a cualquier minuto (PITR) | RDS → *Restore to point in time* o desde la instantánea |
-| Línea base | Instantánea manual `omnitravel-respaldo-<fecha>` | RDS → *Snapshots* → *Restore* |
+| Base de datos (RDS) | Copias automáticas diarias (00:00–00:30 hora Colombia) con restauración a cualquier minuto (PITR). La retención es de **1 día**, el máximo que permite la capa gratuita de AWS (`FreeTierRestrictionError` al pedir 7) | RDS → *Restore to point in time* |
+| Instantáneas manuales | `omnitravel-respaldo-<fecha>`: no vencen. Para compensar la retención de 1 día se toma una antes de cada despliegue importante y cada semana (`bash respaldos.sh`) | RDS → *Snapshots* → *Restore* |
 | Fotos de evidencia (S3) | Versionado del bucket; las versiones anteriores se guardan 30 días | S3 → objeto → *Versions* → restaurar la versión |
 | Código y esquema | GitHub + migraciones versionadas `backend/sql/000…NNN` (`npm run migrar`) | `npm run migrar -- --aplicar` sobre una base vacía |
 
@@ -142,7 +142,7 @@ bash respaldos.sh --probar-restauracion   # además restaura en una base tempora
    ejecutar **Despliegue en AWS** (o renombrar las instancias).
 5. Registrar el incidente en `docs/gestion/bitacora-incidentes.md`.
 
-**Objetivos:** RPO ≤ 5 minutos (PITR) · RTO ≈ 30 minutos (restaurar + redesplegar).
+**Objetivos:** RPO ≤ 5 minutos dentro del último día (PITR) y hasta la última instantánea manual para daños más antiguos · RTO ≈ 30 minutos (la prueba del 9 nov 2026 restauró la base en 8 minutos, más el redespliegue).
 
 ## Costos y apagado
 
