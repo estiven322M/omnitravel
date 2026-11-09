@@ -24,7 +24,7 @@ import { Badge } from '../components/Badge';
 import { BrandMark } from '../components/BrandMark';
 import { FilterSheet } from '../components/FilterSheet';
 import { MapaWeb, type PoiEnMapa } from '../components/MapaWeb';
-import { miniaturaDePoi } from '../services/mocks/fotosPoi';
+import { miniaturaDelLugar } from '../services/mocks/fotosPoi';
 import { PoiCard } from '../components/PoiCard';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import {
@@ -246,7 +246,7 @@ export function MapScreen() {
           ? (barreras.find((barrera) => barrera.poiId === poi.id)
               ?.descripcion ?? 'Reportada por la comunidad')
           : undefined,
-        foto: miniaturaDePoi(poi.nombre, poi.categoria),
+        foto: miniaturaDelLugar(poi),
         // Caminata a ~4,8 km/h (80 m/min) desde tu ubicación (U06).
         detalle: ubicacionUsuario
           ? `A ${Math.max(

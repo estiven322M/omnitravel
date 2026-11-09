@@ -27,7 +27,7 @@ import { ConsensoAlcanzado } from '../components/ConsensoAlcanzado';
 import { EmptyState } from '../components/EmptyState';
 import type { RootStackParamList } from '../navigation/types';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
-import { fotosDePoi, type FotoPoi } from '../services/mocks/fotosPoi';
+import { fotosDelLugar, type FotoPoi } from '../services/mocks/fotosPoi';
 import {
   experienciasDePoi,
   finalizarVisita,
@@ -318,7 +318,7 @@ export function PoiDetailScreen() {
     }
   };
 
-  const fotos = fotosDePoi(poi.nombre, poi.categoria);
+  const fotos = fotosDelLugar(poi);
   const confirmados = CATALOGO_CARACTERISTICAS.filter((caracteristica) => {
     const valor = poi.valores.find(
       (v) => v.caracteristicaId === caracteristica.id,
@@ -682,6 +682,13 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
             <Text style={estilos.referenciaTexto}>Foto de referencia</Text>
           </View>
         ) : null}
+        {actual.credito ? (
+          <View style={estilos.credito}>
+            <Text style={estilos.creditoTexto} numberOfLines={1}>
+              Foto: {actual.credito}
+            </Text>
+          </View>
+        ) : null}
       </View>
       {fotos.length > 1 ? (
         <ScrollView
@@ -691,7 +698,7 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
         >
           {fotos.map((foto, i) => (
             <Pressable
-              key={foto.leyenda}
+              key={foto.clave}
               onPress={() => setIndice(i)}
               accessibilityRole="button"
               accessibilityLabel={`Ver foto: ${foto.leyenda}`}
@@ -724,6 +731,17 @@ function GaleriaFotos({ fotos, nombre }: { fotos: FotoPoi[]; nombre: string }) {
 }
 
 const estilos = StyleSheet.create({
+  credito: {
+    position: 'absolute',
+    right: spacing.sm,
+    bottom: spacing.sm,
+    maxWidth: '75%',
+    backgroundColor: 'rgba(16, 24, 40, 0.6)',
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  creditoTexto: { color: colors.white, fontSize: 10 },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,

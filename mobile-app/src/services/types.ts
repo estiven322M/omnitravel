@@ -69,6 +69,17 @@ export interface Poi {
   ultimaVerificacion: string;
   valores: ValorAccesibilidad[];
   experiencias: ExperienciaViajero[];
+  /** Fotos reales del lugar (tabla POI_FOTO, Wikimedia Commons). */
+  fotos?: FotoLugar[];
+}
+
+/** Foto real de un lugar con su crédito (autor y licencia). */
+export interface FotoLugar {
+  url: string;
+  leyenda: string;
+  autor: string | null;
+  licencia: string | null;
+  fuenteUrl: string | null;
 }
 
 export interface Coordenada {

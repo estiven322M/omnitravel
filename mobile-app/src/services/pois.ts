@@ -5,6 +5,7 @@ import type {
   CaracteristicaAccesibilidad,
   EstadoVerificacion,
   ExperienciaViajero,
+  FotoLugar,
   IconName,
   Poi,
   TipoValor,
@@ -163,6 +164,33 @@ interface RespuestaMapa {
   retroalimentacion: FilaRetroalimentacion[];
   reportes: FilaReporte[];
   confirmaciones: FilaConfirmacion[];
+  /** Fotos reales de los lugares (migración 003); puede no venir. */
+  fotos?: FilaFoto[];
+}
+
+interface FilaFoto {
+  poi_id: number;
+  url: string;
+  leyenda: string | null;
+  autor: string | null;
+  licencia: string | null;
+  fuente_url: string | null;
+}
+
+/** Agrupa las fotos por lugar, en el orden que entrega el backend. */
+export function fotosPorPoi(filas: FilaFoto[] = []): Map<number, FotoLugar[]> {
+  return filas.reduce<Map<number, FotoLugar[]>>((mapa, fila) => {
+    const lista = mapa.get(fila.poi_id) ?? [];
+    lista.push({
+      url: fila.url,
+      leyenda: fila.leyenda?.trim() || 'Foto del lugar',
+      autor: fila.autor,
+      licencia: fila.licencia,
+      fuenteUrl: fila.fuente_url,
+    });
+    mapa.set(fila.poi_id, lista);
+    return mapa;
+  }, new Map());
 }
 
 /** Catálogo del equipo traducido a tokens estables del front. */
@@ -201,6 +229,7 @@ function mapearPois(
   valoresPorPoi: Map<number, ValorAccesibilidad[]>,
   retroalimentacion: FilaRetroalimentacion[],
   confirmacionesPorPoi: Map<number, number>,
+  fotos: Map<number, FotoLugar[]> = new Map(),
 ): Poi[] {
   const retorno = retroalimentacion.reduce<
     Map<number, FilaRetroalimentacion[]>
@@ -261,6 +290,7 @@ function mapearPois(
         ultimaVerificacion: new Date(ultimaActualizacion).toISOString(),
         valores: valoresPorPoi.get(fila.id_poi) ?? [],
         experiencias: experienciasPublicas,
+        fotos: fotos.get(fila.id_poi) ?? [],
       },
     ];
   });
@@ -279,6 +309,7 @@ export async function cargarDatosMapa(): Promise<DatosMapa> {
       retroalimentacion: filasRetro,
       reportes: filasReporte,
       confirmaciones: filasConfirmacion,
+      fotos: filasFoto,
     } = await apiFetch<RespuestaMapa>('/mapa');
 
     const { catalogo, idPorNumerico } = obtenerCatalogo(caracteristicas);
@@ -324,6 +355,7 @@ export async function cargarDatosMapa(): Promise<DatosMapa> {
         valoresPorPoi,
         filasRetro,
         confirmacionesPorPoi,
+        fotosPorPoi(filasFoto),
       ),
       catalogo,
       fuente: 'backend',

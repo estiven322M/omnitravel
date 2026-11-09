@@ -28,6 +28,7 @@
     "limpiar-pruebas": "node --env-file-if-exists=.env scripts/limpiar-pruebas.mjs",
     "ver-lugares": "node --env-file-if-exists=.env scripts/ver-lugares.mjs",
     "aplicar-sql": "node --env-file-if-exists=.env scripts/aplicar-sql.mjs",
+    "cargar-lugares": "node --env-file-if-exists=.env scripts/cargar-lugares.mjs",
     "separar-lugares": "node --env-file-if-exists=.env scripts/separar-lugares.mjs",
     "descargar-ca-rds": "node scripts/descargar-ca-rds.mjs"
   },

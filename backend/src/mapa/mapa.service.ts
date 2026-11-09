@@ -42,6 +42,29 @@ export class MapaService {
           from confirmacion`),
       ]);
 
-    return { caracteristicas, pois, valores, retroalimentacion, reportes, confirmaciones };
+    return {
+      caracteristicas,
+      pois,
+      valores,
+      retroalimentacion,
+      reportes,
+      confirmaciones,
+      fotos: await this.fotos(),
+    };
+  }
+
+  /**
+   * Fotos de referencia de los lugares (migración 003). Si la tabla aún no
+   * existe en la base, el mapa sigue funcionando sin ellas.
+   */
+  private async fotos() {
+    try {
+      return await this.db.query(`
+        select poi_id::int, url, leyenda, autor, licencia, fuente_url
+        from poi_foto
+        order by poi_id, orden, id_foto`);
+    } catch {
+      return [];
+    }
   }
 }

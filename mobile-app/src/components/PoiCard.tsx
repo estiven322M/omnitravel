@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CATALOGO_CARACTERISTICAS } from '../services/mocks/catalog';
 import type { Poi } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
-import { fotoDePoi } from '../services/mocks/fotosPoi';
+import { portadaDelLugar } from '../services/mocks/fotosPoi';
 import { formatearDistancia } from '../utils/format';
 import { colors, fontSize, fontWeight, radii, spacing } from '../utils/theme';
 import { Badge } from './Badge';
@@ -39,7 +39,7 @@ export function PoiCard({
 }: Props) {
   const etiquetas = etiquetasAccesibles(poi);
   const verificado = poi.estadoVerificacion === 'VERIFICADO';
-  const foto = fotoDePoi(poi.nombre, poi.categoria);
+  const foto = portadaDelLugar(poi);
   const esFavorito = useFavoritosStore((estado) => estado.ids.includes(poi.id));
   const alternarFavorito = useFavoritosStore((estado) => estado.alternar);
   const [guardandoFavorito, setGuardandoFavorito] = useState(false);

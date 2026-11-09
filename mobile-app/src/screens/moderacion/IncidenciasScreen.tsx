@@ -19,7 +19,8 @@ import {
   InsigniaModerador,
 } from '../../components/EncabezadoMarca';
 import type { RootStackParamList } from '../../navigation/types';
-import { fotoDePoi } from '../../services/mocks/fotosPoi';
+import { portadaDelLugar } from '../../services/mocks/fotosPoi';
+import { usePoisStore } from '../../store/poisStore';
 import {
   desactivarPuntoDeIncidencia,
   listarIncidencias,
@@ -55,6 +56,7 @@ export function IncidenciasScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const perfil = useProfileStore((estado) => estado.perfil);
   const marcarCambio = useModeracionStore((estado) => estado.marcarCambio);
+  const poiPorId = usePoisStore((estado) => estado.poiPorId);
   const [incidencias, setIncidencias] = useState<Incidencia[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todas');
@@ -215,7 +217,14 @@ export function IncidenciasScreen() {
             <View style={estilos.tarjeta}>
               <View style={estilos.fila}>
                 <Image
-                  source={fotoDePoi(item.poi.nombre, item.poi.tipo).fuente}
+                  source={
+                    portadaDelLugar(
+                      poiPorId(item.poi.id) ?? {
+                        nombre: item.poi.nombre,
+                        categoria: item.poi.tipo,
+                      },
+                    ).fuente
+                  }
                   style={estilos.foto}
                   accessibilityElementsHidden
                 />
