@@ -21,7 +21,7 @@ const AGENTE =
   'OmniTravel-UQ/1.0 (proyecto academico Universidad del Quindio; https://github.com/estiven322M/omnitravel)';
 /** Casco urbano de Armenia: sur, oeste, norte, este. */
 const CAJA = '4.495,-75.725,4.580,-75.635';
-const CUPOS = { restaurante: 10, hotel: 6, museo: 5, parque: 5 };
+const CUPOS = { restaurante: 10, hotel: 6, museo: 5, parque: 4 };
 const SERVIDORES = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
@@ -64,7 +64,7 @@ const normalizar = (texto) =>
     .trim();
 
 /** Nombres que no identifican un lugar concreto. */
-const GENERICO = /^(restaurante|hotel|museo|parque|parqueadero|zona verde|plazoleta)( \d+)?$/;
+const GENERICO = /^(restaurante|hotel|museo|parque|parque infantil|parqueadero|zona verde|plazoleta)( \d+)?$/;
 /** Clubes y escenarios deportivos privados no son parques públicos. */
 const NO_ES_PARQUE = /\b(club|deportivo|coliseo|cancha|estadio)\b/;
 /** Nombres de OSM que no se pudieron confirmar como lugares públicos. */
