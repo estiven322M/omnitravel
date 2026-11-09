@@ -20,18 +20,33 @@ import { conectar } from './conexion.mjs';
 import { ELIMINAR_IDS, LUGARES } from './datos/lugares-armenia.mjs';
 
 const confirmar = process.argv.includes('--confirmar');
-const AGENTE = 'OmniTravel-UQ/1.0 (proyecto academico, Universidad del Quindio)';
+const AGENTE =
+  'OmniTravel-UQ/1.0 (proyecto academico Universidad del Quindio; https://github.com/estiven322M/omnitravel)';
 const CAJA_ARMENIA = '-75.76,4.60,-75.60,4.47'; // oeste,norte,este,sur
 const ANCHO_MINIMO = 900;
 const MAX_FOTOS = 3;
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * GET con reintentos: Wikimedia limita las consultas seguidas (HTTP 429), así
+ * que se espera entre consultas y se reintenta con espera creciente.
+ */
 async function json(url) {
-  const respuesta = await fetch(url, { headers: { 'User-Agent': AGENTE } });
-  if (!respuesta.ok) {
+  const esCommons = String(url).includes('wikimedia.org');
+  for (let intento = 0; intento < 6; intento += 1) {
+    if (esCommons) await esperar(1500);
+    const respuesta = await fetch(url, { headers: { 'User-Agent': AGENTE } });
+    if (respuesta.ok) {
+      return respuesta.json();
+    }
+    if (respuesta.status === 429 || respuesta.status >= 500) {
+      const pausa = Number(respuesta.headers.get('retry-after')) || 2 ** (intento + 1);
+      await esperar(Math.min(pausa, 30) * 1000);
+      continue;
+    }
     throw new Error(`HTTP ${respuesta.status} en ${new URL(url).host}`);
   }
-  return respuesta.json();
+  throw new Error(`Demasiados reintentos en ${new URL(url).host}`);
 }
 
 /** Coordenadas en OpenStreetMap, limitadas al área de Armenia. */
@@ -245,7 +260,7 @@ async function main() {
       if (id) {
         await cliente.query(
           `update poi set nombre = $1, descripcion = $2, tipo = $3, direccion = $4,
-                  ubicacion = ST_SetSRID(ST_MakePoint($5, $6), 4326)::geography,
+                  ubicacion = ST_SetSRID(ST_MakePoint($5, $6), 4326),
                   estado = 'publicado', fecha_actualizacion = now()
             where id_poi = $7`,
           [...datos, id],
@@ -254,7 +269,7 @@ async function main() {
       } else {
         const { rows } = await cliente.query(
           `insert into poi (nombre, descripcion, tipo, direccion, ubicacion, estado)
-           values ($1, $2, $3, $4, ST_SetSRID(ST_MakePoint($5, $6), 4326)::geography, 'publicado')
+           values ($1, $2, $3, $4, ST_SetSRID(ST_MakePoint($5, $6), 4326), 'publicado')
            returning id_poi::int as id`,
           datos,
         );
