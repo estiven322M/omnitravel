@@ -1,8 +1,0 @@
-# ADR-004: Stack tecnológico real (Expo RN, NestJS, PostgreSQL/PostGIS, Valhalla)
-
-- **Estado:** Aceptada según el C4 (N2) y el código actual del repositorio.
-- **Contexto:** Se requiere app nativa multiplataforma, lógica de negocio server-side, consultas geoespaciales de alto rendimiento y ruteo peatonal personalizado; el equipo ya construyó la app y la infraestructura local.
-- **Decisión:** Stack: **React Native (Expo SDK 57) + TypeScript** para la app; **NestJS (Node.js) con TypeScript** como backend core; **PostgreSQL + PostGIS en AWS RDS** como BD geoespacial; **Valhalla** auto-hospedado en Docker como motor de ruteo; identidad con cuentas propias en el backend (JWT, ver ADR-007); **AWS S3** para evidencia fotográfica; Mapbox/OpenStreetMap para la cartografía base.
-- **Alternativas:** Flutter/Kotlin+Swift nativo; Java Spring Boot (stack del curso de referencia); Firebase/Supabase como backend único; Google/Mapbox Directions como motor de ruteo externalizado.
-- **Justificación:** Uniformidad de TypeScript en toda la línea (app+backend, reduce contexto técnico); PostGIS con índices GIST cumple RNF-04; Valhalla permite costing peatonal y personalización de barreras (RNF-21/26) sin costo por consumo externo; el docker-compose del repo ya provisiona PostGIS y Valhalla.
-- **Consecuencias:** Dos runtimes Node (app y backend) y una BD PostGIS con esquema propio (documento 04); el motor de ruteo exige operar los tiles de OSM localmente (extraer/construir el extracto del Quindío) y mantener el contenedor actualizado. El proyecto Supabase compartido se retiró (2026-10-18): la app solo habla con el backend.

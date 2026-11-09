@@ -33,6 +33,7 @@
     "cargar-lugares": "node --env-file-if-exists=.env scripts/cargar-lugares.mjs",
     "complementar-lugares": "node --env-file-if-exists=.env scripts/complementar-lugares.mjs",
     "exportar-esquema": "node --env-file-if-exists=.env scripts/exportar-esquema.mjs",
+    "generar-mer": "node --env-file-if-exists=.env scripts/generar-mer.mjs",
     "separar-lugares": "node --env-file-if-exists=.env scripts/separar-lugares.mjs",
     "descargar-ca-rds": "node scripts/descargar-ca-rds.mjs"
   },

@@ -23,7 +23,7 @@ src/
 ├── common/                       # filtros de excepción, interceptores, DTO comunes
 │   └── exception/                # formato de error `Error` y códigos estables
 ├── security/                     # guards JWT, RBAC por rol, decoradores, extracción de identidad
-├── auth/                         # registro, login, sesión (JWT propio del backend, bcrypt; ver ADR-007)
+├── auth/                         # registro, login, sesión (JWT propio del backend, bcrypt; ver ADR-09)
 ├── users/                        # perfiles públicos (sin datos sensibles), roles, estados
 ├── pois/                         # catálogo POI, búsqueda por bounding box (GeoJSON), detalle
 ├── accessibility/                # catálogo de características y valores vigentes por POI

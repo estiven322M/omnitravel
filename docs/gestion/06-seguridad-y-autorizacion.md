@@ -3,7 +3,7 @@
 ## Autenticación
 El objetivo (C4/RNF-06) es autenticar a todos los usuarios mediante JWT gestionado de forma centralizada en el backend. **Estado actual (2026-10-18)**: implementado. La app autentica contra el backend (`POST /auth/register`, `POST /auth/login`; `mobile-app/src/services/api/auth.ts`), que guarda las cuentas en la tabla `usuario` de la BD en AWS RDS y emite un JWT propio (expiración 24 h). La app guarda el token cifrado en el dispositivo (expo-secure-store) para cumplir RNF-08.
 
-Decisión tomada (ADR-007): cuentas propias en el backend NestJS; Supabase ya no se usa. Reglas:
+Decisión tomada (ADR-09): cuentas propias en el backend NestJS; Supabase ya no se usa. Reglas:
 
 - Los únicos endpoints públicos son `POST /auth/register`, `POST /auth/login` y la consulta pública del mapa (decisión pendiente: si el mapa es público solo con POI `VERIFICADO`). Todo lo demás exige token vigente salvo excepción explícita aprobada.
 - El servidor debe validar firma, expiración, algoritmo permitido y claims necesarios; nunca aceptar roles o identidad enviados libremente por el cliente.

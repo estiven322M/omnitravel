@@ -1,8 +1,0 @@
-# ADR-007: JWT con RBAC y datos sensibles del perfil solo en el dispositivo
-
-- **Estado:** Aceptada e implementada (2026-10-18): cuentas propias en el backend NestJS sobre la BD en AWS RDS; Supabase Auth retirado.
-- **Contexto:** Los usuarios se categorizan por rol y el perfil de accesibilidad (tipo/grado de discapacidad, diagnósticos) es dato sensible protegido por la Ley 1581 de 2012; el backend no debe almacenarlo.
-- **Decisión:** Autenticación JWT (`Bearer`): cuentas propias en el backend (bcrypt) que emite el JWT; sesión cifrada en el dispositivo (expo-secure-store, expiración ≤ 24 h, RNF-08); el backend valida firma/claims de cada token y resuelve rol y alcance, sin aceptar identidad del cuerpo. Autorización por rol (**RBAC**): `VIAJERO_ADI`, `COLABORADOR`, `ESTABLECIMIENTO` comparten módulo comunidad; `MODERADOR`/`ADMIN` habilitan el módulo de moderación (M01–M07) y solo ellos pueden consultar ese panel. El perfil detallado de accesibilidad se guarda cifrado (AES-256) **solo en el dispositivo** (RNF-07); para el ruteo se envían parámetros de restricción anónimos/temporales. El JWT no incluye datos personales, solo `sub`, `rol`, `exp`.
-- **Alternativas:** Guardar el perfil en el backend con cifrado en columnas; construir cuentas propias con bcrypt en NestJS; sesiones con cookies.
-- **Justificación:** Cumple RNF-06/07/08/09 a la vez: los datos sensibles jamás salen del dispositivo, la sesión es portable entre app y front web, y la moderation queda reservada por rol; minimiza el daño ante brechas del servidor.
-- **Consecuencias:** Las cuentas copiadas desde Supabase (hash SHA-256) se migran a bcrypt en su primer login; la sesión debe renovarse de forma segura; toda prueba de endpoints debe verificar 401/403 por rol y propiedad.
