@@ -14,7 +14,7 @@ procesos de OmniTravel. Por defecto apuntan al backend desplegado en Railway.
 
 1. En Postman, usa **Import** y elige el archivo `omnitravel.postman_collection.json`.
 2. Sobre la colección, haz clic en **Run collection** y luego en **Run**. No cambies el orden: cada caso usa datos del anterior.
-3. Para los casos del moderador (CP-F316 a CP-F319), en la pestaña **Variables** de la colección escribe `email_moderador` y `clave_moderador` (no las guardes en el repositorio). Sin ellas esos tres casos se omiten.
+3. Para los casos del moderador (CP-F316 a CP-F319), en la pestaña **Variables** de la colección escribe `email_moderador` y `clave_moderador` (no las guardes en el repositorio). Sin ellas esos cuatro casos se omiten.
 4. Al terminar, toma la captura del resumen, donde aparecen los casos aprobados y fallidos. Esa captura es la evidencia para el documento.
 
 Desde la terminal también se puede ejecutar así:
