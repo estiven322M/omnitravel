@@ -25,6 +25,7 @@ try {
     `select c.oid, c.relname as nombre, obj_description(c.oid, 'pg_class') as comentario
        from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r'
+        and c.relname <> 'migracion_aplicada' -- la crea y la llena npm run migrar
         and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
       order by c.relname`,
   );
@@ -88,7 +89,10 @@ try {
     '--',
     `-- Generado con \`npm run exportar-esquema\` desde la base de producción el ${new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Bogota' })}.`,
     '-- Recrea la estructura completa en una base vacía (sin datos); después se',
-    '-- aplican en orden 001, 002, 003… Usado también por las pruebas de integración.',
+    '-- aplican en orden 001, 002, 003… (npm run migrar). Usado también por las',
+    '-- pruebas de integración. Todo en una transacción: si algo falla, no queda nada.',
+    '',
+    'begin;',
     '',
     ...extensiones.map((e) => `create extension if not exists ${q(e.extname)};`),
     '',
@@ -145,6 +149,7 @@ try {
     lineas.push(...vistas.map((v) => `create or replace view ${q(v.nombre)} as\n${v.definicion.trim()}\n`));
   }
 
+  lineas.push('commit;');
   writeFileSync(SALIDA, `${lineas.join('\n')}\n`);
   console.log(`✔ Esquema exportado: ${tablas.length} tablas, ${foraneas.length} llaves foráneas, ` +
     `${indices.length} índices, ${funciones.length} funciones, ${disparadores.length} disparadores, ${vistas.length} vistas.`);

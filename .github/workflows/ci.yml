@@ -49,6 +49,50 @@ jobs:
             backend/coverage/lcov-report/
           if-no-files-found: ignore
 
+  integracion:
+    name: Integración (API + PostGIS real)
+    runs-on: ubuntu-latest
+    # Base PostgreSQL 16 + PostGIS 3.4 desechable, creada con las migraciones
+    # del repositorio (sql/000…NNN). Auditoría NC-06.
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_PASSWORD: integracion
+          POSTGRES_DB: omnitravel_integracion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Pruebas de integración (Jest + Supertest + PostGIS)
+        run: npm run test:integracion -- --ci --reporters=default --reporters=jest-junit
+        env:
+          INTEGRACION_DATABASE_URL: postgres://postgres:integracion@localhost:5432/omnitravel_integracion
+          JEST_JUNIT_OUTPUT_DIR: reports
+          JEST_JUNIT_OUTPUT_NAME: junit-integracion.xml
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: reportes-integracion
+          path: backend/reports/
+          if-no-files-found: ignore
+
   app:
     name: App móvil (Expo)
     runs-on: ubuntu-latest
@@ -89,7 +133,7 @@ jobs:
 
   testrail:
     name: Resultados a TestRail
-    needs: [backend, app]
+    needs: [backend, integracion, app]
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
@@ -112,7 +156,7 @@ jobs:
         if: steps.secreto.outputs.hay == 'si'
         run: |
           pip install --quiet trcli
-          for f in reportes-backend/reports/junit-backend.xml reportes-app/reports/junit-app.xml; do
+          for f in reportes-backend/reports/junit-backend.xml reportes-integracion/reports/junit-integracion.xml reportes-app/reports/junit-app.xml; do
             trcli -y -h "$TESTRAIL_URL" --project "OmniTravel" \
               --username "$TESTRAIL_USER" --key "$TESTRAIL_KEY" \
               parse_junit --title "CI ${GITHUB_RUN_NUMBER} · $(basename "$f" .xml)" -f "$f"
