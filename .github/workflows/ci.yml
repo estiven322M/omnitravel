@@ -121,6 +121,12 @@ jobs:
         run: npx expo export -p web --output-dir dist
         env:
           EXPO_PUBLIC_API_URL: ${{ vars.API_URL || 'http://localhost:3000' }}
+      - name: Auditoría automática de accesibilidad (axe-core, WCAG 2.1 AA)
+        working-directory: pruebas/accesibilidad
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run auditar -- --dist ../../mobile-app/dist
       - name: Publicar reportes
         if: always()
         uses: actions/upload-artifact@v5
@@ -129,6 +135,7 @@ jobs:
           path: |
             mobile-app/reports/
             mobile-app/coverage/lcov-report/
+            pruebas/accesibilidad/resultados/
           if-no-files-found: ignore
 
   testrail:

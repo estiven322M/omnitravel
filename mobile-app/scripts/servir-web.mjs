@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Servidor estático de la versión web de OmniTravel (carpeta dist/ creada
- * con `npx expo export -p web`). Lo usa el servicio web de Railway.
+ * con `npx expo export -p web`) para probarla en local; en producción la
+ * sirve AWS Amplify Hosting.
  * Rutas desconocidas devuelven index.html (la app maneja su navegación).
  *
  *   node scripts/servir-web.mjs          # puerto $PORT o 8080

@@ -2,7 +2,7 @@
 /**
  * Descarga el certificado raíz PÚBLICO de AWS RDS (global-bundle.pem) en
  * backend/certs/, para que el backend valide el TLS de la base de datos con
- * DB_SSL_CA=certs/global-bundle.pem. Lo usa el build de Railway y sirve
+ * DB_SSL_CA=certs/global-bundle.pem. Lo usa el Dockerfile del backend y sirve
  * igual en cualquier computador del equipo.
  *
  *   npm run descargar-ca-rds

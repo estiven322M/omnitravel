@@ -66,3 +66,6 @@ infra/valhalla/data/valhalla/
 # ==========================================
 
 infra/valhalla/data/valhalla/
+
+# Auditoría de accesibilidad: dependencias locales
+pruebas/accesibilidad/node_modules/

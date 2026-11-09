@@ -1,7 +1,7 @@
 # Pruebas funcionales con Postman
 
 `omnitravel.postman_collection.json` tiene las pruebas funcionales de los tres
-procesos de OmniTravel. Por defecto apuntan al backend desplegado en Railway.
+procesos de OmniTravel. Por defecto apuntan al backend desplegado en AWS (ECS).
 
 | Carpeta | Casos | Qué valida |
 |---|---|---|

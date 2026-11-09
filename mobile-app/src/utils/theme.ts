@@ -14,16 +14,19 @@ export const colors = {
   /** Verde de verificación/accesibilidad confirmada. */
   success: '#0E7F43',
   successSoft: '#EAF5EE',
-  /** Naranja de advertencia (barreras). Usar para iconos, no para texto pequeño. */
+  /** Naranja de advertencia (barreras). Usar para iconos, no para texto. */
   warning: '#F57B15',
+  /** Naranja oscuro para TEXTO de advertencia (5.2:1 sobre warningSoft). */
+  warningText: '#A84B00',
   warningSoft: '#FEF2E2',
   /** Rojo de rechazo/peligro. */
   danger: '#D2282A',
   dangerSoft: '#FCEBEB',
   /** Texto principal (títulos). */
   textPrimary: '#101828',
-  /** Texto secundario (cumple AA sobre blanco). */
-  textSecondary: '#6E7377',
+  /** Texto secundario: 6:1 sobre blanco y ≥5.3:1 sobre los fondos suaves
+   * (primarySoft, successSoft, warningSoft), verificado con axe-core. */
+  textSecondary: '#5F6468',
   /** Gris azulado de subtítulos de los mockups (5.4:1 sobre blanco). */
   textSlate: '#5B6B86',
   /** Azul marino de títulos de los mockups. */

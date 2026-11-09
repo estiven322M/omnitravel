@@ -232,7 +232,7 @@ function EtiquetaChip({
       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
       accessibilityRole="checkbox"
       accessibilityLabel={etiqueta.etiqueta}
-      accessibilityState={{ checked: activa }}
+      aria-checked={activa}
       style={({ pressed }) => [
         estilos.etiquetaChip,
         { backgroundColor: PALETA_TONO[etiqueta.tono].fondo },
@@ -655,9 +655,7 @@ export function ContributeScreen() {
             <Pressable
               onPress={() => elegirTipo(false)}
               accessibilityRole="radio"
-              accessibilityState={{
-                selected: tipoElegido && !borrador.esCritico,
-              }}
+              aria-checked={tipoElegido && !borrador.esCritico}
               accessibilityHint="Reporta un lugar que cuenta con condiciones de accesibilidad para todas las personas"
               style={[
                 estilos.tarjetaTipo,
@@ -697,9 +695,7 @@ export function ContributeScreen() {
             <Pressable
               onPress={() => elegirTipo(true)}
               accessibilityRole="radio"
-              accessibilityState={{
-                selected: tipoElegido && borrador.esCritico,
-              }}
+              aria-checked={tipoElegido && borrador.esCritico}
               accessibilityHint="Reporta una barrera u obstáculo que dificulte la movilidad o el acceso en un lugar"
               style={[
                 estilos.tarjetaTipo,
@@ -758,7 +754,7 @@ export function ContributeScreen() {
                     actualizarBorrador({ modo: 'nuevo', poiId: null })
                   }
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: borrador.modo === 'nuevo' }}
+                  aria-checked={borrador.modo === 'nuevo'}
                   accessibilityHint="Un lugar que todavía no aparece en el mapa"
                   style={[
                     estilos.opcion,
@@ -783,9 +779,7 @@ export function ContributeScreen() {
                 <Pressable
                   onPress={() => actualizarBorrador({ modo: 'actualizacion' })}
                   accessibilityRole="radio"
-                  accessibilityState={{
-                    selected: borrador.modo === 'actualizacion',
-                  }}
+                  aria-checked={borrador.modo === 'actualizacion'}
                   accessibilityHint="Corrige o amplía los datos de un lugar del mapa"
                   style={[
                     estilos.opcion,
@@ -872,7 +866,7 @@ export function ContributeScreen() {
                         key={poi.id}
                         onPress={() => actualizarBorrador({ poiId: poi.id })}
                         accessibilityRole="radio"
-                        accessibilityState={{ selected: activo }}
+                        aria-checked={activo}
                         accessibilityLabel={`${poi.nombre}, ${poi.categoria}`}
                         style={[
                           estilos.filaLugar,
@@ -1458,7 +1452,7 @@ const estilos = StyleSheet.create({
   tituloTipoBarrera: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: colors.warning,
+    color: colors.warningText,
   },
   textoTipo: {
     fontSize: fontSize.sm,

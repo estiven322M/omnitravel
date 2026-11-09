@@ -123,7 +123,7 @@ export const URL_CA_RDS =
 
 /**
  * Garantiza que exista el archivo de DB_SSL_CA antes de conectar: si apunta a
- * un archivo que no está (p. ej. en Railway, donde el disco del build no
+ * un archivo que no está (p. ej. en un contenedor donde el disco del build no
  * siempre llega a la imagen), descarga la CA pública de RDS y la guarda ahí.
  * No hace nada si DB_SSL no es `true`, si la CA viene en línea (PEM) o si el
  * archivo ya existe. Si la descarga falla, el error explica qué revisar.

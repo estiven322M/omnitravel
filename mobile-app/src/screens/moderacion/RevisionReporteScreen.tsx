@@ -106,7 +106,7 @@ function PreguntaChecklist({
           onPress={() => onCambio(valor === opcion ? null : opcion)}
           style={estilos.casilla}
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: valor === opcion }}
+          aria-checked={valor === opcion}
           accessibilityLabel={`${pregunta} ${opcion === 'si' ? 'Sí' : 'No'}`}
         >
           <Ionicons
@@ -557,7 +557,7 @@ export function RevisionReporteScreen() {
                         elegido ? estilos.opcionElegida : null,
                       ]}
                       accessibilityRole="radio"
-                      accessibilityState={{ checked: elegido }}
+                      aria-checked={elegido}
                       accessibilityLabel={`${opcion.titulo}. ${opcion.detalle}`}
                     >
                       <Ionicons

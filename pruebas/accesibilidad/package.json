@@ -1,0 +1,13 @@
+{
+  "name": "omnitravel-pruebas-accesibilidad",
+  "private": true,
+  "description": "Auditoría automática de accesibilidad (axe-core, WCAG 2.1 AA) de la versión web de OmniTravel",
+  "type": "module",
+  "scripts": {
+    "auditar": "node auditar.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.3",
+    "playwright": "1.63.0"
+  }
+}

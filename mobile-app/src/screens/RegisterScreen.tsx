@@ -323,7 +323,7 @@ export function RegisterScreen() {
                     onPress={() => setRol(id)}
                     accessibilityRole="radio"
                     accessibilityLabel={`${etiqueta}. ${detalle}`}
-                    accessibilityState={{ checked: activo }}
+                    aria-checked={activo}
                     style={[
                       estilos.opcionRol,
                       activo ? estilos.opcionRolActiva : null,
@@ -373,7 +373,7 @@ export function RegisterScreen() {
                     onPress={() => alternarNecesidad(id)}
                     accessibilityRole="checkbox"
                     accessibilityLabel={etiqueta}
-                    accessibilityState={{ checked: activa }}
+                    aria-checked={activa}
                     style={[
                       estilos.opcion,
                       activa ? estilos.opcionActiva : null,

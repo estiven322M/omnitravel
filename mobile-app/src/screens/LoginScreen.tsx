@@ -277,7 +277,7 @@ export function LoginScreen() {
                     activa ? estilos.opcionRolActiva : null,
                   ]}
                   accessibilityRole="radio"
-                  accessibilityState={{ checked: activa }}
+                  aria-checked={activa}
                   accessibilityLabel={opcion.titulo}
                   accessibilityHint={opcion.ayuda}
                 >

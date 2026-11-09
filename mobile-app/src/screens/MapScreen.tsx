@@ -1251,7 +1251,7 @@ const estilos = StyleSheet.create({
     textAlign: 'right',
   },
   valorDatoSuave: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   botonInvertir: {
     width: TOUCH_TARGET,

@@ -1,0 +1,57 @@
+[
+  {
+    "pantalla": "U01 Presentación",
+    "violaciones": [],
+    "aprobadas": 19
+  },
+  {
+    "pantalla": "U02 Inicio de sesión",
+    "violaciones": [],
+    "aprobadas": 24
+  },
+  {
+    "pantalla": "U03 Registro",
+    "violaciones": [],
+    "aprobadas": 25
+  },
+  {
+    "pantalla": "U04 Inicio (viajero)",
+    "violaciones": [],
+    "aprobadas": 27
+  },
+  {
+    "pantalla": "U06 Mapa",
+    "violaciones": [],
+    "aprobadas": 25
+  },
+  {
+    "pantalla": "U09 Contribuir",
+    "violaciones": [],
+    "aprobadas": 24
+  },
+  {
+    "pantalla": "Guardados",
+    "violaciones": [],
+    "aprobadas": 23
+  },
+  {
+    "pantalla": "U05 Perfil",
+    "violaciones": [],
+    "aprobadas": 25
+  },
+  {
+    "pantalla": "M02 Panel del moderador",
+    "violaciones": [],
+    "aprobadas": 23
+  },
+  {
+    "pantalla": "M03 Reportes",
+    "violaciones": [],
+    "aprobadas": 23
+  },
+  {
+    "pantalla": "M07 Estadísticas",
+    "violaciones": [],
+    "aprobadas": 24
+  }
+]
