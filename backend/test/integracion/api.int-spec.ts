@@ -102,6 +102,12 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
       await request(http).get('/api/docs').expect(404);
     });
 
+    it('CP-I23 GET /fotos/:id es público y solo sirve fotos registradas', async () => {
+      await request(http).get('/fotos/abc').expect(400);
+      const res = await request(http).get('/fotos/999999').expect(404);
+      expect(res.body.error).toBe('FOTO_NO_ENCONTRADA');
+    });
+
     it('CP-I03 las entradas inválidas se rechazan antes de tocar la base', async () => {
       await registrar('ana');
       const res = await request(http)
