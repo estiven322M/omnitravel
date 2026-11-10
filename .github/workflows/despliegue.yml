@@ -13,6 +13,7 @@
 #   AWS_REGION, AWS_ACCOUNT_ID, EVIDENCIAS_BUCKET, AMPLIFY_APP_ID, WEB_URL
 #   API_URL (opcional: URL del backend; si falta se usa la que entrega ECS)
 # Secretos: DATABASE_URL, JWT_SECRET (+ AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY sin OIDC)
+#   ADMIN_INVITE_CODE: código para registrarse como administrador (vacío = registro de administrador deshabilitado)
 name: Despliegue (AWS)
 
 on:
@@ -100,6 +101,7 @@ jobs:
               {"name": "DB_SSL", "value": "true"},
               {"name": "DB_SSL_CA", "value": "certs/global-bundle.pem"},
               {"name": "JWT_SECRET", "value": "${{ secrets.JWT_SECRET }}"},
+              {"name": "ADMIN_INVITE_CODE", "value": "${{ secrets.ADMIN_INVITE_CODE }}"},
               {"name": "VALHALLA_URL", "value": "https://valhalla1.openstreetmap.de"},
               {"name": "CORS_ORIGINS", "value": "${{ vars.WEB_URL }}"},
               {"name": "EVIDENCIAS_BUCKET", "value": "${{ vars.EVIDENCIAS_BUCKET }}"},
