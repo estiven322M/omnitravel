@@ -56,3 +56,24 @@ export function variacion(actual: number, anterior: number): number | null {
   }
   return Math.round(((actual - anterior) / anterior) * 100);
 }
+
+/**
+ * Tiempo promedio de respuesta del moderador, legible: minutos si es menos de
+ * una hora, horas hasta dos días y días a partir de ahí (679,1 h → «28,3 días»).
+ */
+export function formatoTiempoRespuesta(
+  horas: number | null | undefined,
+): string {
+  if (horas == null || !Number.isFinite(horas) || horas < 0) {
+    return '—';
+  }
+  const decimal = (valor: number) =>
+    (Math.round(valor * 10) / 10).toString().replace('.', ',');
+  if (horas < 1) {
+    return `${Math.max(1, Math.round(horas * 60))} min`;
+  }
+  if (horas < 48) {
+    return `${decimal(horas)} h`;
+  }
+  return `${decimal(horas / 24)} días`;
+}

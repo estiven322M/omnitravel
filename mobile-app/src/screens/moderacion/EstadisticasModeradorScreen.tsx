@@ -24,6 +24,7 @@ import {
 import type { IconName } from '../../services/types';
 import {
   etiquetaDia,
+  formatoTiempoRespuesta,
   maximoRedondo,
   segmentosDe,
   variacion,
@@ -234,7 +235,7 @@ function Actividad({ dias }: { dias: EstadisticasModeracion['actividad'] }) {
             <View
               style={[estilos.puntoLeyenda, { backgroundColor: SERIE[serie] }]}
             />
-            <Text style={estilos.textoLeyenda}>
+            <Text style={estilos.textoSerie}>
               {serie === 'recibidos' ? 'Recibidos' : 'Resueltos'}
             </Text>
           </View>
@@ -561,7 +562,7 @@ export function EstadisticasModeradorScreen() {
               <View style={estilos.separadorVertical} />
               <View style={estilos.desempeno}>
                 <Text style={estilos.valorDesempeno}>
-                  {d.horasPromedio != null ? `${d.horasPromedio} h` : '—'}
+                  {formatoTiempoRespuesta(d.horasPromedio)}
                 </Text>
                 <Text style={estilos.tituloCifra}>Tiempo promedio</Text>
                 <Text style={estilos.detalleCifra}>de respuesta</Text>
@@ -680,6 +681,7 @@ const estilos = StyleSheet.create({
   },
   leyendaSeries: { flexDirection: 'row', gap: spacing.lg },
   itemSerie: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  textoSerie: { fontSize: fontSize.sm, color: colors.textPrimary },
   detalleDia: {
     flexDirection: 'row',
     alignItems: 'baseline',
