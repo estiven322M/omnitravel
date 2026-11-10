@@ -92,7 +92,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_autor}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "raw": "{\n  \"email\": \"{{email_autor}}\",\n  \"password\": \"{{clave}}\",\n  \"aceptaPolitica\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -151,7 +151,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_c1}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "raw": "{\n  \"email\": \"{{email_c1}}\",\n  \"password\": \"{{clave}}\",\n  \"aceptaPolitica\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -210,7 +210,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_c2}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "raw": "{\n  \"email\": \"{{email_c2}}\",\n  \"password\": \"{{clave}}\",\n  \"aceptaPolitica\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -269,7 +269,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_c3}}\",\n  \"password\": \"{{clave}}\"\n}",
+              "raw": "{\n  \"email\": \"{{email_c3}}\",\n  \"password\": \"{{clave}}\",\n  \"aceptaPolitica\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"

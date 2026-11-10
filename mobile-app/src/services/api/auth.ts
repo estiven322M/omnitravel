@@ -31,6 +31,8 @@ export interface DatosRegistro {
    */
   rol?: 'viajero' | 'administrador';
   codigoInvitacion?: string;
+  /** Aceptación de la política de tratamiento de datos (Ley 1581); obligatoria. */
+  aceptaPolitica: boolean;
 }
 
 export interface ResultadoRegistro {
@@ -110,13 +112,15 @@ async function autenticar(
 export async function registrarCuenta(
   datos: DatosRegistro,
 ): Promise<ResultadoRegistro> {
-  const extra =
-    datos.rol === 'administrador'
+  const extra = {
+    aceptaPolitica: datos.aceptaPolitica,
+    ...(datos.rol === 'administrador'
       ? {
           rol: 'administrador',
           codigoInvitacion: datos.codigoInvitacion ?? '',
         }
-      : undefined;
+      : {}),
+  };
   const perfil = await autenticar(
     '/auth/register',
     datos.email,

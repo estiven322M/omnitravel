@@ -47,7 +47,7 @@ describirSiHayBd('Integración — API + PostgreSQL/PostGIS + Valhalla', () => {
   const registrar = async (alias: string) => {
     const res = await request(http)
       .post('/auth/register')
-      .send({ email: `${alias}@integracion.test`, password: CLAVE })
+      .send({ email: `${alias}@integracion.test`, password: CLAVE, aceptaPolitica: true })
       .expect(201);
     tokens[alias] = res.body.token as string;
     return res.body as {

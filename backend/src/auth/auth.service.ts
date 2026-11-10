@@ -58,7 +58,12 @@ export interface Credenciales {
   /** 'viajero' (por defecto) o 'administrador' con código de invitación. */
   rol?: unknown;
   codigoInvitacion?: unknown;
+  /** Ley 1581 de 2012: el registro exige aceptar la política de tratamiento de datos. */
+  aceptaPolitica?: unknown;
 }
+
+/** Versión de la política de tratamiento de datos que acepta quien se registra. */
+export const VERSION_POLITICA_DATOS = '1.0 (10/11/2026)';
 
 /** Eventos de cuenta que quedan en `registro_auditoria` (auditoría 6.7 ítem 9). */
 export type EventoCuenta =
@@ -88,6 +93,14 @@ export class AuthService {
     exigirContrasenaSegura(password);
     const nombreRol = this.rolDeRegistro(datos);
 
+    if (datos?.aceptaPolitica !== true) {
+      throw errorDominio(
+        HttpStatus.BAD_REQUEST,
+        'POLITICA_NO_ACEPTADA',
+        'Para crear la cuenta debes aceptar la política de tratamiento de datos personales (Ley 1581 de 2012).',
+      );
+    }
+
     if (await this.usuarios.existsBy({ email })) {
       throw errorDominio(
         HttpStatus.CONFLICT,
@@ -114,7 +127,11 @@ export class AuthService {
     );
 
     // Asignar un rol al crear la cuenta es un cambio de rol: queda auditado.
-    await this.auditar(id, 'registro_cuenta', { rol: rol.nombre });
+    // La aceptación de la política queda en la auditoría con su versión y fecha.
+    await this.auditar(id, 'registro_cuenta', {
+      rol: rol.nombre,
+      politica_datos: { version: VERSION_POLITICA_DATOS, aceptada: true },
+    });
     return this.respuestaSesion(id, email, rol);
   }
 
@@ -265,7 +282,7 @@ export class AuthService {
   private async auditar(
     usuarioId: string,
     accion: EventoCuenta,
-    detalle: Record<string, string>,
+    detalle: Record<string, unknown>,
   ): Promise<void> {
     try {
       await this.usuarios.manager.query(
