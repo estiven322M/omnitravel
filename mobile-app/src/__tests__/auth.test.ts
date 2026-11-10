@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import {
   iniciarSesionCuenta,
+  registrarCuenta,
   mensajeLegible,
   rolDeUsuarioId,
 } from '../services/api/auth';
@@ -92,5 +93,26 @@ describe('rolDeUsuarioId', () => {
     expect(rolDeUsuarioId(4)).toBe('moderador');
     expect(rolDeUsuarioId(99)).toBe('viajero');
     expect(rolDeUsuarioId(null)).toBe('viajero');
+  });
+});
+
+describe('registro con la política de datos (Ley 1581)', () => {
+  it('envía la aceptación de la política al crear la cuenta', async () => {
+    mockApiFetch.mockResolvedValue({
+      token: 't',
+      usuario: { id_usuario: 9, email: 'ana@correo.co', rol: 'viajero' },
+    });
+    await registrarCuenta({
+      nombre: 'Ana',
+      email: 'Ana@Correo.co',
+      contrasena: 'Segura123!',
+      aceptaPolitica: true,
+    });
+    const [ruta, init] = mockApiFetch.mock.calls[0] as [string, RequestInit];
+    expect(ruta).toBe('/auth/register');
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      email: 'ana@correo.co',
+      aceptaPolitica: true,
+    });
   });
 });

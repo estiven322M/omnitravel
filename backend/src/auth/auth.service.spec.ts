@@ -4,7 +4,7 @@ import type { JwtService } from '@nestjs/jwt';
 import type { Repository } from 'typeorm';
 import type { Rol } from '../usuarios/rol.entity';
 import type { Usuario } from '../usuarios/usuario.entity';
-import { AuthService } from './auth.service';
+import { AuthService, VERSION_POLITICA_DATOS } from './auth.service';
 
 const CONTRASENA = 'Segura123!';
 const CODIGO = 'OMNI-ADMIN-2026';
@@ -53,11 +53,42 @@ const codigo = (error: HttpException) =>
   (error.getResponse() as { error: string }).error;
 
 describe('AuthService — registro de viajero y administrador', () => {
+  it('exige aceptar la política de tratamiento de datos (Ley 1581)', async () => {
+    const { servicio, usuarios } = crearServicio();
+    const error = await capturar(
+      servicio.registrar({
+        email: 'nueva@omnitravel.test',
+        password: CONTRASENA,
+      }),
+    );
+    expect(error.getStatus()).toBe(400);
+    expect(codigo(error)).toBe('POLITICA_NO_ACEPTADA');
+    expect(usuarios.save).not.toHaveBeenCalled();
+  });
+
+  it('deja la aceptación de la política en la auditoría del registro', async () => {
+    const { servicio, usuarios } = crearServicio();
+    await servicio.registrar({
+      email: 'nueva@omnitravel.test',
+      password: CONTRASENA,
+      aceptaPolitica: true,
+    });
+    const [sql, parametros] = usuarios.manager.query.mock.calls[0] as [
+      string,
+      unknown[],
+    ];
+    expect(sql).toContain('registro_auditoria');
+    expect(JSON.parse(parametros[2] as string)).toMatchObject({
+      politica_datos: { aceptada: true },
+    });
+  });
+
   it('registra viajero por defecto y normaliza el correo', async () => {
     const { servicio, usuarios, roles } = crearServicio();
     const resultado = await servicio.registrar({
       email: '  NUEVA@OmniTravel.test ',
       password: CONTRASENA,
+      aceptaPolitica: true,
     });
 
     expect(resultado.usuario.rol).toBe('viajero');
@@ -76,6 +107,7 @@ describe('AuthService — registro de viajero y administrador', () => {
     const resultado = await servicio.registrar({
       email: 'admin2@omnitravel.test',
       password: CONTRASENA,
+      aceptaPolitica: true,
       rol: 'administrador',
       codigoInvitacion: CODIGO,
     });
@@ -92,6 +124,7 @@ describe('AuthService — registro de viajero y administrador', () => {
       servicio.registrar({
         email: 'admin2@omnitravel.test',
         password: CONTRASENA,
+        aceptaPolitica: true,
         rol: 'administrador',
         codigoInvitacion: CODIGO,
       }),
@@ -108,6 +141,7 @@ describe('AuthService — registro de viajero y administrador', () => {
       servicio.registrar({
         email: 'admin2@omnitravel.test',
         password: CONTRASENA,
+        aceptaPolitica: true,
         rol: 'administrador',
         codigoInvitacion: 'NO-ES-EL-CODIGO',
       }),
@@ -124,6 +158,7 @@ describe('AuthService — registro de viajero y administrador', () => {
       servicio.registrar({
         email: 'otro@omnitravel.test',
         password: CONTRASENA,
+        aceptaPolitica: true,
         rol: 'moderador',
       }),
     );
@@ -139,6 +174,7 @@ describe('AuthService — registro de viajero y administrador', () => {
       servicio.registrar({
         email: 'repetida@omnitravel.test',
         password: CONTRASENA,
+        aceptaPolitica: true,
       }),
     );
 
@@ -166,6 +202,7 @@ describe('AuthService — registro de viajero y administrador', () => {
       servicio.registrar({
         email: 'sinrol@omnitravel.test',
         password: CONTRASENA,
+        aceptaPolitica: true,
       }),
     );
 
@@ -199,9 +236,20 @@ describe('AuthService — auditoría de eventos de cuenta', () => {
 
   it('registra el rol asignado al crear la cuenta', async () => {
     const { servicio, usuarios } = crearServicio();
-    await servicio.registrar({ email: 'ana@correo.co', password: CONTRASENA });
+    await servicio.registrar({
+      email: 'ana@correo.co',
+      password: CONTRASENA,
+      aceptaPolitica: true,
+    });
     expect(eventos(usuarios)).toEqual([
-      ['42', 'registro_cuenta', { rol: 'viajero' }],
+      [
+        '42',
+        'registro_cuenta',
+        {
+          rol: 'viajero',
+          politica_datos: { version: VERSION_POLITICA_DATOS, aceptada: true },
+        },
+      ],
     ]);
   });
 
@@ -217,6 +265,7 @@ describe('AuthService — auditoría de eventos de cuenta', () => {
     await servicio.iniciarSesion({
       email: 'ana@correo.co',
       password: CONTRASENA,
+      aceptaPolitica: true,
     });
     expect(eventos(usuarios)).toEqual([
       ['7', 'inicio_sesion', { rol: 'viajero' }],
@@ -251,6 +300,7 @@ describe('AuthService — auditoría de eventos de cuenta', () => {
       servicio.iniciarSesion({
         email: 'nadie@correo.co',
         password: CONTRASENA,
+        aceptaPolitica: true,
       }),
     );
     expect(usuarios.manager.query).not.toHaveBeenCalled();

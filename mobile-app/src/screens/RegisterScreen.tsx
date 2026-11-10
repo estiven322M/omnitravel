@@ -14,6 +14,7 @@ import { Alerta } from '../utils/alerta';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PoliticaDatos } from '../components/PoliticaDatos';
 import { AppButton } from '../components/AppButton';
 import { BrandMark } from '../components/BrandMark';
 import { CampoTexto } from '../components/CampoTexto';
@@ -78,6 +79,7 @@ interface Errores {
   email?: string;
   contrasena?: string;
   codigoInvitacion?: string;
+  politica?: string;
 }
 
 export function validarEmail(email: string): boolean {
@@ -117,6 +119,9 @@ export function RegisterScreen() {
   const [codigoInvitacion, setCodigoInvitacion] = useState('');
   const [necesidades, setNecesidades] = useState<NecesidadAccesibilidad[]>([]);
   const [errores, setErrores] = useState<Errores>({});
+  /** Ley 1581: sin aceptar la política no se crea la cuenta (U03). */
+  const [aceptaPolitica, setAceptaPolitica] = useState(false);
+  const [verPolitica, setVerPolitica] = useState(false);
 
   const alternarNecesidad = (id: NecesidadAccesibilidad) => {
     setNecesidades((previas) =>
@@ -144,6 +149,11 @@ export function RegisterScreen() {
         'Ingresa el código de invitación de administrador.';
     }
 
+    if (!aceptaPolitica) {
+      nuevosErrores.politica =
+        'Debes aceptar la política de tratamiento de datos para crear la cuenta.';
+    }
+
     setErrores(nuevosErrores);
 
     if (Object.keys(nuevosErrores).length > 0) {
@@ -165,6 +175,7 @@ export function RegisterScreen() {
         rol,
         codigoInvitacion:
           rol === 'administrador' ? codigoInvitacion.trim() : undefined,
+        aceptaPolitica,
       });
 
       // El perfil de accesibilidad sigue siendo 100 % local (Ley 1581).
@@ -412,6 +423,54 @@ export function RegisterScreen() {
             </View>
           </View>
 
+          <View style={estilos.filaPolitica}>
+            <Pressable
+              onPress={() => {
+                setAceptaPolitica((actual) => !actual);
+                setErrores((previos) => ({ ...previos, politica: undefined }));
+              }}
+              accessibilityRole="checkbox"
+              aria-checked={aceptaPolitica}
+              accessibilityLabel="Acepto la política de tratamiento de datos personales, Ley 1581 de 2012"
+              style={estilos.casilla}
+            >
+              <Ionicons
+                name={aceptaPolitica ? 'checkbox' : 'square-outline'}
+                size={26}
+                color={errores.politica ? colors.danger : colors.primary}
+              />
+            </Pressable>
+            <Text style={estilos.textoPolitica}>
+              Acepto la{' '}
+              <Text
+                style={estilos.enlacePolitica}
+                onPress={() => setVerPolitica(true)}
+                accessibilityRole="link"
+              >
+                política de tratamiento de datos personales
+              </Text>{' '}
+              (Ley 1581 de 2012).
+            </Text>
+          </View>
+          {errores.politica ? (
+            <Text
+              style={estilos.errorPolitica}
+              accessibilityLiveRegion="polite"
+            >
+              {errores.politica}
+            </Text>
+          ) : null}
+
+          <PoliticaDatos
+            visible={verPolitica}
+            onCerrar={() => setVerPolitica(false)}
+            onAceptar={() => {
+              setAceptaPolitica(true);
+              setErrores((previos) => ({ ...previos, politica: undefined }));
+              setVerPolitica(false);
+            }}
+          />
+
           <AppButton
             titulo="Comenzar a explorar"
             iconoFinal="arrow-forward"
@@ -438,6 +497,20 @@ export function RegisterScreen() {
 }
 
 const estilos = StyleSheet.create({
+  filaPolitica: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  casilla: {
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textoPolitica: { flex: 1, fontSize: fontSize.sm, color: colors.textPrimary },
+  enlacePolitica: {
+    color: colors.primary,
+    fontWeight: fontWeight.bold,
+    textDecorationLine: 'underline',
+  },
+  errorPolitica: { fontSize: fontSize.sm, color: colors.danger },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,
