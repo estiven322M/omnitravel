@@ -1,5 +1,6 @@
 import {
   etiquetaDia,
+  formatoTiempoRespuesta,
   maximoRedondo,
   segmentosDe,
   variacion,
@@ -35,5 +36,15 @@ describe('estadísticas del moderador (M07)', () => {
   it('calcula la variación frente al mes anterior', () => {
     expect(variacion(12, 10)).toBe(20);
     expect(variacion(5, 0)).toBeNull();
+  });
+});
+
+describe('formatoTiempoRespuesta', () => {
+  it('muestra minutos, horas o días según la magnitud', () => {
+    expect(formatoTiempoRespuesta(null)).toBe('—');
+    expect(formatoTiempoRespuesta(0.25)).toBe('15 min');
+    expect(formatoTiempoRespuesta(5.04)).toBe('5 h');
+    expect(formatoTiempoRespuesta(12.36)).toBe('12,4 h');
+    expect(formatoTiempoRespuesta(679.1)).toBe('28,3 días');
   });
 });
