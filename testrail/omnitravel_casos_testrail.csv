@@ -14,16 +14,16 @@ Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jes
 Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > coordenadas.test.ts,devuelve null ante entradas inválidas,Automated,Medium,"RF-02, RNF-07",Jest,Suite mobile-app/src/__tests__/coordenadas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
 2. Ejecutar: npm test -- coordenadas.test.ts
 3. Revisar el resultado del caso «devuelve null ante entradas inválidas».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
-Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,arma los segmentos en orden y omite los vacíos,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,arma los segmentos en orden y omite los vacíos,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
 2. Ejecutar: npm test -- estadisticas.test.ts
 3. Revisar el resultado del caso «arma los segmentos en orden y omite los vacíos».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
-Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,redondea el máximo del eje,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,redondea el máximo del eje,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
 2. Ejecutar: npm test -- estadisticas.test.ts
 3. Revisar el resultado del caso «redondea el máximo del eje».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
-Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,nombra el día sin depender de la zona horaria,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,nombra el día sin depender de la zona horaria,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
 2. Ejecutar: npm test -- estadisticas.test.ts
 3. Revisar el resultado del caso «nombra el día sin depender de la zona horaria».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
-Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,calcula la variación frente al mes anterior,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,calcula la variación frente al mes anterior,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
 2. Ejecutar: npm test -- estadisticas.test.ts
 3. Revisar el resultado del caso «calcula la variación frente al mes anterior».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
 Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > evidencias.test.ts,envía la foto en base64 a POST /evidencias con un timeout amplio,Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/evidencias.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
@@ -1184,3 +1184,39 @@ Proceso 1 - Validación colaborativa de infraestructura > Pruebas de integració
 Proceso 2 - Planificación de rutas accesibles personalizadas > Pruebas de integración (Jest + Supertest + PostGIS),"CP-I21 evita las barreras críticas reportadas cerca del trayecto (RT1, RNF-26)",Automated,High,"RF-01, RNF-26",Jest (integración),Base PostgreSQL 16 + PostGIS 3.4 desechable creada con las migraciones backend/sql/000…005 y catálogos; Valhalla simulado con un servidor HTTP local. En CI: job «Integración (API + PostGIS real)».,"1. Definir INTEGRACION_DATABASE_URL con una base vacía.
 2. En backend ejecutar: npm run test:integracion
 3. Revisar el resultado del caso «CP-I21 evita las barreras críticas reportadas cerca del trayecto (RT1, RNF-26)».",El caso pasa: la API responde el código esperado y la base queda en el estado verificado por el caso.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",descarga la foto de Wikimedia con agente identificado,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «descarga la foto de Wikimedia con agente identificado».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",la segunda vez usa la copia en memoria,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «la segunda vez usa la copia en memoria».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",responde 404 si la foto no existe,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «responde 404 si la foto no existe».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",no actúa como proxy abierto: rechaza otros dominios,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «no actúa como proxy abierto: rechaza otros dominios».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",si Wikimedia responde con error no entrega nada,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «si Wikimedia responde con error no entrega nada».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > fotos.service.spec.ts",rechaza identificadores inválidos sin consultar la base,Automated,Medium,RNF-06,Jest,Suite backend/src/mapa/fotos.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- fotos.service.spec.ts
+3. Revisar el resultado del caso «rechaza identificadores inválidos sin consultar la base».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > auth.service.spec.ts",exige aceptar la política de tratamiento de datos (Ley 1581),Automated,Medium,"RNF-21, RNF-23",Jest,Suite backend/src/auth/auth.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- auth.service.spec.ts
+3. Revisar el resultado del caso «exige aceptar la política de tratamiento de datos (Ley 1581)».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > Backend > auth.service.spec.ts",deja la aceptación de la política en la auditoría del registro,Automated,Medium,"RNF-21, RNF-23",Jest,Suite backend/src/auth/auth.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- auth.service.spec.ts
+3. Revisar el resultado del caso «deja la aceptación de la política en la auditoría del registro».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas unitarias (Jest) > App móvil > estadisticas.test.ts,"muestra minutos, horas o días según la magnitud",Automated,Medium,"RF-02, RNF-28",Jest,Suite mobile-app/src/__tests__/estadisticas.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- estadisticas.test.ts
+3. Revisar el resultado del caso «muestra minutos, horas o días según la magnitud».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > fotosPoi.test.ts",usa GET /fotos/:id cuando el backend entrega el id de la foto,Automated,Medium,"RNF-21, RNF-23",Jest,Suite mobile-app/src/__tests__/fotosPoi.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- fotosPoi.test.ts
+3. Revisar el resultado del caso «usa GET /fotos/:id cuando el backend entrega el id de la foto».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > auth.test.ts",envía la aceptación de la política al crear la cuenta,Automated,Medium,"RNF-21, RNF-23",Jest,Suite mobile-app/src/__tests__/auth.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- auth.test.ts
+3. Revisar el resultado del caso «envía la aceptación de la política al crear la cuenta».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas de integración (Jest + Supertest + PostGIS)",CP-I23 GET /fotos/:id es público y solo sirve fotos registradas,Automated,High,"RF-04, RNF-23",Jest (integración),Base PostgreSQL 16 + PostGIS 3.4 desechable creada con las migraciones backend/sql/000…005 y catálogos; Valhalla simulado con un servidor HTTP local. En CI: job «Integración (API + PostGIS real)».,"1. Definir INTEGRACION_DATABASE_URL con una base vacía.
+2. En backend ejecutar: npm run test:integracion
+3. Revisar el resultado del caso «CP-I23 GET /fotos/:id es público y solo sirve fotos registradas».",El caso pasa: la API responde el código esperado y la base queda en el estado verificado por el caso.
