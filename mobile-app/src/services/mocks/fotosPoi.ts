@@ -1,4 +1,4 @@
-import type { ImageSourcePropType } from 'react-native';
+import { Platform, type ImageSourcePropType } from 'react-native';
 import type { FotoLugar } from '../types';
 import { MINIATURAS } from './miniaturasPoi';
 
@@ -193,6 +193,20 @@ interface LugarConFotos {
   fotos?: FotoLugar[];
 }
 
+/**
+ * Agente identificado para Wikimedia Commons: su política de uso pide que
+ * las aplicaciones se identifiquen y puede rechazar agentes genéricos (como
+ * el de Android). En la web el navegador pone el suyo.
+ */
+export const AGENTE_FOTOS =
+  'OmniTravel/1.0 (app academica de turismo accesible; Universidad del Quindio)';
+
+export function fuenteRemota(url: string): ImageSourcePropType {
+  return Platform.OS === 'web'
+    ? { uri: url }
+    : { uri: url, headers: { 'User-Agent': AGENTE_FOTOS } };
+}
+
 /** «Autor · Licencia · Wikimedia Commons» (sin partes vacías). */
 export function creditoDeFoto(foto: FotoLugar): string {
   return [foto.autor, foto.licencia, 'Wikimedia Commons']
@@ -207,7 +221,7 @@ export function creditoDeFoto(foto: FotoLugar): string {
 export function fotosDelLugar(lugar: LugarConFotos): FotoPoi[] {
   if (lugar.fotos && lugar.fotos.length > 0) {
     return lugar.fotos.map((foto) => ({
-      fuente: { uri: foto.url },
+      fuente: fuenteRemota(foto.url),
       clave: foto.url,
       leyenda: foto.leyenda,
       referencia: false,
