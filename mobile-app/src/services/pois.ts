@@ -174,6 +174,8 @@ interface RespuestaMapa {
 }
 
 interface FilaFoto {
+  /** Id de poi_foto: la foto se sirve desde la API (GET /fotos/:id). */
+  id_foto?: number;
   poi_id: number;
   url: string;
   leyenda: string | null;
@@ -182,12 +184,21 @@ interface FilaFoto {
   fuente_url: string | null;
 }
 
+/**
+ * URL con la que la app pide la foto: la API la sirve con un agente
+ * identificado, porque Wikimedia Commons bloquea (403) las descargas directas
+ * desde Android. Sin id (backend antiguo) se usa la URL original.
+ */
+export function urlDeFoto(fila: Pick<FilaFoto, 'id_foto' | 'url'>): string {
+  return fila.id_foto != null ? `${API_URL}/fotos/${fila.id_foto}` : fila.url;
+}
+
 /** Agrupa las fotos por lugar, en el orden que entrega el backend. */
 export function fotosPorPoi(filas: FilaFoto[] = []): Map<number, FotoLugar[]> {
   return filas.reduce<Map<number, FotoLugar[]>>((mapa, fila) => {
     const lista = mapa.get(fila.poi_id) ?? [];
     lista.push({
-      url: fila.url,
+      url: urlDeFoto(fila),
       leyenda: fila.leyenda?.trim() || 'Foto del lugar',
       autor: fila.autor,
       licencia: fila.licencia,

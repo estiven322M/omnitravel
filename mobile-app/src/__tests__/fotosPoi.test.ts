@@ -42,3 +42,16 @@ describe('fotos de los lugares', () => {
     ).toEqual(['Acceso', 'Interior', 'Baño adaptado', 'Zona de mesas']);
   });
 });
+
+describe('fotos servidas por la API (Wikimedia bloquea a Android)', () => {
+  it('usa GET /fotos/:id cuando el backend entrega el id de la foto', () => {
+    const { urlDeFoto } =
+      jest.requireActual<typeof import('../services/pois')>('../services/pois');
+    expect(
+      urlDeFoto({ id_foto: 12, url: 'https://upload.wikimedia.org/x.jpg' }),
+    ).toMatch(/\/fotos\/12$/);
+    expect(urlDeFoto({ url: 'https://upload.wikimedia.org/x.jpg' })).toBe(
+      'https://upload.wikimedia.org/x.jpg',
+    );
+  });
+});

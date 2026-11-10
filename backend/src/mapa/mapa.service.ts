@@ -60,7 +60,7 @@ export class MapaService {
   private async fotos() {
     try {
       return await this.db.query(`
-        select poi_id::int, url, leyenda, autor, licencia, fuente_url
+        select id_foto::int, poi_id::int, url, leyenda, autor, licencia, fuente_url
         from poi_foto
         order by poi_id, orden, id_foto`);
     } catch {
