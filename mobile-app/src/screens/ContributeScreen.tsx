@@ -248,7 +248,7 @@ function EtiquetaChip({
         size={16}
         color={PALETA_TONO[etiqueta.tono].tema}
       />
-      <Text style={estilos.etiquetaTexto} numberOfLines={2}>
+      <Text style={estilos.etiquetaTexto} numberOfLines={3}>
         {etiqueta.etiqueta}
       </Text>
     </Pressable>
