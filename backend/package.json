@@ -27,6 +27,7 @@
     "ver-usuarios": "node --env-file-if-exists=.env scripts/ver-usuarios.mjs",
     "ver-esquema": "node --env-file-if-exists=.env scripts/ver-esquema.mjs",
     "limpiar-pruebas": "node --env-file-if-exists=.env scripts/limpiar-pruebas.mjs",
+    "metricas-rnf": "node --env-file-if-exists=.env scripts/metricas-rnf.mjs",
     "ver-lugares": "node --env-file-if-exists=.env scripts/ver-lugares.mjs",
     "aplicar-sql": "node --env-file-if-exists=.env scripts/aplicar-sql.mjs",
     "migrar": "node --env-file-if-exists=.env scripts/migrar.mjs",
