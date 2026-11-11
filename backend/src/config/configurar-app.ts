@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import helmet from 'helmet';
 import { OPCIONES_HELMET, origenesCors, swaggerHabilitado } from './seguridad';
 
@@ -26,6 +27,9 @@ export function configurarApp(
       next,
     ),
   );
+  // Respuestas comprimidas (gzip): GET /mapa pasa de ~74 KB a una fracción
+  // y la API atiende más peticiones simultáneas (RNF-02).
+  app.use(compression());
   // Las fotos de evidencia llegan en base64 (≤ 5 MB → ~6,7 MB en JSON).
   app.useBodyParser('json', { limit: '8mb' });
   // Solo afecta a clientes web (Expo web); la app nativa no usa CORS.
