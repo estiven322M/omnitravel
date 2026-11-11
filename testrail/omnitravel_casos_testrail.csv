@@ -1220,3 +1220,36 @@ Proceso 3 - Gestión de retroalimentación e incidencias post-viaje > Pruebas un
 "Transversal - Seguridad, sesión y plataforma > Pruebas de integración (Jest + Supertest + PostGIS)",CP-I23 GET /fotos/:id es público y solo sirve fotos registradas,Automated,High,"RF-04, RNF-23",Jest (integración),Base PostgreSQL 16 + PostGIS 3.4 desechable creada con las migraciones backend/sql/000…005 y catálogos; Valhalla simulado con un servidor HTTP local. En CI: job «Integración (API + PostGIS real)».,"1. Definir INTEGRACION_DATABASE_URL con una base vacía.
 2. En backend ejecutar: npm run test:integracion
 3. Revisar el resultado del caso «CP-I23 GET /fotos/:id es público y solo sirve fotos registradas».",El caso pasa: la API responde el código esperado y la base queda en el estado verificado por el caso.
+Proceso 2 - Planificación de rutas accesibles personalizadas > Pruebas unitarias (Jest) > Backend > mapa.service.spec.ts,peticiones simultáneas comparten una sola consulta a la base,Automated,Medium,RNF-02,Jest,Suite backend/src/mapa/mapa.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- mapa.service.spec.ts
+3. Revisar el resultado del caso «peticiones simultáneas comparten una sola consulta a la base».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 2 - Planificación de rutas accesibles personalizadas > Pruebas unitarias (Jest) > Backend > mapa.service.spec.ts,invalidar obliga a consultar de nuevo,Automated,Medium,RNF-02,Jest,Suite backend/src/mapa/mapa.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- mapa.service.spec.ts
+3. Revisar el resultado del caso «invalidar obliga a consultar de nuevo».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 2 - Planificación de rutas accesibles personalizadas > Pruebas unitarias (Jest) > Backend > mapa.service.spec.ts,con MAPA_CACHE_MS=0 cada petición consulta la base,Automated,Medium,RNF-02,Jest,Suite backend/src/mapa/mapa.service.spec.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta backend.
+2. Ejecutar: npm test -- mapa.service.spec.ts
+3. Revisar el resultado del caso «con MAPA_CACHE_MS=0 cada petición consulta la base».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > ToggleRow.test.tsx",anuncia «Desactivado» desde el primer foco cuando está apagado,Automated,Medium,"RNF-11, RNF-12",Jest,Suite mobile-app/src/__tests__/ToggleRow.test.tsx. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- ToggleRow.test.tsx
+3. Revisar el resultado del caso «anuncia «Desactivado» desde el primer foco cuando está apagado».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > ToggleRow.test.tsx",anuncia «Activado» y queda marcado cuando está encendido,Automated,Medium,"RNF-11, RNF-12",Jest,Suite mobile-app/src/__tests__/ToggleRow.test.tsx. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- ToggleRow.test.tsx
+3. Revisar el resultado del caso «anuncia «Activado» y queda marcado cuando está encendido».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > moderacion.test.ts,ofrece denunciar el reporte vigente de otra persona,Automated,Medium,"C4, RNF-29",Jest,Suite mobile-app/src/__tests__/moderacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- moderacion.test.ts
+3. Revisar el resultado del caso «ofrece denunciar el reporte vigente de otra persona».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > moderacion.test.ts,no ofrece denunciar un reporte propio (evita AUTODENUNCIA),Automated,Medium,"C4, RNF-29",Jest,Suite mobile-app/src/__tests__/moderacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- moderacion.test.ts
+3. Revisar el resultado del caso «no ofrece denunciar un reporte propio (evita AUTODENUNCIA)».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+Proceso 1 - Validación colaborativa de infraestructura > Pruebas unitarias (Jest) > App móvil > moderacion.test.ts,"no lo ofrece en revisión, rechazado, sin reporte ni en moderación",Automated,Medium,"RF-02, RNF-23",Jest,Suite mobile-app/src/__tests__/moderacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- moderacion.test.ts
+3. Revisar el resultado del caso «no lo ofrece en revisión, rechazado, sin reporte ni en moderación».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > gamificacion.test.ts",publicar vale más que reportar y las confirmaciones suman,Automated,Medium,U3,Jest,Suite mobile-app/src/__tests__/gamificacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- gamificacion.test.ts
+3. Revisar el resultado del caso «publicar vale más que reportar y las confirmaciones suman».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > gamificacion.test.ts",asigna el nivel según los puntos y el umbral del siguiente,Automated,Medium,U3,Jest,Suite mobile-app/src/__tests__/gamificacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- gamificacion.test.ts
+3. Revisar el resultado del caso «asigna el nivel según los puntos y el umbral del siguiente».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
+"Transversal - Seguridad, sesión y plataforma > Pruebas unitarias (Jest) > App móvil > gamificacion.test.ts",calcula el avance hacia el siguiente nivel y su texto accesible,Automated,Medium,U3,Jest,Suite mobile-app/src/__tests__/gamificacion.test.ts. Base de datos y servicios externos simulados.,"1. Abrir una terminal en la carpeta mobile-app.
+2. Ejecutar: npm test -- gamificacion.test.ts
+3. Revisar el resultado del caso «calcula el avance hacia el siguiente nivel y su texto accesible».",Jest marca el caso como PASS: todas sus aserciones (expect) se cumplen.
