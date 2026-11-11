@@ -12,6 +12,7 @@ import { SavedScreen } from '../screens/SavedScreen';
 import type { IconName } from '../services/types';
 import { colors, fontSize, fontWeight } from '../utils/theme';
 import { opcionesBarraInferior } from './estiloPestanas';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -65,8 +66,9 @@ function BotonContribuir({
  * Perfil. Las cuentas de moderación usan su propio panel (ModeradorTabs).
  */
 export function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
-    <Tab.Navigator screenOptions={opcionesBarraInferior}>
+    <Tab.Navigator screenOptions={opcionesBarraInferior(insets.bottom)}>
       <Tab.Screen
         name="Inicio"
         component={HomeScreen}
