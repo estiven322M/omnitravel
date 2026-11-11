@@ -7,6 +7,7 @@ import { PerfilModeradorScreen } from '../screens/moderacion/PerfilModeradorScre
 import { ReportesPendientesScreen } from '../screens/moderacion/ReportesPendientesScreen';
 import type { IconName } from '../services/types';
 import { opcionesBarraInferior } from './estiloPestanas';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ModeradorTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<ModeradorTabParamList>();
@@ -27,8 +28,9 @@ function icono(activo: IconName, inactivo: IconName) {
 
 /** Panel de moderación (M02–M07): Inicio · Reportes · Mapa · Estadísticas · Perfil. */
 export function ModeradorTabs() {
+  const insets = useSafeAreaInsets();
   return (
-    <Tab.Navigator screenOptions={opcionesBarraInferior}>
+    <Tab.Navigator screenOptions={opcionesBarraInferior(insets.bottom)}>
       <Tab.Screen
         name="InicioModerador"
         component={DashboardModeradorScreen}
