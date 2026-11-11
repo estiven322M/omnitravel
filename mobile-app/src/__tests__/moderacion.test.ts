@@ -6,6 +6,7 @@ import {
 import {
   dimensionDeReporte,
   haceCuanto,
+  puedeDenunciar,
   tipoDeReporte,
 } from '../utils/moderacion';
 
@@ -122,5 +123,25 @@ describe('servicio del panel de moderación', () => {
       gravedad: 'alta',
       poi: { id: '2', tipo: 'parque' },
     });
+  });
+});
+
+describe('puedeDenunciar', () => {
+  const vigente = { id: '7', estado: 'pendiente_validacion' };
+  it('ofrece denunciar el reporte vigente de otra persona', () => {
+    expect(puedeDenunciar(vigente, false, new Set(['3']))).toBe(true);
+  });
+  it('no ofrece denunciar un reporte propio (evita AUTODENUNCIA)', () => {
+    expect(puedeDenunciar(vigente, false, new Set(['7']))).toBe(false);
+  });
+  it('no lo ofrece en revisión, rechazado, sin reporte ni en moderación', () => {
+    expect(
+      puedeDenunciar({ id: '7', estado: 'en_revision' }, false, new Set()),
+    ).toBe(false);
+    expect(
+      puedeDenunciar({ id: '7', estado: 'rechazado' }, false, new Set()),
+    ).toBe(false);
+    expect(puedeDenunciar(null, false, new Set())).toBe(false);
+    expect(puedeDenunciar(vigente, true, new Set())).toBe(false);
   });
 });

@@ -36,6 +36,7 @@ import {
 } from '../services/api/feedback';
 import {
   confirmarReporte,
+  listarMisReportes,
   obtenerReporteDePoi,
   ReporteError,
 } from '../services/reportes';
@@ -43,6 +44,7 @@ import type { ExperienciaViajero, ReporteComunitario } from '../services/types';
 import { useFavoritosStore } from '../store/favoritosStore';
 import { usePoisStore } from '../store/poisStore';
 import { useProfileStore } from '../store/profileStore';
+import { puedeDenunciar } from '../utils/moderacion';
 import { usaPanelModeracion } from '../services/inicioSesion';
 import { formatearFechaCorta } from '../utils/format';
 import {
@@ -103,6 +105,9 @@ export function PoiDetailScreen() {
     }
   }, [poisCargados, cargarPois]);
 
+  const [idsPropios, setIdsPropios] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [reporte, setReporte] = useState<ReporteComunitario | null | undefined>(
     undefined,
   );
@@ -141,6 +146,16 @@ export function PoiDetailScreen() {
       .then((activo) => {
         if (vigente) {
           setReporte(activo);
+        }
+        // ¿Es un reporte propio? Entonces no se ofrece denunciarlo.
+        if (activo) {
+          listarMisReportes()
+            .then((mios) => {
+              if (vigente) {
+                setIdsPropios(new Set(mios.map((mio) => mio.id)));
+              }
+            })
+            .catch(() => undefined);
         }
       })
       .catch(() => {
@@ -603,10 +618,7 @@ export function PoiDetailScreen() {
               Este reporte fue denunciado: moderación lo está revisando.
             </Text>
           ) : null}
-          {reporteActivo &&
-          !enPanelModeracion &&
-          reporteActivo.estado !== 'en_revision' &&
-          reporteActivo.estado !== 'rechazado' ? (
+          {puedeDenunciar(reporteActivo, enPanelModeracion, idsPropios) ? (
             <AppButton
               titulo="Denunciar este reporte"
               variante="fantasma"
