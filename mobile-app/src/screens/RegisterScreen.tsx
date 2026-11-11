@@ -196,10 +196,7 @@ export function RegisterScreen() {
 
   return (
     <SafeAreaView style={estilos.pantalla} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={estilos.pantalla}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={estilos.pantalla} behavior="padding">
         <ScrollView
           contentContainerStyle={estilos.contenido}
           keyboardShouldPersistTaps="handled"

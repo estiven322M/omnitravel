@@ -179,10 +179,7 @@ export function FeedbackScreen() {
         <Text style={estilos.tituloBarra}>Calificar visita</Text>
       </View>
 
-      <KeyboardAvoidingView
-        style={estilos.pantalla}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={estilos.pantalla} behavior="padding">
         <ScrollView
           contentContainerStyle={estilos.contenido}
           keyboardShouldPersistTaps="handled"
