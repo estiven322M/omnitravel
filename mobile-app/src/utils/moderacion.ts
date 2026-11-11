@@ -87,3 +87,22 @@ export function haceCuanto(iso: string, ahora: number = Date.now()): string {
     year: 'numeric',
   });
 }
+
+/**
+ * ¿Se muestra «Denunciar este reporte»? Solo para reportes vigentes de OTRA
+ * persona: denunciar el propio lo rechaza el backend (AUTODENUNCIA) y en la
+ * validación con usuarios el botón llevaba a ese error.
+ */
+export function puedeDenunciar(
+  reporte: { id: string; estado: string } | null | undefined,
+  enPanelModeracion: boolean,
+  idsPropios: ReadonlySet<string>,
+): boolean {
+  if (!reporte || enPanelModeracion) {
+    return false;
+  }
+  if (reporte.estado === 'en_revision' || reporte.estado === 'rechazado') {
+    return false;
+  }
+  return !idsPropios.has(reporte.id);
+}
