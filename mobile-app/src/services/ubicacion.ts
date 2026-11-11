@@ -64,8 +64,11 @@ async function desdeTelefono(): Promise<Coordenada> {
     throw new UbicacionError('permiso');
   }
   try {
+    // RNF-18: el origen de la ruta y la ubicación de un reporte necesitan
+    // precisión de GPS (< 10 m). «Balanced» usa wifi y antenas (≈ 100 m):
+    // en la medición del 11/11/2026 el error fue de 41 a 104 m.
     const posicion = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+      accuracy: Location.Accuracy.Highest,
     });
     return {
       latitude: posicion.coords.latitude,
