@@ -8,11 +8,43 @@ import { DataSource } from 'typeorm';
  * cambien. Los ids bigint y los numeric se convierten a number en SQL
  * porque la app los usa como claves numéricas.
  */
+/** Vigencia de la copia en memoria de GET /mapa (MAPA_CACHE_MS; 0 = sin copia). */
+const VIGENCIA_POR_DEFECTO_MS = 3000;
+
 @Injectable()
 export class MapaService {
   constructor(@InjectDataSource() private readonly db: DataSource) { }
 
-  async datos() {
+  private copia: { hasta: number; datos: Promise<unknown> } | null = null;
+
+  /**
+   * RNF-02: con muchas peticiones simultáneas, todas comparten una sola
+   * consulta a la base durante unos segundos (en lugar de 7 consultas por
+   * petición). Un cambio se ve en el mapa a más tardar en esa vigencia.
+   */
+  datos() {
+    const vigencia = Number(process.env.MAPA_CACHE_MS ?? VIGENCIA_POR_DEFECTO_MS);
+    const ahora = Date.now();
+    if (vigencia > 0 && this.copia && this.copia.hasta > ahora) {
+      return this.copia.datos;
+    }
+    const datos = this.consultar();
+    if (vigencia > 0) {
+      this.copia = { hasta: ahora + vigencia, datos };
+      // Si la consulta falla, no se guarda el error.
+      datos.catch(() => {
+        this.copia = null;
+      });
+    }
+    return datos;
+  }
+
+  /** Vacía la copia en memoria (la siguiente petición consulta la base). */
+  invalidar() {
+    this.copia = null;
+  }
+
+  private async consultar() {
     const [caracteristicas, pois, valores, retroalimentacion, reportes, confirmaciones] =
       await Promise.all([
         this.db.query(`
