@@ -35,7 +35,10 @@ export function ToggleRow({
       accessibilityRole="switch"
       accessibilityLabel={etiqueta}
       accessibilityHint={descripcion}
-      accessibilityState={{ checked: valor }}
+      // TalkBack debe decir el estado desde el primer foco (prueba con
+      // usuarios, formato 4: «no indicó que estaba desmarcada»).
+      aria-checked={valor}
+      accessibilityValue={{ text: valor ? 'Activado' : 'Desactivado' }}
       style={({ pressed }) => [
         estilos.fila,
         pressed ? estilos.presionado : null,

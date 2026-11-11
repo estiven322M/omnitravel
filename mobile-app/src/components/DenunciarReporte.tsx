@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -83,10 +82,7 @@ export function DenunciarReporte({
       onRequestClose={cerrar}
       accessibilityViewIsModal
     >
-      <KeyboardAvoidingView
-        style={estilos.fondo}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={estilos.fondo} behavior="padding">
         <View style={estilos.hoja}>
           <ScrollView
             contentContainerStyle={estilos.contenido}
