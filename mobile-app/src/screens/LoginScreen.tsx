@@ -225,14 +225,6 @@ export function LoginScreen() {
               <Ionicons name="arrow-back" size={22} color={colors.primary} />
               <Text style={estilos.volverTexto}>Volver</Text>
             </Pressable>
-            <View
-              style={estilos.idioma}
-              accessible
-              accessibilityLabel="Idioma: español"
-            >
-              <Text style={estilos.idiomaTexto}>ES</Text>
-              <Ionicons name="chevron-down" size={14} color={colors.primary} />
-            </View>
           </View>
 
           <View style={estilos.marca}>
@@ -447,16 +439,6 @@ const estilos = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.primary,
     fontWeight: fontWeight.medium,
-  },
-  idioma: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  idiomaTexto: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: fontWeight.semibold,
   },
   marca: {
     alignItems: 'center',
